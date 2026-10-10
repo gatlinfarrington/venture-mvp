@@ -12,15 +12,24 @@ const banned = [
 ];
 
 describe("seo pages", () => {
-  it("ships the four programmatic routes", () => {
+  it("ships one comparison route per requested source slug", () => {
     expect(seoPages.map((p) => p.slug).sort()).toEqual(
       [
-        "gumroad-to-google-sheets",
-        "lemon-squeezy-to-google-sheets",
-        "mrr-spreadsheet-template",
-        "polar-to-google-sheets",
+        "gumroad-analytics-google-sheets",
+        "lemon-squeezy-analytics",
+        "polar-analytics",
+        "stripe-to-google-sheets",
       ].sort(),
     );
+  });
+
+  it("gives each page unique title, h1, and OG title", () => {
+    const titles = new Set(seoPages.map((p) => p.title));
+    const h1s = new Set(seoPages.map((p) => p.h1));
+    const ogs = new Set(seoPages.map((p) => p.ogTitle));
+    expect(titles.size).toBe(seoPages.length);
+    expect(h1s.size).toBe(seoPages.length);
+    expect(ogs.size).toBe(seoPages.length);
   });
 
   it("avoids filler marketing words", () => {

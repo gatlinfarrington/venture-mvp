@@ -21,9 +21,10 @@ export function Nav() {
       <div className="container nav-inner">
         <BrandWordmark />
         <nav className="nav-links" aria-label="Primary">
-          <Link href="/#pricing">Pricing</Link>
+          <Link href="/pricing">Pricing</Link>
           <Link href="/#how-it-works">How it works</Link>
           <Link href="/#faq">FAQ</Link>
+          <Link href="/docs">Docs</Link>
         </nav>
         <div className="nav-actions">
           <a className="btn btn-primary btn-sm" href={siteConfig.installUrl}>
@@ -48,9 +49,10 @@ export function Nav() {
       </div>
       {open ? (
         <div className="mobile-drawer container">
-          <Link href="/#pricing" onClick={() => setOpen(false)}>Pricing</Link>
+          <Link href="/pricing" onClick={() => setOpen(false)}>Pricing</Link>
           <Link href="/#how-it-works" onClick={() => setOpen(false)}>How it works</Link>
           <Link href="/#faq" onClick={() => setOpen(false)}>FAQ</Link>
+          <Link href="/docs" onClick={() => setOpen(false)}>Docs</Link>
           <a href={siteConfig.installUrl}>Install free</a>
         </div>
       ) : null}
