@@ -18,7 +18,7 @@ export const PRICE_LOOKUP_KEYS = {
 export const PRODUCT_LOOKUP = {
   pro: {
     name: "RevenueSheet Pro",
-    description: "All three sources, scheduled refresh, MRR dashboard.",
+    description: "All connected sources, scheduled refresh, MRR dashboard.",
   },
   business: {
     name: "RevenueSheet Business",

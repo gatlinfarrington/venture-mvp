@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { HeroDemoLazy } from "@/components/HeroDemoLazy";
+import { InstallCta } from "@/components/InstallCta";
 import { Pricing } from "@/components/Pricing";
 import { Reveal } from "@/components/Reveal";
 import { brand } from "@/lib/brand";
@@ -31,9 +32,9 @@ export function Hero() {
             ))}
           </div>
           <div className="hero-ctas hero-reveal" style={{ animationDelay: "240ms" }}>
-            <a className="btn btn-primary" href={siteConfig.installUrl}>
+            <InstallCta className="btn btn-primary" source="hero">
               Install for Google Sheets
-            </a>
+            </InstallCta>
             <a className="btn btn-secondary" href="#dashboard">
               See the dashboard
             </a>
@@ -52,7 +53,7 @@ export function HowItWorks() {
     {
       n: "01",
       title: "Connect",
-      body: "Paste an API key from Lemon Squeezy, Polar, or Gumroad. No OAuth dance with those stores — the add-on reads what you grant.",
+      body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe. No OAuth dance with those stores — the add-on reads what you grant.",
       img: "/design/how-connect-2x.png",
       alt: "Connect sources panel with example store connections",
     },
@@ -244,7 +245,7 @@ export function FAQ() {
   const items = [
     {
       q: "Where does my data live?",
-      a: `Synced rows are written into your Google Sheet. ${brand.name} also stores license and sync settings needed to run the add-on. Exact retention and subprocessors will be listed in the privacy policy before paid launch.`,
+      a: `Order and subscription rows land in your Google Sheet. License keys, support messages, and launch invites are stored so we can run the product — on Vercel (hosting), Upstash Redis (licenses and form storage), and Stripe (billing). Details are on the privacy page.`,
     },
     {
       q: "What Google scopes do you need?",
@@ -252,15 +253,15 @@ export function FAQ() {
     },
     {
       q: "Lemon Squeezy is moving to Stripe — will this still work?",
-      a: "Yes for as long as Lemon Squeezy (or its successor) exposes an orders/subscriptions API. If the API changes, we update the importer. Polar and Gumroad remain independent sources.",
+      a: "Yes for as long as Lemon Squeezy exposes an orders API — and you can also connect Stripe directly. Polar and Gumroad stay independent sources either way.",
     },
     {
       q: "How do refunds work for paid plans?",
-      a: "Billing runs through Stripe. Refund and cancel terms will be published with paid launch; until then, email support and we will handle requests case by case. Cancel anytime from the Stripe customer portal in your receipt.",
+      a: "Cancel anytime from the billing portal; contact support for refund requests.",
     },
     {
       q: "How do I cancel?",
-      a: "Use the Stripe customer portal link in your receipt email. After cancel, the license becomes inactive on the next webhook; Free-tier limits still apply if you keep the add-on installed.",
+      a: "Open the Stripe customer portal from your receipt email. After cancel, the license becomes inactive on the next webhook; Free-tier limits still apply if you keep the add-on installed.",
     },
   ];
 
@@ -269,7 +270,7 @@ export function FAQ() {
       <div className="container">
         <Reveal className="section-head">
           <p className="eyebrow">FAQ</p>
-          <h2 className="h2">Straight answers before you install.</h2>
+          <h2 className="h2">Data, scopes, billing.</h2>
         </Reveal>
         <Reveal className="faq-list">
           {items.map((item) => (
@@ -294,9 +295,9 @@ export function FinalCTA() {
             <br />
             finally in one place.
           </h2>
-          <a className="btn btn-primary" href={siteConfig.installUrl}>
+          <InstallCta className="btn btn-primary" source="final-cta">
             Install for Google Sheets
-          </a>
+          </InstallCta>
         </Reveal>
       </div>
     </section>

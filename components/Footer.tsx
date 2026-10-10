@@ -1,12 +1,8 @@
 import Link from "next/link";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { brand } from "@/lib/brand";
-import { supportEmail, supportMailto } from "@/lib/support";
 
 export function Footer() {
-  const support = supportEmail();
-  const mailto = supportMailto();
-
   return (
     <footer className="site-footer">
       <div className="container">
@@ -33,6 +29,7 @@ export function Footer() {
             <Link href="/lemon-squeezy-analytics">Lemon Squeezy</Link>
             <Link href="/polar-analytics">Polar</Link>
             <Link href="/gumroad-analytics-google-sheets">Gumroad</Link>
+            <Link href="/stripe-to-google-sheets">Stripe</Link>
           </div>
           <div className="footer-col">
             <h3>Guides</h3>
@@ -49,7 +46,7 @@ export function Footer() {
             <h3>Legal</h3>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
-            {support && mailto ? <a href={mailto}>Support</a> : null}
+            <Link href="/support">Support</Link>
           </div>
         </div>
         <div className="footer-bottom">

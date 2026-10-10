@@ -15,7 +15,7 @@ export default function ApiKeysPage() {
       <h1>API keys</h1>
       <div className="prose">
         <p>
-          Source keys (Lemon Squeezy, Polar, Gumroad) are required for sync. Treat them like
+          Source keys (Lemon Squeezy, Polar, Gumroad, Stripe) are required for sync. Treat them like
           passwords for your storefront data.
         </p>
         <h2>Where keys are stored</h2>
@@ -28,8 +28,9 @@ export default function ApiKeysPage() {
         <h2>License keys vs source keys</h2>
         <p>
           A <strong>license key</strong> from Checkout proves your Free / Pro / Business tier. A{" "}
-          <strong>source API key</strong> proves access to Lemon Squeezy, Polar, or Gumroad. They
-          are different credentials — never paste a license key into a source field or the reverse.
+          <strong>source API key</strong> proves access to Lemon Squeezy, Polar, Gumroad, or Stripe.
+          They are different credentials — never paste a license key into a source field or the
+          reverse.
         </p>
         <h2>Rotation</h2>
         <ol>

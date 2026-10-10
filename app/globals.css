@@ -1726,3 +1726,134 @@ a.tag-pill:hover {
     gap: var(--space-3);
   }
 }
+
+/* Support form */
+.support-page {
+  max-width: 40rem;
+  padding-bottom: var(--space-16);
+}
+
+.support-lede {
+  margin: var(--space-4) 0 var(--space-8);
+}
+
+.support-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.support-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.support-field label {
+  font-family: var(--font-mono);
+  font-size: var(--t-label-size);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.support-field input,
+.support-field textarea {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font: inherit;
+  border-radius: var(--radius-sm);
+}
+
+.support-field input:focus,
+.support-field textarea:focus {
+  outline: 2px solid var(--c-signal);
+  outline-offset: 1px;
+}
+
+.support-field textarea {
+  resize: vertical;
+  min-height: 10rem;
+}
+
+.support-hp {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.support-error {
+  color: var(--c-danger);
+  margin: 0;
+}
+
+.support-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6) 0;
+}
+
+/* Launch invite dialog */
+.invite-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--c-ink) 40%, transparent);
+}
+
+.invite-dialog {
+  width: min(100%, 28rem);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+}
+
+.invite-form,
+.invite-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.invite-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-label-size);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.invite-form input[type="email"] {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font: inherit;
+  border-radius: var(--radius-sm);
+}
+
+.invite-form input[type="email"]:focus {
+  outline: 2px solid var(--c-signal);
+  outline-offset: 1px;
+}
+
+.invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}

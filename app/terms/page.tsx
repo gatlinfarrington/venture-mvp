@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { brand, siteHostname } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
-import { privacyEmail, supportEmail, supportMailto } from "@/lib/support";
+import { privacyEmail } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "Terms of service",
@@ -11,8 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
-  const support = supportEmail();
-  const supportMail = supportMailto();
   const privacy = privacyEmail();
   return (
     <main className="legal container">
@@ -26,8 +24,8 @@ export default function TermsPage() {
 
         <h2>The service</h2>
         <p>
-          {brand.name} syncs commerce data from supported sources (currently Lemon Squeezy, Polar,
-          and Gumroad) into Google Sheets and builds an MRR-oriented dashboard tab. Features and
+          {brand.name} syncs commerce data from supported sources (Lemon Squeezy, Polar, Gumroad,
+          and Stripe) into Google Sheets and builds an MRR-oriented dashboard tab. Features and
           source coverage may change. Free, Pro, and Business tiers are described on the{" "}
           <Link href="/pricing">pricing</Link> page.
         </p>
@@ -77,8 +75,9 @@ export default function TermsPage() {
 
         <h2>Refunds</h2>
         <p>
-          First-time charges may be refunded within 14 days on request
-          {support ? <> to {support}</> : null}. After that, cancellations stop future renewals.
+          Cancel anytime from the billing portal; contact{" "}
+          <Link href="/support">support</Link> for refund requests. Cancellations stop future
+          renewals; access continues through the paid period unless a refund is issued.
         </p>
 
         <h2>Intellectual property</h2>
@@ -98,7 +97,7 @@ export default function TermsPage() {
         <p>
           To the extent permitted by law, our total liability for claims relating to the service is
           limited to the amounts you paid us in the three months before the claim. We are not liable
-          for lost profits, lost data in your Google account (maintain your own Drive backups), or
+          for lost profits, lost data in your Google account (maintain your own sheet backups), or
           indirect damages.
         </p>
 
@@ -117,18 +116,12 @@ export default function TermsPage() {
 
         <h2>Contact</h2>
         <p>
-          {support && supportMail ? (
-            <>
-              <a href={supportMail}>{support}</a>
-              {privacy ? <br /> : null}
-            </>
-          ) : null}
+          Support: <Link href="/support">/support</Link>
           {privacy ? (
             <>
+              <br />
               Privacy: <a href={`mailto:${privacy}`}>{privacy}</a>
             </>
-          ) : !support ? (
-            <>Contact details will be published when {brand.name} launches paid plans.</>
           ) : null}
         </p>
       </div>

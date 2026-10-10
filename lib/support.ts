@@ -1,4 +1,4 @@
-/** Public support inbox — only shown when SUPPORT_EMAIL is set (domain may not exist yet). */
+/** @deprecated Prefer the /support form — kept for optional inbox display when set. */
 export function supportEmail(): string | null {
   const raw =
     process.env.NEXT_PUBLIC_SUPPORT_EMAIL?.trim() ||
@@ -7,9 +7,9 @@ export function supportEmail(): string | null {
   return raw.length > 0 ? raw : null;
 }
 
+/** @deprecated Support contact is the /support form — no dead mailto links. */
 export function supportMailto(): string | null {
-  const email = supportEmail();
-  return email ? `mailto:${email}` : null;
+  return null;
 }
 
 /** Privacy contact — optional until PRIVACY_EMAIL is set. */

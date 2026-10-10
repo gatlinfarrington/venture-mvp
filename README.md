@@ -1,6 +1,6 @@
 # RevenueSheet
 
-Google Sheets add-on marketing site + license API. Sync Lemon Squeezy, Polar, and Gumroad revenue into a sheet you own, with an MRR dashboard.
+Google Sheets add-on marketing site + license API. Sync Lemon Squeezy, Polar, Gumroad, and Stripe revenue into a sheet you own, with an MRR dashboard.
 
 > **Name is swappable.** Edit [`lib/brand.ts`](lib/brand.ts) (`name`, `domain`, `logo`, legal emails) for the site, and [`addon/src/lib/brand.ts`](addon/src/lib/brand.ts) for the Sheets add-on. The placeholder logo is the **Ledger Cell** mark (`design/logo-v2/c3-symbol.svg` / `addon/design/ledger-cell-mark.svg`).
 
@@ -42,7 +42,7 @@ See [`.env.example`](.env.example).
 | Variable | Required | Notes |
 |---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | Preferred in prod | Canonical origin, no trailing slash; falls back to `https://${VERCEL_PROJECT_PRODUCTION_URL}` |
-| `NEXT_PUBLIC_INSTALL_URL` | No | Workspace Marketplace listing URL |
+| `NEXT_PUBLIC_MARKETPLACE_URL` / `NEXT_PUBLIC_INSTALL_URL` | No | Workspace listing; when unset, Install CTAs open launch-invite capture |
 | `STRIPE_SECRET_KEY` | For checkout | `sk_test_…` / `sk_live_…` — paste to go live |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Enables paid CTAs | Real `pk_test_` / `pk_live_` (no `REPLACE`) |
 | `STRIPE_WEBHOOK_SECRET` | For webhooks | Endpoint `/api/webhooks/stripe` |

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BrandWordmark } from "@/components/BrandWordmark";
-import { siteConfig } from "@/lib/site";
+import { InstallCta } from "@/components/InstallCta";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -29,9 +29,9 @@ export function Nav() {
           <Link href="/changelog">Changelog</Link>
         </nav>
         <div className="nav-actions">
-          <a className="btn btn-primary btn-sm" href={siteConfig.installUrl}>
+          <InstallCta className="btn btn-primary btn-sm" source="nav">
             Install free
-          </a>
+          </InstallCta>
           <button
             type="button"
             className="icon-btn mobile-nav"
@@ -57,7 +57,7 @@ export function Nav() {
           <Link href="/docs" onClick={() => setOpen(false)}>Docs</Link>
           <Link href="/blog" onClick={() => setOpen(false)}>Blog</Link>
           <Link href="/changelog" onClick={() => setOpen(false)}>Changelog</Link>
-          <a href={siteConfig.installUrl}>Install free</a>
+          <InstallCta source="nav-mobile">Install free</InstallCta>
         </div>
       ) : null}
     </header>

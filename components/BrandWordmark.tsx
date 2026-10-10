@@ -11,7 +11,7 @@ type Props = {
 export function BrandWordmark({ href = "/", markSize = 28, className }: Props) {
   return (
     <Link href={href} className={`brand ${className ?? ""}`.trim()}>
-      <LogoMark size={markSize} className="brand-mark" />
+      <LogoMark size={markSize} className="brand-mark" decorative />
       <span>{brand.name}</span>
     </Link>
   );

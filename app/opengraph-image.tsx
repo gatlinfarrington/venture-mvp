@@ -11,7 +11,7 @@ export default function OgImage() {
     (
       <OgFrame
         title={brand.pitch}
-        subtitle="Lemon Squeezy, Polar and Gumroad → Google Sheets, with an MRR dashboard."
+        subtitle="Lemon Squeezy, Polar, Gumroad and Stripe → Google Sheets, with an MRR dashboard."
       />
     ),
     { ...size },

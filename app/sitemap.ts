@@ -22,6 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/changelog",
     "/privacy",
     "/terms",
+    "/support",
     "/vs/baremetrics",
     "/vs/chartmogul",
     "/vs/zapier",

@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { InstallCta } from "@/components/InstallCta";
 import { Reveal } from "@/components/Reveal";
-import { checkoutEnabled, pricing, siteConfig, type BillingInterval } from "@/lib/site";
+import { checkoutEnabled, pricing, type BillingInterval } from "@/lib/site";
+import { marketplaceUrlClient } from "@/lib/marketplace-client";
 
 export function Pricing() {
   const [interval, setInterval] = useState<BillingInterval>("month");
@@ -45,6 +46,10 @@ export function Pricing() {
       setPendingTier(null);
     }
   }
+
+  const listing = marketplaceUrlClient();
+  /** Paid checkout only when Marketplace is live and Stripe is configured. */
+  const paidCheckoutReady = Boolean(listing) && checkoutEnabled;
 
   return (
     <section id="pricing" className="section">
@@ -110,10 +115,10 @@ export function Pricing() {
                   ))}
                 </ul>
                 {plan.tier === "free" ? (
-                  <Link className="btn btn-secondary" href={siteConfig.installUrl}>
+                  <InstallCta className="btn btn-secondary" source="pricing-free">
                     Start free
-                  </Link>
-                ) : checkoutEnabled ? (
+                  </InstallCta>
+                ) : paidCheckoutReady ? (
                   <div className="price-cta-stack">
                     <button
                       type="button"
@@ -126,10 +131,17 @@ export function Pricing() {
                   </div>
                 ) : (
                   <div className="price-cta-stack">
-                    <a className="btn btn-secondary" href={siteConfig.installUrl}>
-                      Coming soon
-                    </a>
-                    <p className="price-cta-caption mono muted">Checkout opens at launch</p>
+                    <InstallCta
+                      className="btn btn-secondary"
+                      source={`pricing-${plan.tier}`}
+                    >
+                      Get launch invite
+                    </InstallCta>
+                    <p className="price-cta-caption mono muted">
+                      {checkoutEnabled
+                        ? "Marketplace listing opens at launch"
+                        : "Checkout opens at launch"}
+                    </p>
                   </div>
                 )}
               </Reveal>

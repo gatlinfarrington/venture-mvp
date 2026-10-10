@@ -12,13 +12,14 @@ describe("tierLimits", () => {
 
   it("pro unlocks all sources with a single store", () => {
     expect(tierLimits("pro")).toEqual({
-      maxSources: 3,
+      maxSources: 4,
       maxStores: 1,
       scheduledRefresh: true,
     });
   });
 
   it("business allows multiple stores", () => {
+    expect(tierLimits("business").maxSources).toBe(4);
     expect(tierLimits("business").maxStores).toBeGreaterThan(1);
     expect(tierLimits("business").scheduledRefresh).toBe(true);
   });

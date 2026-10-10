@@ -49,34 +49,39 @@ export const seoPages: SeoPage[] = [
   },
   {
     slug: "stripe-to-google-sheets",
-    title: "Stripe to Google Sheets — revenue without leaving the spreadsheet",
-    description: `Compare Stripe dashboards to a Google Sheets revenue ledger. How ${brand.name} fits when you sell through Lemon Squeezy today and plan a Stripe migration later.`,
-    h1: "Stripe revenue models, in Google Sheets",
-    lede: `Stripe’s Dashboard is the system of record for payments. Many operators still want a sheet: QUERY formulas, investor updates, and a single MRR view across marketplaces. ${brand.name} starts with Lemon Squeezy, Polar, and Gumroad — and this page explains how that fits a Stripe-shaped workflow.`,
-    ogEyebrow: "Stripe · comparison",
-    ogTitle: "Stripe-shaped revenue, sheet-native",
+    title: "Stripe to Google Sheets — sync charges, subs, and MRR",
+    description: `Import Stripe charges, subscriptions, customers, and refunds into Google Sheets with ${brand.name}. Stack Stripe MRR beside Lemon Squeezy, Polar, and Gumroad.`,
+    h1: "Stripe revenue, synced into Google Sheets",
+    lede: `Stripe’s Dashboard is the system of record for payouts and disputes. ${brand.name} pulls charges, subscriptions, customers, and refunds into named tabs so you can QUERY, share, and stack MRR with Lemon Squeezy, Polar, and Gumroad in one sheet.`,
+    ogEyebrow: "Stripe",
+    ogTitle: "Stripe → Google Sheets",
     sections: [
+      {
+        h2: "What syncs from Stripe",
+        paragraphs: [
+          "Connect a restricted read-only Stripe API key. The add-on backfills charges (as orders), subscriptions with MRR contribution, customers, and refunds into stable column headers — then scheduled sync keeps the sheet current on Pro and Business.",
+        ],
+        bullets: [
+          "Charges → Orders tab (amount, email, status, country)",
+          "Subscriptions → MRR contribution and interval",
+          "Customers and refunds linked by Stripe ids",
+        ],
+      },
       {
         h2: "Sheets vs the Stripe Dashboard",
         paragraphs: [
-          "Use Stripe (or a Stripe-powered merchant of record) when you need payouts, tax forms, and dispute tools. Use Sheets when you need custom cohorts, combined marketplace revenue, or a model your finance person already trusts.",
+          "Keep Stripe for payouts, Radar, Tax, and disputes. Use the sheet when you need custom cohorts, multi-source MRR, or a model your finance person already trusts.",
         ],
         bullets: [
           "Stripe Dashboard: payouts, disputes, Radar, Tax",
           "Google Sheets: formulas, shared models, multi-source MRR",
-          `${brand.name}: syncs Lemon Squeezy / Polar / Gumroad into that sheet today`,
+          `${brand.name}: syncs Stripe alongside Lemon Squeezy, Polar, and Gumroad`,
         ],
       },
       {
-        h2: "Lemon Squeezy and the Stripe transition",
+        h2: "How to connect",
         paragraphs: [
-          "If you sell through Lemon Squeezy while evaluating a direct Stripe integration, keep history in Sheets so platform changes do not erase your analytics trail. Connect Lemon Squeezy now; when you add native Stripe support later, the Dashboard tab is already the place KPIs land.",
-        ],
-      },
-      {
-        h2: "What to do next",
-        paragraphs: [
-          `Install ${brand.name}, connect the storefronts you use today, and keep Stripe Checkout (or Lemon Squeezy) as the payment rail. The sheet becomes the analytics layer — not a replacement for Stripe’s money movement tools.`,
+          `Install ${brand.name}, open the sidebar, choose Stripe, and paste a restricted key with read access to charges, subscriptions, customers, and refunds. Run Backfill once, then enable scheduled refresh on Pro or Business.`,
         ],
       },
     ],
