@@ -20,7 +20,7 @@ const catalog = [
   {
     tier: "pro",
     productName: "RevenueSheet Pro",
-    description: "All three sources, scheduled refresh, MRR dashboard.",
+    description: "All four stores plus CSV, scheduled refresh, MRR dashboard.",
     prices: [
       { interval: "month", amount: 900, lookup_key: "revenuesheet_pro_monthly" },
       { interval: "year", amount: 9000, lookup_key: "revenuesheet_pro_annual" },

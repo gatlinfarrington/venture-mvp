@@ -11,6 +11,9 @@ export const brand = {
   pitch: "All your stores, in a sheet you own.",
   description:
     "Lemon Squeezy, Polar, Gumroad and Stripe revenue, synced into Google Sheets on a schedule, with an MRR dashboard built for you.",
+  /** Meta / Open Graph: includes Stripe + CSV (hero lede stays `description`). */
+  metaDescription:
+    "Lemon Squeezy, Polar, Gumroad and Stripe revenue, plus CSV import, synced into Google Sheets on a schedule, with an MRR dashboard built for you.",
   taglineShort: "Google Sheets add-on",
   /** Logo concept currently shipping (Ledger Cell = c3). */
   logo: {

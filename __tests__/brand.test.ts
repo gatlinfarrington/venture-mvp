@@ -61,4 +61,10 @@ describe("brand config", () => {
       /Lemon Squeezy, Polar, Gumroad and Stripe revenue, synced into Google Sheets on a schedule/,
     );
   });
+
+  it("lists Stripe and CSV import in the meta / Open Graph description", () => {
+    expect(brand.metaDescription).toMatch(/Stripe/);
+    expect(brand.metaDescription).toMatch(/CSV import/);
+  });
 });
+
