@@ -6,7 +6,7 @@ import type {
   NormalizedSubscription,
 } from "../importers/types";
 
-/** Realistic SAMPLE dataset labeled for screenshots. Not live customer data. */
+/** Realistic SAMPLE dataset labeled for screenshots (matches launch template). Not live customer data. */
 export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
   const products = [
     { name: "Demo SaaS · Pro", source: "polar" as const, mrr: 29 },

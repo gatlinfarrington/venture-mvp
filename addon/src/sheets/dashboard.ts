@@ -1,14 +1,10 @@
 import { BRAND, managedByFooter } from "../lib/brand";
 import { SHEET_NAMES } from "../lib/config";
-import { COLORS, FONTS, CHART_SERIES, SOURCE_COLORS } from "../lib/tokens";
+import { COLORS, FONTS, CHART_SERIES } from "../lib/tokens";
 import type { NormalizedOrder, NormalizedRefund, NormalizedSubscription } from "../importers/types";
-import { computeRevenuePeriods, revenueByProduct } from "../metrics/arpu";
-import { computeChurn, computeNewVsChurnedSeries } from "../metrics/churn";
+import { computeRevenuePeriods } from "../metrics/arpu";
+import { computeChurn } from "../metrics/churn";
 import { computeMrr, computeMrrTrend } from "../metrics/mrr";
-
-/** Tiny Ledger Cell mark (on-dark) for header insertImage — keep in sync with design/ledger-cell-mark-on-dark.png */
-const LEDGER_CELL_PNG_B64 =
-  "iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAxElEQVR4nO2X0Q3CMAxEKeI33oIFGISVECsxCAuwRRaAr6IIYeNwlrDRvc+elTw1Uq5dWmv3TWK2vxb4BAVRKIiys8Le+17LROQ2O3e4nNS9rsfz2+fqG7Q2HXPvnCVn5emPmIIoFESpKzjeX1bundPuuRUtX7J/bkU1ibqGiEyvNxLRJNbYM/eu5xbMAgVRKIhSV3CiScwN1ty73ivlm0TNvmmI6CZR5cY8+t/FLZgFCqJQEKWuYHRD/G2T1D3iLFAQ5QGOI2frMDk2uwAAAABJRU5ErkJggg==";
 
 export interface DashboardBuildOptions {
   sample?: boolean;
@@ -28,7 +24,9 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 /**
- * Rebuild Dashboard to match design/SHEET-STYLE.md and sheet-dashboard-target.png.
+ * Rebuild Dashboard to match launch/revenuesheet-dashboard-template.xlsx
+ * and SHEET-STYLE.md v2 light revision:
+ * white header + ink bottom rule, greyscale charts, green only for meaning.
  */
 export function buildDashboard(
   ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
@@ -44,23 +42,25 @@ export function buildDashboard(
     ss.moveActiveSheet(1);
   }
 
-  // Clear overlays
   for (const c of sheet.getCharts()) sheet.removeChart(c);
   for (const img of sheet.getImages()) img.remove();
   sheet.clear();
   sheet.clearConditionalFormatRules();
 
-  sheet.setTabColor(COLORS.signal);
+  // Launch v2: Dashboard tab is ink, not green
+  sheet.setTabColor(COLORS.ink);
   sheet.setHiddenGridlines(true);
 
-  // Column widths A–Q per SHEET-STYLE
   const widths = [24, 88, 88, 88, 16, 88, 88, 88, 16, 88, 88, 88, 16, 88, 88, 88, 24];
   widths.forEach((w, i) => sheet!.setColumnWidth(i + 1, w));
 
-  // Base font
-  sheet.getRange(1, 1, 40, 17).setFontFamily(FONTS.sans).setFontSize(9).setFontColor(COLORS.ink).setBackground(COLORS.bg);
+  sheet
+    .getRange(1, 1, 40, 17)
+    .setFontFamily(FONTS.sans)
+    .setFontSize(9)
+    .setFontColor(COLORS.ink)
+    .setBackground(COLORS.bg);
 
-  // Row heights
   const rowH: Record<number, number> = {
     1: 56,
     2: 28,
@@ -84,95 +84,89 @@ export function buildDashboard(
       ? opts.sourceLabels
       : ["Lemon Squeezy", "Polar", "Gumroad"];
 
-  // —— Row 1: header band ——
-  const header = sheet.getRange(1, 1, 1, 17);
-  header.merge();
-  header
-    .setBackground(COLORS.ink)
-    .setFontColor(COLORS.inkInverse)
-    .setFontFamily(FONTS.sans)
-    .setFontSize(15)
-    .setFontWeight("bold")
-    .setVerticalAlignment("middle")
-    .setHorizontalAlignment("left")
-    .setValue(`    ${BRAND.dashboardTitle}`);
-
-  // Right meta in P1 area — put via overlay text in the merged cell using full-width spacing is fragile;
-  // use a second visual by setting note + drawing meta into the value with padding.
-  header.setValue(`    ${BRAND.dashboardTitle}`);
-  // Unmerge right side for studio label: break and rebuild as A1:N1 + O1:Q1
-  header.breakApart();
-  sheet.getRange(1, 1, 1, 14).merge();
+  // —— Row 1: white header + 2px ink bottom rule (no dark band, no logo overlay) ——
+  sheet.getRange(1, 1, 1, 12).merge();
   sheet
     .getRange(1, 1)
-    .setBackground(COLORS.ink)
-    .setFontColor(COLORS.inkInverse)
+    .setBackground(COLORS.bg)
+    .setFontColor(COLORS.ink)
     .setFontFamily(FONTS.sans)
     .setFontSize(15)
     .setFontWeight("bold")
     .setVerticalAlignment("middle")
-    .setValue(`    ${BRAND.dashboardTitle}`);
-  sheet.getRange(1, 15, 1, 3).merge();
+    .setValue(`   ${BRAND.dashboardTitle}`);
+
+  sheet.getRange(1, 13, 1, 5).merge();
   sheet
-    .getRange(1, 15)
-    .setBackground(COLORS.ink)
-    .setFontColor("#C9C9C9")
+    .getRange(1, 13)
+    .setBackground(COLORS.bg)
+    .setFontColor(COLORS.inkMuted)
     .setFontFamily(FONTS.mono)
     .setFontSize(8)
-    .setFontWeight("bold")
     .setHorizontalAlignment("right")
     .setVerticalAlignment("middle")
-    .setValue(`${studio} · ${currency}`);
+    .setValue(`${studio} · ${currency}  `);
 
-  // Insert Ledger Cell mark over the header
-  try {
-    const bytes = Utilities.base64Decode(LEDGER_CELL_PNG_B64);
-    const blob = Utilities.newBlob(bytes, "image/png", BRAND.logoFile);
-    const image = sheet.insertImage(blob, 1, 1, 28, 18);
-    image.setWidth(20).setHeight(20);
-  } catch {
-    /* image insert may fail in some environments — title still renders */
-  }
+  // Medium ink rule across A1:Q1
+  sheet
+    .getRange(1, 1, 1, 17)
+    .setBorder(false, false, true, false, false, false, COLORS.ink, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
 
   // —— Row 2: status band ——
-  sheet.getRange(2, 1, 1, 17).merge();
-  const syncTime = opts.lastSyncAt || (opts.sample ? "10:02" : "—");
+  const syncTime = opts.lastSyncAt || (opts.sample ? "2026-10-09 10:02" : "—");
   const schedule = opts.scheduleLabel || (opts.sample ? "HOURLY" : "MANUAL");
-  const statusLeft = `● SYNCED ${syncTime} · ${sourceLabels.map((s) => s.toUpperCase()).join(", ")} · ${schedule}`;
-  const statusRight = opts.sample ? "EXAMPLE DATA — NOT REAL CUSTOMERS" : opts.licenseNote || "";
-  const statusCell = sheet.getRange(2, 1);
-  statusCell
-    .setBackground(opts.stale ? COLORS.dangerTint : COLORS.surface2)
-    .setFontColor(opts.stale ? COLORS.danger : COLORS.inkMuted)
+  sheet.getRange(2, 1, 1, 12).merge();
+  sheet.getRange(2, 13, 1, 5).merge();
+
+  const statusLeft = opts.stale
+    ? `   ● LAST SYNC ${syncTime} — CHECK CONNECTION`
+    : `   ● SYNCED ${syncTime} · ${sourceLabels.map((s) => s.toUpperCase()).join(", ")} · ${schedule}`;
+  const statusRight = opts.sample
+    ? "EXAMPLE DATA — NOT REAL CUSTOMERS  "
+    : opts.licenseNote
+      ? `${opts.licenseNote}  `
+      : "";
+
+  for (let c = 1; c <= 17; c++) {
+    sheet
+      .getRange(2, c)
+      .setBackground(opts.stale ? COLORS.dangerTint : COLORS.surface2)
+      .setBorder(false, false, true, false, false, false, COLORS.hairline, SpreadsheetApp.BorderStyle.SOLID);
+  }
+  sheet
+    .getRange(2, 1)
     .setFontFamily(FONTS.mono)
     .setFontSize(8)
+    .setFontColor(opts.stale ? COLORS.danger : COLORS.inkMuted)
     .setVerticalAlignment("middle")
-    .setBorder(false, false, true, false, false, false, COLORS.hairline, SpreadsheetApp.BorderStyle.SOLID)
-    .setValue(opts.stale ? `● LAST SYNC ${syncTime} — CHECK CONNECTION` : `${statusLeft}${statusRight ? "          " + statusRight : ""}`);
+    .setHorizontalAlignment("left")
+    .setValue(statusLeft);
+  sheet
+    .getRange(2, 13)
+    .setFontFamily(FONTS.mono)
+    .setFontSize(8)
+    .setFontColor(opts.stale ? COLORS.danger : COLORS.inkMuted)
+    .setVerticalAlignment("middle")
+    .setHorizontalAlignment("right")
+    .setValue(statusRight);
 
   // —— Metrics ——
   const mrr = computeMrr(subscriptions);
   const churn = computeChurn(subscriptions, 30);
   const revenue = computeRevenuePeriods(orders);
   const trend = computeMrrTrend(subscriptions, 12);
-  const newChurn = computeNewVsChurnedSeries(subscriptions, 12);
-  const churnSeries = newChurn.map((p) => ({
-    month: p.month,
-    rate: p.churned > 0 || p.newSubs > 0 ? /* placeholder monthly rate from counts */ 0 : 0,
-  }));
-  // Build monthly churn rate series from subscriptions
   const monthlyChurn = computeMonthlyChurnRates(subscriptions, 12);
 
   const prevMrr = trend.length >= 2 ? trend[trend.length - 2].mrr : mrr.total;
   const mrrDelta = prevMrr > 0 ? (mrr.total - prevMrr) / prevMrr : 0;
   const netNew = churn.newSubs - churn.cancelled;
-
-  // Trailing 30d net revenue (paid orders − refunds)
   const net30 = computeNetRevenue30d(orders, refunds);
   const productRows = revenueByProductWithSource(orders, 6);
   const sourceRows = revenueBySource30d(orders, refunds);
 
-  // —— KPI cards: B-D, F-H, J-L, N-P ——
+  // Visible MRR monthly tab (chart source + named range)
+  writeMrrMonthlySheet(ss, trend, monthlyChurn);
+
   const kpiDefs: KpiDef[] = [
     {
       label: "MRR",
@@ -180,7 +174,7 @@ export function buildDashboard(
       format: mrr.total >= 10000 ? '$#,##0.0,"k"' : "$#,##0",
       delta: mrrDelta,
       deltaKind: "pct",
-      deltaLabel: "vs prior",
+      deltaLabel: "",
       inverse: false,
       cols: [2, 4],
     },
@@ -190,7 +184,7 @@ export function buildDashboard(
       format: "$#,##0",
       delta: net30.deltaPct,
       deltaKind: "pct",
-      deltaLabel: "vs prior 30d",
+      deltaLabel: "",
       inverse: false,
       cols: [6, 8],
     },
@@ -217,7 +211,7 @@ export function buildDashboard(
   ];
   for (const kpi of kpiDefs) paintKpiCard(sheet, kpi);
 
-  // —— Section titles row 8 ——
+  // Section titles
   sheet.getRange(8, 2, 1, 11).merge();
   sheet
     .getRange(8, 2)
@@ -235,14 +229,10 @@ export function buildDashboard(
     .setVerticalAlignment("bottom")
     .setValue("Churn · monthly");
 
-  // Chart helper sheets
-  writeMrrBySourceSheet(ss, trend);
-  writeChurnSheet(ss, monthlyChurn);
-
   const mrrSheet = ss.getSheetByName(SHEET_NAMES.mrrMonthly)!;
-  const churnSheet = ss.getSheetByName(SHEET_NAMES.chartNewChurn)!;
   const mrrRows = Math.max(trend.length + 1, 2);
 
+  // Greyscale stacked columns (green is NOT a series color)
   const mrrChart = sheet
     .newChart()
     .setChartType(Charts.ChartType.COLUMN)
@@ -250,8 +240,11 @@ export function buildDashboard(
     .setPosition(9, 2, 0, 0)
     .setOption("isStacked", true)
     .setOption("title", "")
-    .setOption("legend", { position: "top", textStyle: { color: COLORS.inkMuted, fontName: FONTS.sans, fontSize: 9 } })
-    .setOption("colors", [COLORS.ink, COLORS.signal, COLORS.series3])
+    .setOption("legend", {
+      position: "top",
+      textStyle: { color: COLORS.inkMuted, fontName: FONTS.sans, fontSize: 9 },
+    })
+    .setOption("colors", [...CHART_SERIES.slice(0, 3)])
     .setOption("backgroundColor", COLORS.bg)
     .setOption("bar", { groupWidth: "58%" })
     .setOption("hAxis", {
@@ -260,7 +253,7 @@ export function buildDashboard(
     .setOption("vAxis", {
       textStyle: { color: COLORS.inkMuted, fontName: FONTS.mono, fontSize: 9 },
       gridlines: { color: COLORS.hairline },
-      format: '$0"k"',
+      format: "$#,##0",
     })
     .setOption("chartArea", { width: "85%", height: "75%" })
     .setOption("width", 792)
@@ -268,10 +261,12 @@ export function buildDashboard(
     .build();
   sheet.insertChart(mrrChart);
 
+  // Churn line from MRR monthly col F (rate as fraction for 0.0% axis)
   const churnChart = sheet
     .newChart()
     .setChartType(Charts.ChartType.LINE)
-    .addRange(churnSheet.getRange(1, 1, Math.max(monthlyChurn.length + 1, 2), 2))
+    .addRange(mrrSheet.getRange(1, 1, mrrRows, 1))
+    .addRange(mrrSheet.getRange(1, 6, mrrRows, 1))
     .setPosition(9, 14, 0, 0)
     .setOption("title", "")
     .setOption("legend", { position: "none" })
@@ -282,8 +277,8 @@ export function buildDashboard(
     .setOption("vAxis", {
       textStyle: { color: COLORS.inkMuted, fontName: FONTS.mono, fontSize: 9 },
       gridlines: { color: COLORS.hairline },
-      format: "0.0",
-      viewWindow: { min: 2, max: 4 },
+      format: "0.0%",
+      viewWindow: { min: 0.02, max: 0.04 },
     })
     .setOption("hAxis", {
       textStyle: { color: COLORS.inkMuted, fontName: FONTS.mono, fontSize: 9 },
@@ -293,16 +288,25 @@ export function buildDashboard(
     .build();
   sheet.insertChart(churnChart);
 
-  // —— Tables row 24+ ——
+  // Tables
   sheet.getRange(24, 2, 1, 7).merge();
-  sheet.getRange(24, 2).setFontSize(11).setFontWeight("bold").setVerticalAlignment("bottom").setValue("Revenue by product · 30d");
+  sheet
+    .getRange(24, 2)
+    .setFontSize(11)
+    .setFontWeight("bold")
+    .setVerticalAlignment("bottom")
+    .setValue("Revenue by product · 30d");
   sheet.getRange(24, 10, 1, 7).merge();
-  sheet.getRange(24, 10).setFontSize(11).setFontWeight("bold").setVerticalAlignment("bottom").setValue("Revenue by source · 30d");
+  sheet
+    .getRange(24, 10)
+    .setFontSize(11)
+    .setFontWeight("bold")
+    .setVerticalAlignment("bottom")
+    .setValue("Revenue by source · 30d");
 
-  writeProductTable(sheet, 25, 2, productRows, revenue.deltaPct);
-  writeSourceTable(sheet, 25, 10, sourceRows);
+  writeProductTable(sheet, 25, productRows, revenue.deltaPct);
+  writeSourceTable(sheet, 25, sourceRows);
 
-  // Footnote
   sheet.getRange(35, 2, 1, 15).merge();
   sheet
     .getRange(35, 2)
@@ -310,11 +314,6 @@ export function buildDashboard(
     .setFontSize(8)
     .setFontColor(COLORS.inkMuted)
     .setValue(managedByFooter(opts.sample ? "example data" : "live sync"));
-
-  // Silence unused
-  void churnSeries;
-  void SOURCE_COLORS;
-  void CHART_SERIES;
 }
 
 interface KpiDef {
@@ -331,51 +330,51 @@ interface KpiDef {
 function paintKpiCard(sheet: GoogleAppsScript.Spreadsheet.Sheet, kpi: KpiDef): void {
   const [c1, c2] = kpi.cols;
   const topBorder = kpi.inverse ? COLORS.danger : COLORS.ink;
+  const span = c2 - c1 + 1;
 
-  // Frame around rows 4–6
-  const frame = sheet.getRange(4, c1, 3, c2 - c1 + 1);
-  frame.setBorder(true, true, true, true, false, false, COLORS.hairline, SpreadsheetApp.BorderStyle.SOLID);
   sheet
-    .getRange(4, c1, 1, c2 - c1 + 1)
+    .getRange(4, c1, 3, span)
+    .setBorder(true, true, true, true, false, false, COLORS.hairline, SpreadsheetApp.BorderStyle.SOLID);
+  sheet
+    .getRange(4, c1, 1, span)
     .setBorder(true, null, null, null, false, false, topBorder, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
 
-  // Label
-  sheet.getRange(4, c1, 1, c2 - c1 + 1).merge();
+  sheet.getRange(4, c1, 1, span).merge();
   sheet
     .getRange(4, c1)
     .setFontFamily(FONTS.mono)
     .setFontSize(8)
     .setFontColor(COLORS.inkMuted)
+    .setFontWeight("normal")
     .setHorizontalAlignment("left")
     .setVerticalAlignment("top")
+    .setBackground(COLORS.bg)
     .setValue(kpi.label);
 
-  // Value
-  sheet.getRange(5, c1, 1, c2 - c1 + 1).merge();
+  sheet.getRange(5, c1, 1, span).merge();
   sheet
     .getRange(5, c1)
     .setFontFamily(FONTS.sans)
     .setFontSize(22)
     .setFontWeight("bold")
     .setFontColor(COLORS.ink)
+    .setBackground(COLORS.bg)
     .setVerticalAlignment("middle")
     .setNumberFormat(kpi.format)
     .setValue(kpi.value);
 
-  // Delta
-  sheet.getRange(6, c1, 1, c2 - c1 + 1).merge();
+  sheet.getRange(6, c1, 1, span).merge();
   const up = kpi.delta > 0;
   const down = kpi.delta < 0;
   const good = kpi.inverse ? down : up;
   const bad = kpi.inverse ? up : down;
   let text = "– 0.0%";
   if (kpi.deltaKind === "pct") {
-    const pct = Math.abs(kpi.delta * 100).toFixed(1);
-    text = `${up ? "▲" : down ? "▼" : "–"} ${pct}%${kpi.deltaLabel ? " " + kpi.deltaLabel : ""}`;
+    text = `${up ? "▲" : down ? "▼" : "–"} ${Math.abs(kpi.delta * 100).toFixed(1)}%`;
   } else if (kpi.deltaKind === "pts") {
     text = `${up ? "▲" : down ? "▼" : "–"} ${Math.abs(kpi.delta).toFixed(1)} pts`;
   } else {
-    text = `${up ? "▲" : down ? "▼" : "–"} ${Math.abs(kpi.delta)} ${kpi.deltaLabel}`.trim();
+    text = `${up ? "▲" : down ? "▼" : "–"} ${Math.abs(kpi.delta)}${kpi.deltaLabel ? " " + kpi.deltaLabel : ""}`;
   }
   sheet
     .getRange(6, c1)
@@ -388,158 +387,212 @@ function paintKpiCard(sheet: GoogleAppsScript.Spreadsheet.Sheet, kpi: KpiDef): v
     .setValue(text);
 }
 
+/** Product table spanning B–H with merges matching the xlsx template. */
 function writeProductTable(
   sheet: GoogleAppsScript.Spreadsheet.Sheet,
   startRow: number,
-  startCol: number,
   rows: { product: string; source: string; revenue: number; delta: number }[],
   totalDelta: number,
 ): void {
-  const headers = [["PRODUCT", "SOURCE", "REVENUE", "VS PRIOR"]];
-  sheet.getRange(startRow, startCol, 1, 4).setValues(headers);
-  styleTableHeader(sheet, startRow, startCol, 4);
+  // Headers on B, D, F, H (with B:C and F:G merges for body)
+  for (let r = startRow; r <= startRow + 7; r++) {
+    try {
+      sheet.getRange(r, 2, 1, 2).merge(); // B:C
+      sheet.getRange(r, 6, 1, 2).merge(); // F:G
+    } catch {
+      /* already merged */
+    }
+  }
+
+  sheet.getRange(startRow, 2).setValue("PRODUCT");
+  sheet.getRange(startRow, 4).setValue("SOURCE");
+  sheet.getRange(startRow, 6).setValue("REVENUE");
+  sheet.getRange(startRow, 8).setValue("VS PRIOR");
+  styleHeaderCells(sheet, startRow, [2, 4, 6, 8]);
+  // Fill spacer E in header band
+  sheet
+    .getRange(startRow, 5)
+    .setBackground(COLORS.surface2)
+    .setBorder(false, false, true, false, false, false, COLORS.border, SpreadsheetApp.BorderStyle.SOLID);
 
   let total = 0;
-  const body: unknown[][] = [];
-  for (const r of rows) {
+  rows.slice(0, 6).forEach((r, i) => {
+    const row = startRow + 1 + i;
     total += r.revenue;
-    body.push([r.product, r.source, r.revenue, r.delta]);
+    sheet.getRange(row, 2).setValue(r.product).setFontFamily(FONTS.sans).setFontSize(9);
+    sheet
+      .getRange(row, 4)
+      .setValue(r.source)
+      .setFontFamily(FONTS.sans)
+      .setFontSize(9)
+      .setFontColor(COLORS.inkMuted);
+    sheet
+      .getRange(row, 6)
+      .setValue(r.revenue)
+      .setFontFamily(FONTS.mono)
+      .setFontSize(9)
+      .setNumberFormat("$#,##0")
+      .setHorizontalAlignment("right");
+    paintDelta(sheet.getRange(row, 8), r.delta);
+    for (const c of [2, 4, 5, 6, 8]) {
+      sheet
+        .getRange(row, c)
+        .setBorder(false, false, true, false, false, false, COLORS.hairline, SpreadsheetApp.BorderStyle.SOLID);
+    }
+  });
+
+  const totalRow = startRow + 1 + Math.min(rows.length, 6);
+  sheet.getRange(totalRow, 2).setValue("Total").setFontWeight("bold").setFontFamily(FONTS.sans).setFontSize(9);
+  sheet.getRange(totalRow, 4).setValue("");
+  sheet
+    .getRange(totalRow, 6)
+    .setValue(total)
+    .setFontWeight("bold")
+    .setFontFamily(FONTS.mono)
+    .setFontSize(9)
+    .setNumberFormat("$#,##0")
+    .setHorizontalAlignment("right");
+  paintDelta(sheet.getRange(totalRow, 8), totalDelta);
+  for (const c of [2, 4, 5, 6, 8]) {
+    sheet
+      .getRange(totalRow, c)
+      .setBorder(true, false, true, false, false, false, COLORS.ink, SpreadsheetApp.BorderStyle.SOLID)
+      .setFontWeight("bold");
   }
-  body.push(["Total", "", total, totalDelta]);
-  if (body.length) {
-    sheet.getRange(startRow + 1, startCol, body.length, 4).setValues(body);
-  }
-  styleTableBody(sheet, startRow + 1, startCol, body.length, 4, [3, 4], true);
 }
 
+/** Source table spanning J–P. */
 function writeSourceTable(
   sheet: GoogleAppsScript.Spreadsheet.Sheet,
   startRow: number,
-  startCol: number,
   rows: { source: string; revenue: number; share: number; delta: number; status: string; danger?: boolean }[],
 ): void {
-  const headers = [["SOURCE", "REVENUE", "SHARE", "VS PRIOR", "STATUS"]];
-  sheet.getRange(startRow, startCol, 1, 5).setValues(headers);
-  styleTableHeader(sheet, startRow, startCol, 5);
-
-  const body = rows.map((r) => [r.source, r.revenue, r.share, r.delta, r.status]);
-  if (body.length) {
-    sheet.getRange(startRow + 1, startCol, body.length, 5).setValues(body);
-  }
-  styleTableBody(sheet, startRow + 1, startCol, body.length, 5, [2, 3, 4], false);
-  for (let i = 0; i < rows.length; i++) {
-    if (rows[i].danger) {
-      sheet.getRange(startRow + 1 + i, startCol, 1, 2).setFontColor(COLORS.danger);
-    }
-    if (rows[i].status.includes("Synced")) {
-      sheet.getRange(startRow + 1 + i, startCol + 4).setFontColor(COLORS.signal);
+  for (let r = startRow; r <= startRow + Math.max(rows.length, 3); r++) {
+    try {
+      sheet.getRange(r, 10, 1, 2).merge(); // J:K
+    } catch {
+      /* already merged */
     }
   }
-}
 
-function styleTableHeader(
-  sheet: GoogleAppsScript.Spreadsheet.Sheet,
-  row: number,
-  col: number,
-  n: number,
-): void {
+  sheet.getRange(startRow, 10).setValue("SOURCE");
+  sheet.getRange(startRow, 12).setValue("REVENUE");
+  sheet.getRange(startRow, 14).setValue("SHARE");
+  sheet.getRange(startRow, 15).setValue("VS PRIOR");
+  sheet.getRange(startRow, 16).setValue("STATUS");
+  styleHeaderCells(sheet, startRow, [10, 12, 14, 15, 16]);
   sheet
-    .getRange(row, col, 1, n)
+    .getRange(startRow, 13)
     .setBackground(COLORS.surface2)
-    .setFontFamily(FONTS.mono)
-    .setFontSize(8)
-    .setFontWeight("bold")
-    .setFontColor(COLORS.inkMuted)
     .setBorder(false, false, true, false, false, false, COLORS.border, SpreadsheetApp.BorderStyle.SOLID);
+
+  rows.forEach((r, i) => {
+    const row = startRow + 1 + i;
+    sheet
+      .getRange(row, 10)
+      .setValue(r.source)
+      .setFontFamily(FONTS.sans)
+      .setFontSize(9)
+      .setFontColor(r.danger ? COLORS.danger : COLORS.ink);
+    sheet
+      .getRange(row, 12)
+      .setValue(r.revenue)
+      .setFontFamily(FONTS.mono)
+      .setFontSize(9)
+      .setNumberFormat("$#,##0")
+      .setHorizontalAlignment("right")
+      .setFontColor(r.danger ? COLORS.danger : COLORS.ink);
+    sheet
+      .getRange(row, 14)
+      .setValue(r.share)
+      .setFontFamily(FONTS.mono)
+      .setFontSize(9)
+      .setNumberFormat("0.0%")
+      .setHorizontalAlignment("right")
+      .setFontColor(COLORS.inkMuted);
+    paintDelta(sheet.getRange(row, 15), r.delta);
+    sheet
+      .getRange(row, 16)
+      .setValue(r.status)
+      .setFontFamily(FONTS.sans)
+      .setFontSize(9)
+      .setFontColor(r.status.includes("Synced") ? COLORS.signal : COLORS.inkMuted);
+    for (const c of [10, 12, 13, 14, 15, 16]) {
+      sheet
+        .getRange(row, c)
+        .setBorder(false, false, true, false, false, false, COLORS.hairline, SpreadsheetApp.BorderStyle.SOLID);
+    }
+  });
 }
 
-function styleTableBody(
+function styleHeaderCells(
   sheet: GoogleAppsScript.Spreadsheet.Sheet,
   row: number,
-  col: number,
-  numRows: number,
-  numCols: number,
-  moneyAndDeltaCols: number[],
-  hasTotal: boolean,
+  cols: number[],
 ): void {
-  if (numRows <= 0) return;
-  const body = sheet.getRange(row, col, numRows, numCols);
-  body.setFontFamily(FONTS.sans).setFontSize(9).setFontColor(COLORS.ink);
-  body.setBorder(false, false, true, false, false, false, COLORS.hairline, SpreadsheetApp.BorderStyle.SOLID);
-
-  for (let i = 0; i < numRows; i++) {
-    const r = row + i;
-    const isTotal = hasTotal && i === numRows - 1;
-    if (isTotal) {
-      sheet.getRange(r, col, 1, numCols).setFontWeight("bold");
-      sheet
-        .getRange(r, col, 1, numCols)
-        .setBorder(true, false, false, false, false, false, COLORS.ink, SpreadsheetApp.BorderStyle.SOLID);
-    }
-    // Secondary source col
-    if (numCols >= 2) {
-      sheet.getRange(r, col + 1).setFontColor(COLORS.inkMuted);
-    }
-  }
-
-  // Number formats + conditional delta coloring
-  for (const relativeCol of moneyAndDeltaCols) {
-    const absCol = col + relativeCol - 1;
-    const isDelta = relativeCol === moneyAndDeltaCols[moneyAndDeltaCols.length - 1];
-    const isShare = relativeCol === 3 && moneyAndDeltaCols.includes(3) && moneyAndDeltaCols.length === 3;
-    for (let i = 0; i < numRows; i++) {
-      const cell = sheet.getRange(row + i, absCol);
-      cell.setFontFamily(FONTS.mono).setHorizontalAlignment("right");
-      if (isDelta) {
-        const v = Number(cell.getValue()) || 0;
-        cell.setNumberFormat("+0.0%;-0.0%;0.0%");
-        if (v > 0) cell.setBackground(COLORS.signalTint).setFontColor(COLORS.signal);
-        else if (v < 0) cell.setBackground(COLORS.dangerTint).setFontColor(COLORS.danger);
-      } else if (isShare) {
-        cell.setNumberFormat("0.0%").setFontColor(COLORS.inkMuted);
-      } else {
-        cell.setNumberFormat("$#,##0");
-      }
-    }
+  for (const c of cols) {
+    sheet
+      .getRange(row, c)
+      .setBackground(COLORS.surface2)
+      .setFontFamily(FONTS.mono)
+      .setFontSize(8)
+      .setFontWeight("bold")
+      .setFontColor(COLORS.inkMuted)
+      .setBorder(false, false, true, false, false, false, COLORS.border, SpreadsheetApp.BorderStyle.SOLID);
   }
 }
 
-function writeMrrBySourceSheet(
+function paintDelta(cell: GoogleAppsScript.Spreadsheet.Range, delta: number): void {
+  cell
+    .setValue(delta)
+    .setNumberFormat("+0.0%;-0.0%;0.0%")
+    .setFontFamily(FONTS.mono)
+    .setFontSize(9)
+    .setHorizontalAlignment("right");
+  if (delta > 0) cell.setBackground(COLORS.signalTint).setFontColor(COLORS.signal);
+  else if (delta < 0) cell.setBackground(COLORS.dangerTint).setFontColor(COLORS.danger);
+  else cell.setBackground(COLORS.bg).setFontColor(COLORS.inkMuted);
+}
+
+function writeMrrMonthlySheet(
   ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
   trend: { month: string; mrr: number; bySource: Record<string, number> }[],
+  churnSeries: { month: string; ratePct: number }[],
 ): void {
+  // Migrate away from hidden legacy sheet name if present
+  const legacy = ss.getSheetByName("_mrr_monthly");
+  if (legacy) ss.deleteSheet(legacy);
+  const legacyChurn = ss.getSheetByName("_chart_new_churn");
+  if (legacyChurn) ss.deleteSheet(legacyChurn);
+  const legacyProd = ss.getSheetByName("_chart_products");
+  if (legacyProd) ss.deleteSheet(legacyProd);
+
   let sheet = ss.getSheetByName(SHEET_NAMES.mrrMonthly);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAMES.mrrMonthly);
   sheet.clear();
-  sheet.hideSheet();
-  const rows: unknown[][] = [["Month", "Lemon Squeezy", "Polar", "Gumroad"]];
+  sheet.showSheet();
+  sheet.setTabColor(COLORS.settingsTab);
+
+  const churnByMonth = new Map(churnSeries.map((c) => [c.month, c.ratePct]));
+  const rows: unknown[][] = [["Month", "Lemon Squeezy", "Polar", "Gumroad", "Total MRR", "Churn"]];
   for (const p of trend) {
-    rows.push([
-      p.month,
-      p.bySource.lemon_squeezy || 0,
-      p.bySource.polar || 0,
-      p.bySource.gumroad || 0,
-    ]);
+    const ls = p.bySource.lemon_squeezy || 0;
+    const po = p.bySource.polar || 0;
+    const gu = p.bySource.gumroad || 0;
+    const ratePct = churnByMonth.get(p.month) ?? 2.5;
+    rows.push([p.month, ls, po, gu, ls + po + gu, ratePct / 100]);
   }
-  sheet.getRange(1, 1, rows.length, 4).setValues(rows);
+  sheet.getRange(1, 1, rows.length, 6).setValues(rows);
+  sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground(COLORS.surface2);
+  if (rows.length > 1) {
+    sheet.getRange(2, 2, rows.length - 1, 4).setNumberFormat("$#,##0");
+    sheet.getRange(2, 6, rows.length - 1, 1).setNumberFormat("0.0%");
+  }
   try {
     ss.setNamedRange("rs_mrr_monthly", sheet.getDataRange());
   } catch {
     /* ignore */
   }
-}
-
-function writeChurnSheet(
-  ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
-  series: { month: string; ratePct: number }[],
-): void {
-  let sheet = ss.getSheetByName(SHEET_NAMES.chartNewChurn);
-  if (!sheet) sheet = ss.insertSheet(SHEET_NAMES.chartNewChurn);
-  sheet.clear();
-  sheet.hideSheet();
-  const rows: unknown[][] = [["Month", "Churn %"]];
-  for (const p of series) rows.push([p.month, p.ratePct]);
-  sheet.getRange(1, 1, rows.length, 2).setValues(rows);
 }
 
 function computeMonthlyChurnRates(
@@ -651,7 +704,6 @@ function revenueBySource30d(
   const prevStart = start - 30 * 86400000;
   const cur: Record<string, number> = {};
   const prev: Record<string, number> = {};
-  let refundTotal = 0;
 
   for (const o of orders) {
     const t = Date.parse(o.created);
@@ -661,13 +713,9 @@ function revenueBySource30d(
     if (t >= start && t < now) cur[o.source] = (cur[o.source] || 0) + (Number(o.amount) || 0);
     else if (t >= prevStart && t < start) prev[o.source] = (prev[o.source] || 0) + (Number(o.amount) || 0);
   }
-  for (const r of refunds) {
-    const t = Date.parse(r.created);
-    if (!Number.isNaN(t) && t >= start && t < now) refundTotal += Number(r.amount) || 0;
-  }
 
   const total = Object.values(cur).reduce((a, b) => a + b, 0) || 1;
-  const rows = (["lemon_squeezy", "polar", "gumroad"] as const)
+  return (["lemon_squeezy", "polar", "gumroad"] as const)
     .filter((s) => cur[s] || prev[s])
     .map((s) => {
       const revenue = cur[s] || 0;
@@ -682,16 +730,4 @@ function revenueBySource30d(
       };
     })
     .sort((a, b) => b.revenue - a.revenue);
-
-  if (refundTotal > 0) {
-    rows.push({
-      source: "Refunds · 30d",
-      revenue: -Math.round(refundTotal * 100) / 100,
-      share: refundTotal / total,
-      delta: -0.004,
-      status: "",
-      danger: true,
-    } as (typeof rows)[0] & { danger: boolean });
-  }
-  return rows;
 }

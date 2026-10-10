@@ -198,11 +198,14 @@ export function runScheduledSync(): void {
 }
 
 function colorDataTabs(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void {
+  // Launch v2 tab colors: Dashboard + data = ink; Refunds = danger; Settings/MRR monthly = muted
+  ss.getSheetByName(SHEET_NAMES.dashboard)?.setTabColor(COLORS.ink);
   ss.getSheetByName(SHEET_NAMES.orders)?.setTabColor(COLORS.ink);
   ss.getSheetByName(SHEET_NAMES.subscriptions)?.setTabColor(COLORS.ink);
   ss.getSheetByName(SHEET_NAMES.customers)?.setTabColor(COLORS.ink);
   ss.getSheetByName(SHEET_NAMES.refunds)?.setTabColor(COLORS.danger);
   ss.getSheetByName(SHEET_NAMES.settings)?.setTabColor(COLORS.settingsTab);
+  ss.getSheetByName(SHEET_NAMES.mrrMonthly)?.setTabColor(COLORS.settingsTab);
 }
 
 function ensureSettingsSheet(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, license: LicenseStatus): void {

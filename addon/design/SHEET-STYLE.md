@@ -117,3 +117,10 @@ Hidden `_raw_lemonsqueezy`, `_raw_polar` and `_raw_gumroad` tabs hold the source
 - Use human header labels with units, e.g. "Amount (USD)".
 - Synced ranges get warning-only protection. A1 carries the note "Managed by RevenueSheet: edits are overwritten on sync. Add your own columns to the right."
 - Named ranges: `rs_orders`, `rs_subs`, `rs_customers`, `rs_mrr_monthly`.
+
+## v2 light revision (Oct 10, 2026, launch pack)
+Gatlin rejected dark boxes, so `launch/revenuesheet-dashboard-template.xlsx` ships these overrides. They take precedence over the sections above:
+- **Header band:** white fill, Inter Tight 15 bold ink title, 2px (`medium`) ink bottom rule across A1:Q1. The right-hand meta sits in M1:Q1, mono 8 `#5C5C5C`. No black band.
+- **Chart series:** Lemon Squeezy `#0D0D0D`, Polar `#5C5C5C`, Gumroad `#8C8C8C`, with 1px white separators between stacks. Green is no longer a series color, because green is reserved for meaning (positive deltas, "Synced").
+- **Tab colors:** Dashboard `#0D0D0D` (was green), the data tabs `#0D0D0D`, Refunds `#B42318`, Settings and MRR monthly `#8C8C8C`.
+- **Chart data:** lives on a visible `MRR monthly` tab (named range `rs_mrr_monthly`). The MRR KPI and the MoM delta are formulas against it.
