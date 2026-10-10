@@ -89,8 +89,8 @@ export function HowItWorks() {
                 <Image
                   src={step.img}
                   alt={step.alt}
-                  width={1120}
-                  height={840}
+                  width={2400}
+                  height={1800}
                   sizes="(max-width: 900px) 100vw, 33vw"
                   quality={75}
                 />
