@@ -1,5 +1,6 @@
 import { BRAND, managedByFooter } from "../lib/brand";
 import { SHEET_NAMES, type DashboardTemplate } from "../lib/config";
+import type { BackfillSourceRow } from "../lib/onboardingCopy";
 import { COLORS, FONTS, CHART_SERIES } from "../lib/tokens";
 import type { NormalizedOrder, NormalizedRefund, NormalizedSubscription } from "../importers/types";
 import { computeRevenuePeriods } from "../metrics/arpu";
@@ -7,6 +8,10 @@ import { computeChurn } from "../metrics/churn";
 import { computeGoalProgress } from "../metrics/goals";
 import { computeMrr, computeMrrTrend } from "../metrics/mrr";
 import { appendGrowthPanels, paintContinuousGoalBar } from "./growthPanels";
+import { paintEmptyDashboard, paintSyncingDashboard } from "./onboarding";
+import { applyTabOrderAndColors } from "./tabs";
+
+export type DashboardMode = "empty" | "syncing" | "filled";
 
 export interface DashboardBuildOptions {
   sample?: boolean;
@@ -22,6 +27,17 @@ export interface DashboardBuildOptions {
   backfillIncomplete?: boolean;
   template?: DashboardTemplate;
   mrrGoal?: number;
+  /** empty = no source; syncing = mid-backfill; filled (default) = live v2. */
+  mode?: DashboardMode;
+  /** Required when mode === "syncing". */
+  syncing?: {
+    activeLabel: string;
+    ordersSoFar: number;
+    totalKnown?: number;
+    doneLabels: string[];
+    sources: BackfillSourceRow[];
+    partial?: { mrr?: number; net30?: number; activeSubs?: number };
+  };
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -44,11 +60,35 @@ export function buildDashboard(
   refunds: NormalizedRefund[] = [],
   opts: DashboardBuildOptions = {},
 ): void {
+  applyTabOrderAndColors(ss);
   let sheet = ss.getSheetByName(SHEET_NAMES.dashboard);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAMES.dashboard, 0);
-  else {
-    ss.setActiveSheet(sheet);
-    ss.moveActiveSheet(1);
+
+  const mode: DashboardMode =
+    opts.mode ||
+    (opts.backfillIncomplete ? "syncing" : "filled");
+
+  if (mode === "empty") {
+    paintEmptyDashboard(sheet, {
+      currency: opts.currency,
+      studioLabel: opts.studioLabel || "YOUR STORE",
+    });
+    writeMrrMonthlySheet(ss, [], []);
+    return;
+  }
+
+  if (mode === "syncing" && opts.syncing) {
+    paintSyncingDashboard(sheet, {
+      currency: opts.currency,
+      studioLabel: opts.studioLabel || "YOUR STORE",
+      lastUpdate: opts.lastSyncAt || "·",
+      ...opts.syncing,
+    });
+    const mrrOpts = { includeTrialingPastDue: !!opts.includeTrialingPastDue };
+    const trend = computeMrrTrend(subscriptions, 12, new Date(), mrrOpts);
+    const monthlyChurn = computeMonthlyChurnRates(subscriptions, 12);
+    writeMrrMonthlySheet(ss, trend, monthlyChurn);
+    return;
   }
 
   for (const c of sheet.getCharts()) sheet.removeChart(c);
@@ -87,7 +127,7 @@ export function buildDashboard(
   for (let r = 1; r <= 35; r++) sheet.setRowHeight(r, rowH[r] ?? 21);
 
   const currency = opts.currency || "USD";
-  const studio = opts.studioLabel || (opts.sample ? "EXAMPLE STUDIO" : "YOUR STUDIO");
+  const studio = opts.studioLabel || (opts.sample ? "EXAMPLE STUDIO" : "YOUR STORE");
   const sourceLabels =
     opts.sourceLabels && opts.sourceLabels.length
       ? opts.sourceLabels
@@ -279,10 +319,11 @@ export function buildDashboard(
   const mrrRows = Math.max(trend.length + 1, 2);
 
   // Greyscale stacked columns (green is NOT a series color)
+  // Month + Stripe / LS / Polar / Gumroad / CSV (cols 1–6); Total & Churn stay off the stack.
   const mrrChart = sheet
     .newChart()
     .setChartType(Charts.ChartType.COLUMN)
-    .addRange(mrrSheet.getRange(1, 1, mrrRows, 4))
+    .addRange(mrrSheet.getRange(1, 1, mrrRows, 6))
     .setPosition(9, 2, 0, 0)
     .setOption("isStacked", true)
     .setOption("title", "")
@@ -290,7 +331,7 @@ export function buildDashboard(
       position: "top",
       textStyle: { color: COLORS.inkMuted, fontName: FONTS.sans, fontSize: 9 },
     })
-    .setOption("colors", [...CHART_SERIES.slice(0, 3)])
+    .setOption("colors", [...CHART_SERIES.slice(0, 4), "#B5B5B5"])
     .setOption("backgroundColor", COLORS.bg)
     .setOption("bar", { groupWidth: "58%" })
     .setOption("hAxis", {
@@ -312,7 +353,7 @@ export function buildDashboard(
     .newChart()
     .setChartType(Charts.ChartType.LINE)
     .addRange(mrrSheet.getRange(1, 1, mrrRows, 1))
-    .addRange(mrrSheet.getRange(1, 6, mrrRows, 1))
+    .addRange(mrrSheet.getRange(1, 8, mrrRows, 1))
     .setPosition(9, 14, 0, 0)
     .setOption("title", "")
     .setOption("legend", { position: "none" })
@@ -656,19 +697,32 @@ function writeMrrMonthlySheet(
   sheet.setTabColor(COLORS.settingsTab);
 
   const churnByMonth = new Map(churnSeries.map((c) => [c.month, c.ratePct]));
-  const rows: unknown[][] = [["Month", "Lemon Squeezy", "Polar", "Gumroad", "Total MRR", "Churn"]];
+  const headers = [
+    "Month",
+    "Stripe",
+    "Lemon Squeezy",
+    "Polar",
+    "Gumroad",
+    "CSV",
+    "Total MRR",
+    "Churn",
+  ];
+  const rows: unknown[][] = [headers];
   for (const p of trend) {
+    const st = p.bySource.stripe || 0;
     const ls = p.bySource.lemon_squeezy || 0;
     const po = p.bySource.polar || 0;
     const gu = p.bySource.gumroad || 0;
+    const csv = p.bySource.csv || 0;
+    const total = st + ls + po + gu + csv;
     const ratePct = churnByMonth.get(p.month) ?? 2.5;
-    rows.push([p.month, ls, po, gu, ls + po + gu, ratePct / 100]);
+    rows.push([p.month, st, ls, po, gu, csv, total, ratePct / 100]);
   }
-  sheet.getRange(1, 1, rows.length, 6).setValues(rows);
-  sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground(COLORS.surface2);
+  sheet.getRange(1, 1, rows.length, headers.length).setValues(rows);
+  sheet.getRange(1, 1, 1, headers.length).setFontWeight("bold").setBackground(COLORS.surface2);
   if (rows.length > 1) {
-    sheet.getRange(2, 2, rows.length - 1, 4).setNumberFormat("$#,##0");
-    sheet.getRange(2, 6, rows.length - 1, 1).setNumberFormat("0.0%");
+    sheet.getRange(2, 2, rows.length - 1, 6).setNumberFormat("$#,##0");
+    sheet.getRange(2, 8, rows.length - 1, 1).setNumberFormat("0.0%");
   }
   try {
     ss.setNamedRange("rs_mrr_monthly", sheet.getDataRange());

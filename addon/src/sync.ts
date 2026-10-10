@@ -1,6 +1,7 @@
 import { CONFIG, SHEET_NAMES, SOURCES, type SourceId } from "./lib/config";
 import { isBackfillIncomplete, resolveFetchCursor } from "./lib/backfill";
 import { checkLicenseSync, enforceSourceLimit, type LicenseStatus } from "./lib/license";
+import type { BackfillSourceRow } from "./lib/onboardingCopy";
 import {
   clearSyncCursor,
   getApiKey,
@@ -28,6 +29,7 @@ import { fetchPolarResultSync } from "./importers/polar";
 import { fetchStripeResultSync } from "./importers/stripe";
 import type { ImportBundle, ImportResult, SyncCursor } from "./importers/types";
 import { buildSampleBundle } from "./demo/sampleData";
+import { computeMrr } from "./metrics/mrr";
 import { buildDashboard } from "./sheets/dashboard";
 import {
   ensureDataSheets,
@@ -36,6 +38,8 @@ import {
   readSubscriptions,
   writeImportBundle,
 } from "./sheets/dataTabs";
+import { writeEmptyCohortSheet } from "./sheets/growthPanels";
+import { applyTabOrderAndColors, ensureAllTabs } from "./sheets/tabs";
 
 export interface SyncResult {
   ok: boolean;
@@ -108,17 +112,38 @@ function dashboardOpts(partial: {
   };
 }
 
+/** First open / no keys: paint empty dashboard + cohorts + settings. */
+export function paintEmptyWorkbook(ss?: GoogleAppsScript.Spreadsheet.Spreadsheet): void {
+  const spreadsheet = ss || SpreadsheetApp.getActive();
+  ensureAllTabs(spreadsheet);
+  ensureDataSheets(spreadsheet);
+  applyTabOrderAndColors(spreadsheet);
+  const license = checkLicenseSync();
+  buildDashboard(spreadsheet, [], [], [], {
+    mode: "empty",
+    currency: getDisplayCurrency(),
+    studioLabel: "YOUR STORE",
+    lastSyncAt: "",
+    sourceLabels: [],
+    scheduleLabel: "MANUAL",
+  });
+  writeEmptyCohortSheet(spreadsheet);
+  ensureSettingsSheet(spreadsheet, license, { empty: true });
+}
+
 export function runSync(opts: { full?: boolean } = {}): SyncResult {
   const ss = SpreadsheetApp.getActive();
+  ensureAllTabs(ss);
   ensureDataSheets(ss);
-  colorDataTabs(ss);
+  applyTabOrderAndColors(ss);
 
   const license = checkLicenseSync();
   const connected = getConnectedSources();
   if (!connected.length) {
+    paintEmptyWorkbook(ss);
     return {
       ok: false,
-      message: `No API keys saved. Open ${BRAND.name} → Settings to connect a source.`,
+      message: `No API keys saved. Open ${BRAND.name} → sidebar to connect a source.`,
       sources: [],
     };
   }
@@ -131,6 +156,8 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   let bundle = emptyBundle();
   const errors: string[] = [];
   const incompleteSources: SourceId[] = [];
+  const completedThisRun: SourceId[] = [];
+  const totalKnownBySource: Partial<Record<SourceId, number>> = {};
   let resuming = false;
 
   for (const source of limited.allowed as SourceId[]) {
@@ -143,7 +170,11 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
       const result = fetchSourceResult(source, key, cursor);
       bundle = mergeBundles(bundle, result.bundle);
       setSyncCursor(source, result.cursor);
+      if (result.totalCount != null && result.totalCount > 0) {
+        totalKnownBySource[source] = result.totalCount;
+      }
       if (result.incomplete) incompleteSources.push(source);
+      else completedThisRun.push(source);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`${source}: ${msg}`);
@@ -163,25 +194,61 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   setDemoMode(false);
 
   const labels = limited.allowed.map((id) => SOURCES.find((s) => s.id === id)?.label || id);
+  const incomplete = incompleteSources.length > 0;
+  const syncTime = Utilities.formatDate(now, ss.getSpreadsheetTimeZone(), "HH:mm");
+  const fullSyncTime = Utilities.formatDate(now, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm");
 
-  buildDashboard(
-    ss,
-    orders,
-    subscriptions,
-    refunds,
-    dashboardOpts({
-      sample: false,
-      lastSyncAt: Utilities.formatDate(now, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm"),
-      sourceLabels: labels,
-      scheduleLabel: license.allowSchedule ? scheduleLabelForUi() : "MANUAL",
-      licenseNote: license.degraded ? license.message : "",
-      backfillIncomplete: incompleteSources.length > 0,
-    }),
-  );
+  if (incomplete) {
+    const activeId = incompleteSources[0];
+    const activeLabel = SOURCES.find((s) => s.id === activeId)?.label || activeId;
+    const ordersSoFar = orders.filter((o) => o.source === activeId).length || orders.length;
+    const mrr = computeMrr(subscriptions, { includeTrialingPastDue: getIncludeTrialingPastDue() });
+    const net30 = sumNetRevenue30d(orders, refunds);
+    buildDashboard(ss, orders, subscriptions, refunds, {
+      ...dashboardOpts({
+        sample: false,
+        lastSyncAt: syncTime,
+        sourceLabels: labels,
+        scheduleLabel: license.allowSchedule ? scheduleLabelForUi() : "MANUAL",
+        licenseNote: license.degraded ? license.message : "",
+        backfillIncomplete: true,
+      }),
+      mode: "syncing",
+      syncing: {
+        activeLabel,
+        ordersSoFar,
+        totalKnown: totalKnownBySource[activeId],
+        doneLabels: completedThisRun
+          .filter((id) => !incompleteSources.includes(id))
+          .map((id) => SOURCES.find((s) => s.id === id)?.label || id),
+        sources: buildBackfillRows(orders, limited.allowed as SourceId[], incompleteSources, totalKnownBySource),
+        partial: {
+          mrr: mrr.total,
+          net30,
+          activeSubs: mrr.activeCount,
+        },
+      },
+    });
+    writeEmptyCohortSheet(ss);
+  } else {
+    buildDashboard(
+      ss,
+      orders,
+      subscriptions,
+      refunds,
+      dashboardOpts({
+        sample: false,
+        lastSyncAt: fullSyncTime,
+        sourceLabels: labels,
+        scheduleLabel: license.allowSchedule ? scheduleLabelForUi() : "MANUAL",
+        licenseNote: license.degraded ? license.message : "",
+        backfillIncomplete: false,
+      }),
+    );
+  }
 
   ensureSettingsSheet(ss, license);
 
-  const incomplete = incompleteSources.length > 0;
   return {
     ok: errors.length === 0,
     incomplete,
@@ -194,10 +261,66 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   };
 }
 
+function sumNetRevenue30d(
+  orders: { created: string; amount: number; status?: string }[],
+  refunds: { created: string; amount: number }[],
+): number {
+  const end = Date.now();
+  const start = end - 30 * 86400000;
+  let sum = 0;
+  for (const o of orders) {
+    const t = Date.parse(o.created);
+    if (Number.isNaN(t) || t < start || t > end) continue;
+    const status = String(o.status || "").toLowerCase();
+    if (status === "refunded" || status === "chargeback" || status === "failed") continue;
+    sum += Number(o.amount) || 0;
+  }
+  for (const r of refunds) {
+    const t = Date.parse(r.created);
+    if (Number.isNaN(t) || t < start || t > end) continue;
+    sum -= Number(r.amount) || 0;
+  }
+  return Math.round(sum * 100) / 100;
+}
+
+function buildBackfillRows(
+  orders: { source: string }[],
+  connected: SourceId[],
+  incomplete: SourceId[],
+  totals: Partial<Record<SourceId, number>>,
+): BackfillSourceRow[] {
+  const countBy = (id: string) => orders.filter((o) => o.source === id).length;
+  const connectedSet = new Set(connected);
+  const incompleteSet = new Set(incomplete);
+  const rows: BackfillSourceRow[] = SOURCES.map((s) => {
+    const rowsN = countBy(s.id);
+    if (!connectedSet.has(s.id)) {
+      return { label: s.label, rows: 0, status: "not_connected" };
+    }
+    if (incompleteSet.has(s.id)) {
+      return {
+        label: s.label,
+        rows: rowsN,
+        totalKnown: totals[s.id],
+        status: "backfilling",
+      };
+    }
+    return { label: s.label, rows: rowsN, status: "synced" };
+  });
+  const csvRows = countBy("csv");
+  rows.push({
+    label: "CSV",
+    rows: csvRows,
+    status: csvRows > 0 ? "synced" : "not_imported",
+  });
+  return rows;
+}
+
 export function runDemoMode(): SyncResult {
   const ss = SpreadsheetApp.getActive();
+  ensureAllTabs(ss);
   ensureDataSheets(ss);
-  colorDataTabs(ss);
+  applyTabOrderAndColors(ss);
   const bundle = buildSampleBundle();
   writeImportBundle(ss, bundle, { merge: false, currency: "USD" });
   setDemoMode(true);
@@ -252,28 +375,34 @@ export function runScheduledSync(): void {
   runSync({ full: false });
 }
 
-function colorDataTabs(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void {
-  ss.getSheetByName(SHEET_NAMES.dashboard)?.setTabColor(COLORS.ink);
-  ss.getSheetByName(SHEET_NAMES.orders)?.setTabColor(COLORS.ink);
-  ss.getSheetByName(SHEET_NAMES.subscriptions)?.setTabColor(COLORS.ink);
-  ss.getSheetByName(SHEET_NAMES.customers)?.setTabColor(COLORS.ink);
-  ss.getSheetByName(SHEET_NAMES.refunds)?.setTabColor(COLORS.danger);
-  ss.getSheetByName(SHEET_NAMES.settings)?.setTabColor(COLORS.settingsTab);
-  ss.getSheetByName(SHEET_NAMES.mrrMonthly)?.setTabColor(COLORS.settingsTab);
-  ss.getSheetByName(SHEET_NAMES.cohorts)?.setTabColor(COLORS.settingsTab);
-}
-
 function ensureSettingsSheet(
   ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
   license: LicenseStatus,
+  opts: { empty?: boolean } = {},
 ): void {
   let sheet = ss.getSheetByName(SHEET_NAMES.settings);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAMES.settings);
   sheet.clear();
   sheet.setTabColor(COLORS.settingsTab);
+  const connected = getConnectedSources();
+  const lastSync = opts.empty
+    ? "Never"
+    : getLastSyncAt() || "Never";
+  const schedule = opts.empty || !license.allowSchedule
+    ? "Off · turn on in the sidebar"
+    : getScheduleCadence();
+  const sources = opts.empty || !connected.length
+    ? "None connected"
+    : connected.map((id) => SOURCES.find((s) => s.id === id)?.label || id).join(", ");
+  const plan = license.tier === "free" || opts.empty
+    ? "Free until a license key is saved"
+    : `${license.tier} · ${license.message}`;
   const rows: unknown[][] = [
     ["Setting", "Value"],
-    ["Last sync", getLastSyncAt() || "·"],
+    ["Last sync", lastSync],
+    ["Schedule", schedule],
+    ["Sources", sources],
+    ["Plan", plan],
     ["License tier", license.tier],
     ["License status", license.message],
     ["Schedule allowed", license.allowSchedule ? "yes" : "no"],
@@ -282,7 +411,7 @@ function ensureSettingsSheet(
     ["MRR goal", getMrrGoal() || "·"],
     ["Currency", getDisplayCurrency()],
     ["MRR includes trial/past_due", getIncludeTrialingPastDue() ? "yes" : "no (default)"],
-    ["Connected sources", getConnectedSources().join(", ") || "·"],
+    ["Connected sources", connected.join(", ") || "·"],
     ["License API", "Script property LICENSE_API_BASE (optional override)"],
     ["Brand", BRAND.name],
   ];

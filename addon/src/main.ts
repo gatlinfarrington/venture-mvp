@@ -13,9 +13,11 @@ import { runWeeklyDigest } from "./lib/emailDigest";
 import { mapCsvToBundle } from "./importers/csv";
 import {
   getAllSettingsForSidebar,
+  getConnectedSources,
   getCsvColumnMap,
   getDashboardTemplate,
   getDisplayCurrency,
+  getLastSyncAt,
   getMrrGoal,
   setApiKey,
   setCsvColumnMap,
@@ -30,6 +32,7 @@ import {
 import { installDigestTrigger, removeDigestTrigger } from "./lib/schedule";
 import {
   installSchedule,
+  paintEmptyWorkbook,
   removeSchedule,
   runDemoMode,
   runScheduledSync,
@@ -51,6 +54,14 @@ function onOpen(): void {
     .addItem("Disable schedule", "menuDisableSchedule")
     .addItem("Send weekly digest now", "menuSendDigest")
     .addToUi();
+  // First open with nothing connected: draw the empty onboarding dashboard.
+  try {
+    if (!getConnectedSources().length && !getLastSyncAt()) {
+      paintEmptyWorkbook();
+    }
+  } catch {
+    /* non-GAS / no active spreadsheet */
+  }
 }
 
 function onInstall(_e: GoogleAppsScript.Events.AddonOnInstall): void {

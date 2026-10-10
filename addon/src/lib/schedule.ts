@@ -1,4 +1,5 @@
 import { CONFIG, DIGEST_HANDLER, type ScheduleCadence } from "./config";
+import { SCHEDULE_NEEDS_LICENSE } from "./onboardingCopy";
 import { checkLicenseSync } from "./license";
 import { getScheduleCadence, isEmailDigestOptIn, setScheduleCadence } from "./properties";
 
@@ -12,7 +13,7 @@ function removeTriggersByHandler(handler: string): void {
 export function installSchedule(cadence?: ScheduleCadence): string {
   const license = checkLicenseSync();
   if (!license.allowSchedule) {
-    return "Scheduled refresh requires a paid plan. Connect a license key in Settings.";
+    return SCHEDULE_NEEDS_LICENSE;
   }
   const chosen = cadence || getScheduleCadence();
   setScheduleCadence(chosen);
