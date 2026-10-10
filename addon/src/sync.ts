@@ -143,7 +143,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
     paintEmptyWorkbook(ss);
     return {
       ok: false,
-      message: `No API keys saved. Open ${BRAND.name} → sidebar to connect a source.`,
+      message: `No API keys saved. Open ${BRAND.name} → License & display to connect a source.`,
       sources: [],
     };
   }

@@ -7,9 +7,11 @@ export function supportEmail(): string | null {
   return raw.length > 0 ? raw : null;
 }
 
-export function supportMailto(): string | null {
+export function supportMailto(subject?: string): string | null {
   const email = supportEmail();
-  return email ? `mailto:${email}` : null;
+  if (!email) return null;
+  if (!subject) return `mailto:${email}`;
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}`;
 }
 
 /** Privacy contact — optional until PRIVACY_EMAIL is set. */
