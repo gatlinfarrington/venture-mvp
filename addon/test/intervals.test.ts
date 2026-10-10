@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { normalizeBillingInterval, toMonthlyAmount } from "../src/lib/intervals";
+import {
+  intervalFromUnitAndCount,
+  normalizeBillingInterval,
+  periodLengthInMonths,
+  toMonthlyAmount,
+  toMonthlyFromUnitCount,
+} from "../src/lib/intervals";
 import { mapGumroadSubscriber } from "../src/importers/gumroad";
 import { mapLemonSubscription } from "../src/importers/lemonSqueezy";
 import { mapPolarSubscription } from "../src/importers/polar";
@@ -90,38 +96,116 @@ describe("importer interval → MRR", () => {
     assert.equal(two.mrr, 10);
   });
 
-  it("Lemon Squeezy quarterly and every_two_years map correctly", () => {
-    const sub = mapLemonSubscription({
-      id: "7",
-      type: "subscriptions",
-      attributes: {
-        created_at: "2026-01-01T00:00:00Z",
-        product_name: "Pro",
-        user_email: "a@example.com",
-        recurring_price: 9000,
-        billing_interval: "quarter",
-        currency: "USD",
-        status: "active",
-      },
-    });
-    assert.equal(sub.interval, "quarter");
-    assert.equal(sub.mrr, 30);
+  it("intervalFromUnitAndCount maps LS variant month×N / year×N", () => {
+    assert.equal(intervalFromUnitAndCount("month", 1), "month");
+    assert.equal(intervalFromUnitAndCount("month", 3), "quarter");
+    assert.equal(intervalFromUnitAndCount("month", 6), "biannual");
+    assert.equal(intervalFromUnitAndCount("year", 1), "year");
+    assert.equal(intervalFromUnitAndCount("year", 2), "biennial");
+    assert.equal(periodLengthInMonths("month", 3), 3);
+    assert.equal(periodLengthInMonths("year", 1), 12);
+    assert.equal(toMonthlyFromUnitCount(90, "month", 3), 30);
+    assert.equal(toMonthlyFromUnitCount(120, "year", 1), 10);
+    assert.equal(toMonthlyFromUnitCount(240, "year", 2), 10);
+  });
 
-    const two = mapLemonSubscription({
-      id: "8",
+  it("Lemon Squeezy reads interval+count from related variant (not subscription attrs)", () => {
+    // Real LS Subscription objects have no billing_interval / recurring_price.
+    const quarterly = mapLemonSubscription(
+      {
+        id: "7",
+        type: "subscriptions",
+        attributes: {
+          created_at: "2026-01-01T00:00:00Z",
+          product_name: "Pro",
+          user_email: "a@example.com",
+          variant_id: 11,
+          status: "active",
+          first_subscription_item: { quantity: 1, price_id: 1 },
+        },
+      },
+      { variant: { interval: "month", interval_count: 3, price: 9000 } },
+    );
+    assert.equal(quarterly.interval, "quarter");
+    assert.equal(quarterly.mrr, 30);
+
+    const yearly = mapLemonSubscription(
+      {
+        id: "8",
+        type: "subscriptions",
+        attributes: {
+          created_at: "2026-01-01T00:00:00Z",
+          product_name: "Yearly",
+          user_email: "a@example.com",
+          variant_id: 12,
+          status: "active",
+        },
+      },
+      { variant: { interval: "year", interval_count: 1, price: 12000 } },
+    );
+    assert.equal(yearly.interval, "year");
+    assert.equal(yearly.mrr, 10);
+
+    const biennial = mapLemonSubscription(
+      {
+        id: "9",
+        type: "subscriptions",
+        attributes: {
+          created_at: "2026-01-01T00:00:00Z",
+          product_name: "Biennial",
+          user_email: "a@example.com",
+          variant_id: 13,
+          status: "active",
+        },
+      },
+      { variant: { interval: "year", interval_count: 2, price: 24000 } },
+    );
+    assert.equal(biennial.interval, "biennial");
+    assert.equal(biennial.mrr, 10);
+
+    // Without related variant, LS payloads default to monthly (the old bug).
+    const bare = mapLemonSubscription({
+      id: "10",
       type: "subscriptions",
       attributes: {
         created_at: "2026-01-01T00:00:00Z",
-        product_name: "Biennial",
+        product_name: "Bare",
         user_email: "a@example.com",
-        recurring_price: 24000,
-        billing_interval: "every_two_years",
-        currency: "USD",
+        variant_id: 14,
         status: "active",
       },
     });
-    assert.equal(two.interval, "biennial");
-    assert.equal(two.mrr, 10);
+    assert.equal(bare.interval, "month");
+    assert.equal(bare.mrr, 0);
+  });
+
+  it("Lemon Squeezy prefers Price renewal_interval_* when present", () => {
+    const sub = mapLemonSubscription(
+      {
+        id: "11",
+        type: "subscriptions",
+        attributes: {
+          created_at: "2026-01-01T00:00:00Z",
+          product_name: "Pro",
+          user_email: "a@example.com",
+          variant_id: 20,
+          status: "active",
+          first_subscription_item: { quantity: 2, price_id: 5 },
+        },
+      },
+      {
+        // Stale/wrong variant should lose to Price object fields.
+        variant: { interval: "month", interval_count: 1, price: 999 },
+        price: {
+          renewal_interval_unit: "year",
+          renewal_interval_quantity: 1,
+          unit_price: 12000,
+        },
+      },
+    );
+    assert.equal(sub.interval, "year");
+    // $120/yr × qty 2 → $240/yr → $20 MRR
+    assert.equal(sub.mrr, 20);
   });
 
   it("Polar yearly and biennial monthly-normalized", () => {
