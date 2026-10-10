@@ -33,8 +33,8 @@ const compareRows = [
   {
     label: "Refresh",
     free: pricing.free.refresh,
-    pro: "Scheduled",
-    business: "Scheduled",
+    pro: pricing.pro.refresh,
+    business: pricing.business.refresh,
   },
   {
     label: "Stores per source",

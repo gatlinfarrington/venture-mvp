@@ -12,6 +12,7 @@ export const SITEMAP_ROUTES_FALLBACK = [
   "/docs/setup/stripe",
   "/docs/csv-import",
   "/docs/api-keys",
+  "/docs/mrr-and-churn",
   "/docs/faq",
   "/docs/troubleshooting",
   "/blog",
@@ -25,6 +26,7 @@ export const SITEMAP_ROUTES_FALLBACK = [
   "/vs/baremetrics",
   "/vs/chartmogul",
   "/vs/zapier",
+  "/vs/polar-dashboard",
 ] as const;
 
 /** Key marketing pages for Lighthouse CI budgets (≥95). */

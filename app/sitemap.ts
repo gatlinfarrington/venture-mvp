@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/docs/setup/stripe",
     "/docs/csv-import",
     "/docs/api-keys",
+    "/docs/mrr-and-churn",
     "/docs/faq",
     "/docs/troubleshooting",
     "/blog",
@@ -28,6 +29,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/vs/baremetrics",
     "/vs/chartmogul",
     "/vs/zapier",
+    "/vs/polar-dashboard",
     // /success is post-checkout only: kept out of the sitemap and disallowed in robots.ts
   ].map((path) => ({
     url: `${base}${path}`,

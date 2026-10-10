@@ -44,6 +44,7 @@ export function Footer() {
             <Link href="/vs/baremetrics">vs Baremetrics</Link>
             <Link href="/vs/chartmogul">vs ChartMogul</Link>
             <Link href="/vs/zapier">vs Zapier</Link>
+            <Link href="/vs/polar-dashboard">vs Polar’s dashboard</Link>
           </div>
           <div className="footer-col">
             <h3>Legal</h3>
