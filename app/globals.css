@@ -2015,7 +2015,7 @@ body:has(.success-shell) .admin-stripe-banner {
 }
 
 .success-checklist li.is-done .success-check-title {
-  color: var(--c-ink-muted); /* #5C5C5C */
+  color: var(--c-ink-muted);
 }
 
 .success-checklist li.is-done .success-check-face {

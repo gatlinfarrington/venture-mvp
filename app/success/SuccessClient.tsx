@@ -51,7 +51,7 @@ function tierLabel(tier: string) {
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
-function intervalLabel(_interval: string) {
+function intervalLabel() {
   return "monthly";
 }
 
@@ -268,7 +268,7 @@ function SuccessInner() {
 
   const license = data?.license;
   const tier = license ? tierLabel(license.tier) : "Pro";
-  const interval = license ? intervalLabel(license.interval) : "monthly";
+  const interval = license ? intervalLabel() : "monthly";
   const email = data?.email || "your inbox";
   const price = license ? monthlyPrice(license.tier) : "";
 
