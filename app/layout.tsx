@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Nav } from "@/components/Nav";
-import { ThemeProvider } from "@/components/ThemeProvider";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -52,10 +51,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
-    { media: "(prefers-color-scheme: dark)", color: "#0A0A0B" },
-  ],
+  themeColor: "#FFFFFF",
   width: "device-width",
   initialScale: 1,
 };
@@ -66,21 +62,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('rs-theme');if(t==='dark'||(t!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.setAttribute('data-theme','dark')}}catch(e){}})();`,
-          }}
-        />
         <style>{`:root{--font-sans:var(--font-sans-loaded),'Inter Tight',system-ui,sans-serif;--font-mono:var(--font-mono-loaded),'JetBrains Mono',ui-monospace,monospace}`}</style>
       </head>
       <body>
-        <ThemeProvider>
-          <Nav />
-          {children}
-          <Footer />
-        </ThemeProvider>
+        <Nav />
+        {children}
+        <Footer />
       </body>
     </html>
   );

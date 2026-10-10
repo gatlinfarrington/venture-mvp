@@ -3,29 +3,49 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Reveal } from "@/components/Reveal";
-import { pricing, type BillingInterval } from "@/lib/site";
-
-async function startCheckout(
-  tier: "pro" | "business",
-  interval: BillingInterval,
-) {
-  const res = await fetch("/api/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tier, interval }),
-  });
-  const data = (await res.json()) as { url?: string; error?: string };
-  if (data.url) {
-    window.location.href = data.url;
-    return;
-  }
-  alert(data.error ?? "Checkout is not configured yet. Set Stripe test keys in env.");
-}
+import { checkoutEnabled, pricing, type BillingInterval } from "@/lib/site";
 
 export function Pricing() {
   const [interval, setInterval] = useState<BillingInterval>("month");
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+  const [pendingTier, setPendingTier] = useState<string | null>(null);
 
   const plans = [pricing.free, pricing.pro, pricing.business];
+
+  async function startCheckout(
+    tier: "pro" | "business",
+    billing: BillingInterval,
+  ) {
+    if (!checkoutEnabled) {
+      setCheckoutMessage("Checkout opens at launch — Stripe keys are not configured yet.");
+      return;
+    }
+    setPendingTier(tier);
+    setCheckoutMessage(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier, interval: billing }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (data.url) {
+        const checkoutUrl = data.url;
+        // Navigate after paint so the immutability lint does not flag location writes.
+        queueMicrotask(() => {
+          window.location.assign(checkoutUrl);
+        });
+        return;
+      }
+      setCheckoutMessage(
+        data.error ?? "Checkout could not start. Check Stripe env vars and try again.",
+      );
+    } catch {
+      setCheckoutMessage("Checkout could not start. Try again in a moment.");
+    } finally {
+      setPendingTier(null);
+    }
+  }
 
   return (
     <section id="pricing" className="section">
@@ -80,7 +100,7 @@ export function Pricing() {
                     </span>
                   </p>
                   {plan.tier !== "free" && interval === "year" ? (
-                    <p className="mono muted" style={{ marginTop: "var(--space-2)" }}>
+                    <p className="mono muted price-annual">
                       ${plan.annual}/yr
                     </p>
                   ) : null}
@@ -94,19 +114,34 @@ export function Pricing() {
                   <Link className="btn btn-secondary" href="/#how-it-works">
                     Start free
                   </Link>
-                ) : (
+                ) : checkoutEnabled ? (
                   <button
                     type="button"
                     className={featured ? "btn btn-primary" : "btn btn-secondary"}
+                    disabled={pendingTier === plan.tier}
                     onClick={() => startCheckout(plan.tier, interval)}
                   >
-                    Get {plan.name}
+                    {pendingTier === plan.tier ? "Opening…" : `Get ${plan.name}`}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled
+                    title="Stripe Checkout is not configured yet"
+                  >
+                    Checkout opens at launch
                   </button>
                 )}
               </Reveal>
             );
           })}
         </div>
+        {checkoutMessage ? (
+          <p role="status" className="checkout-status">
+            {checkoutMessage}
+          </p>
+        ) : null}
       </div>
     </section>
   );

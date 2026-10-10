@@ -15,6 +15,12 @@ export const siteConfig = {
   domain: brand.domain,
 };
 
+/** Paid Checkout is off until a real Stripe publishable key is set. */
+export const checkoutEnabled = Boolean(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
+    !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.includes("REPLACE"),
+);
+
 export type Tier = "free" | "pro" | "business";
 
 export type BillingInterval = "month" | "year";
