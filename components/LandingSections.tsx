@@ -1,5 +1,4 @@
 import { HeroDemoLazy } from "@/components/HeroDemoLazy";
-import { HeroRevealBoot } from "@/components/HeroRevealBoot";
 import { InstallCta } from "@/components/InstallCta";
 import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
@@ -13,7 +12,6 @@ export function Hero() {
 
   return (
     <section className="hero">
-      <HeroRevealBoot />
       <div className="container hero-grid">
         <div className="hero-copy">
           <p className="eyebrow hero-reveal" style={{ animationDelay: "0ms" }}>
@@ -74,24 +72,27 @@ export function HowItWorks() {
       n: "01",
       title: "Connect",
       body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe, or import CSV for anything else. No OAuth dance with those stores: the add-on reads what you grant.",
-      desktop: "/design/how-connect-2x.png",
-      phone: "/design/how-connect-phone-2x.png",
+      src: "/design/how-connect-2x.png",
+      w: 600,
+      h: 1508,
       alt: "Connect sources panel with example store connections",
     },
     {
       n: "02",
       title: "Backfill",
       body: "We pull full order history into named tabs, not just new rows from today. Then scheduled sync keeps the sheet current.",
-      desktop: "/design/how-backfill-2x.png",
-      phone: "/design/how-backfill-phone-2x.png",
+      src: "/design/how-backfill-2x.png",
+      w: 600,
+      h: 600,
       alt: "Sidebar mid-backfill with ink progress bar and orders writing in",
     },
     {
       n: "03",
       title: "Dashboard",
       body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data (formulas you can audit and extend).",
-      desktop: "/design/how-dashboard-2x.png",
-      phone: "/design/how-dashboard-phone-2x.png",
+      src: "/design/how-dashboard-2x.png",
+      w: 672,
+      h: 480,
       alt: "MRR dashboard with KPIs and stacked source chart",
     },
   ];
@@ -109,14 +110,13 @@ export function HowItWorks() {
               <span className="step-num">{step.n}</span>
               <h3 className="h3">{step.title}</h3>
               <p className="muted">{step.body}</p>
-              <div className={`step-frame${step.n === "02" ? " step-frame-backfill" : ""}`}>
+              <div className="step-frame">
                 <ResponsiveCrop
-                  desktop={step.desktop}
-                  phone={step.phone}
+                  desktop={step.src}
                   alt={step.alt}
-                  width={2400}
-                  height={1800}
-                  sizes="(max-width: 900px) 100vw, 33vw"
+                  width={step.w}
+                  height={step.h}
+                  sizes="(max-width: 900px) 100vw, 300px"
                   quality={75}
                 />
               </div>
@@ -159,9 +159,11 @@ export function WhatLands() {
             <ResponsiveCrop
               desktop="/design/lands-orders-2x.png"
               phone="/design/lands-orders-phone-2x.png"
-              alt="Orders tab with Order ID, created, source, product, email, amount, and status"
-              width={2400}
-              height={1800}
+              alt="Orders tab with Order ID, Created, Source, Product, and Amount"
+              width={1264}
+              height={749}
+              phoneWidth={654}
+              phoneHeight={605}
               sizes="(max-width: 900px) 100vw, 55vw"
               quality={70}
             />

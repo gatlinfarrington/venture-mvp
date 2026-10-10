@@ -2,12 +2,13 @@ import Image from "next/image";
 
 type Props = {
   desktop: string;
-  phone: string;
+  /** When omitted, the desktop image is used at every viewport. */
+  phone?: string;
   alt: string;
   /** Desktop intrinsic size (2x). */
   width: number;
   height: number;
-  /** Phone intrinsic size (2x). Defaults to 3:4 1200×1600. */
+  /** Phone intrinsic size (2x). */
   phoneWidth?: number;
   phoneHeight?: number;
   sizes: string;
@@ -16,8 +17,7 @@ type Props = {
 };
 
 /**
- * Desktop + phone marketing crops (see public/design/MARKETING-CROPS.md).
- * Phone frame shown at max-width 600px via CSS; both are next/image optimized.
+ * Desktop + optional phone marketing crops (see public/design/MARKETING-CROPS.md).
  */
 export function ResponsiveCrop({
   desktop,
@@ -25,16 +25,17 @@ export function ResponsiveCrop({
   alt,
   width,
   height,
-  phoneWidth = 1200,
-  phoneHeight = 1600,
+  phoneWidth,
+  phoneHeight,
   sizes,
   quality = 75,
   className,
 }: Props) {
+  const only = !phone || phone === desktop;
   return (
     <span className={`responsive-crop${className ? ` ${className}` : ""}`}>
       <Image
-        className="responsive-crop-desktop"
+        className={`responsive-crop-desktop${only ? " responsive-crop-only" : ""}`}
         src={desktop}
         alt={alt}
         width={width}
@@ -42,16 +43,18 @@ export function ResponsiveCrop({
         sizes={sizes}
         quality={quality}
       />
-      <Image
-        className="responsive-crop-phone"
-        src={phone}
-        alt=""
-        width={phoneWidth}
-        height={phoneHeight}
-        sizes="100vw"
-        quality={quality}
-        aria-hidden
-      />
+      {!only ? (
+        <Image
+          className="responsive-crop-phone"
+          src={phone}
+          alt=""
+          width={phoneWidth ?? width}
+          height={phoneHeight ?? height}
+          sizes="100vw"
+          quality={quality}
+          aria-hidden
+        />
+      ) : null}
     </span>
   );
 }

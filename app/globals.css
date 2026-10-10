@@ -362,21 +362,21 @@ a.chip[aria-current="page"] {
   background: var(--c-signal);
 }
 
-/* Visible by default for crawlers / full-page captures. JS adds .reveal-motion. */
+/* Visible by default. html.motion (head script) gates entrance motion. */
 .reveal {
   opacity: 1;
   transform: none;
-}
-
-.reveal.reveal-motion {
-  opacity: 0;
-  transform: translateY(var(--reveal-distance));
   transition:
     opacity var(--dur-reveal) var(--ease-out),
     transform var(--dur-reveal) var(--ease-out);
 }
 
-.reveal.reveal-motion.is-visible {
+.motion .reveal:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(var(--reveal-distance));
+}
+
+.motion .reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
@@ -386,7 +386,7 @@ a.chip[aria-current="page"] {
   transform: none;
 }
 
-.hero-reveal.reveal-motion {
+.motion .hero-reveal {
   opacity: 0;
   transform: translateY(var(--reveal-distance));
   animation: hero-rv var(--dur-reveal) var(--ease-out) forwards;
@@ -401,12 +401,14 @@ a.chip[aria-current="page"] {
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
-  .reveal.reveal-motion,
+  .motion .reveal:not(.is-visible),
+  .motion .reveal.is-visible,
   .hero-reveal,
-  .hero-reveal.reveal-motion {
+  .motion .hero-reveal {
     opacity: 1;
     transform: none;
     animation: none;
+    transition: none;
   }
 }
 
@@ -1013,6 +1015,7 @@ a.chip[aria-current="page"] {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-6);
+  align-items: stretch;
 }
 
 .step {
@@ -1031,29 +1034,40 @@ a.chip[aria-current="page"] {
 }
 
 .step-frame {
-  /* stylelint-disable-next-line color-no-hex -- design-exception: token-color step card border */
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
   background: var(--c-surface);
   overflow: hidden;
-  aspect-ratio: 4 / 3;
   margin-top: auto;
   padding: var(--space-6);
+  display: grid;
+  place-items: center;
 }
 
-.step-frame .responsive-crop,
+.step-frame .responsive-crop {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  margin-inline: auto;
+}
+
+.step-frame img {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  display: block;
+  background: var(--c-surface);
+}
+
 .lands-frame .responsive-crop {
   display: block;
   width: 100%;
-  height: 100%;
 }
 
-.step-frame img,
 .lands-frame img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top left;
+  height: auto;
+  display: block;
   background: var(--c-surface);
 }
 
@@ -1061,24 +1075,17 @@ a.chip[aria-current="page"] {
   display: none;
 }
 
-/* Phone: hug the image; no fixed aspect empty space. */
 @media (max-width: 600px) {
-  .step-frame {
-    aspect-ratio: auto;
-    padding: var(--space-4);
-  }
-
-  .step-frame img {
-    height: auto;
-    object-fit: contain;
-    object-position: top left;
-  }
-
   .responsive-crop-desktop {
     display: none;
   }
 
   .responsive-crop-phone {
+    display: block;
+  }
+
+  /* Steps 01/02 use a single image (no phone swap). */
+  .step-frame .responsive-crop-desktop.responsive-crop-only {
     display: block;
   }
 }
@@ -1139,39 +1146,12 @@ a.chip[aria-current="page"] {
 }
 
 .lands-frame {
-  /* stylelint-disable-next-line color-no-hex -- design-exception: token-color lands card border */
-  border: 1px solid #e5e5e5;
+  border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--c-surface);
-  /* Match left list height; top aligns with first hairline (tab-list border-top). */
-  align-self: stretch;
-  height: 100%;
-  min-height: 0;
-  display: flex;
   margin-top: 0;
-}
-
-.lands-frame .responsive-crop {
-  flex: 1;
-  min-height: 0;
-}
-
-.lands-frame img {
-  object-fit: cover;
-  object-position: top left;
-}
-
-@media (max-width: 600px) {
-  .lands-frame {
-    aspect-ratio: auto;
-    height: auto;
-  }
-
-  .lands-frame img {
-    height: auto;
-    object-fit: contain;
-  }
+  padding: var(--space-4);
 }
 
 @media (max-width: 900px) {
