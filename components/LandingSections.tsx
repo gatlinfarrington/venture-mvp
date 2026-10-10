@@ -60,8 +60,8 @@ export function HowItWorks() {
       n: "02",
       title: "Backfill",
       body: "We pull full order history into named tabs, not just new rows from today. Then scheduled sync keeps the sheet current.",
-      img: "/design/how-orders-2x.png",
-      alt: "Orders tab filling with product and amount columns",
+      img: "/design/how-backfill-2x.png",
+      alt: "Sidebar mid-backfill with ink progress bar and orders writing in",
     },
     {
       n: "03",

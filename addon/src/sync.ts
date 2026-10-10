@@ -188,7 +188,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
     message: errors.length
       ? `Synced with errors: ${errors.join("; ")}`
       : incomplete
-        ? `Synced ${labels.join(", ") || "no sources"} (backfill in progress — will resume on next sync).`
+        ? `Synced ${labels.join(", ") || "no sources"} (backfill in progress · will resume on next sync).`
         : `Synced ${labels.join(", ") || "no sources"}.`,
     sources: limited.allowed as SourceId[],
   };

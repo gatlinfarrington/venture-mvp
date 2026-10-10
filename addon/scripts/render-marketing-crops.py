@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render 4:3 @ 2x (2400×1800) marketing crops from marketing-crops.html."""
+"""Render marketing crops from marketing-crops.html (desktop 4:3 + phone 3:4)."""
 from __future__ import annotations
 
 import re
@@ -15,12 +15,17 @@ SRC = Path(__file__).resolve().parent / "marketing-crops.html"
 PUBLIC = ROOT / "public" / "design"
 ARTIFACTS = Path("/opt/cursor/artifacts")
 
+# id → filename, (w, h)
 CROPS = [
-    ("crop-connect", "how-connect-2x.png"),
-    ("crop-orders", "how-orders-2x.png"),
-    ("crop-dashboard", "how-dashboard-2x.png"),
+    ("crop-connect", "how-connect-2x.png", 2400, 1800),
+    ("crop-backfill", "how-backfill-2x.png", 2400, 1800),
+    ("crop-orders", "lands-orders-2x.png", 2400, 1800),
+    ("crop-dashboard", "how-dashboard-2x.png", 2400, 1800),
+    ("crop-connect-phone", "how-connect-phone-2x.png", 1200, 1600),
+    ("crop-backfill-phone", "how-backfill-phone-2x.png", 1200, 1600),
+    ("crop-orders-phone", "lands-orders-phone-2x.png", 1200, 1600),
+    ("crop-dashboard-phone", "how-dashboard-phone-2x.png", 1200, 1600),
 ]
-W, H = 2400, 1800
 
 
 def extract_crop(html: str, crop_id: str) -> str:
@@ -46,7 +51,7 @@ def extract_crop(html: str, crop_id: str) -> str:
     raise SystemExit(f"unbalanced div for #{crop_id}")
 
 
-def render_one(html_path: Path, shot: Path) -> None:
+def render_one(html_path: Path, shot: Path, w: int, h: int) -> None:
     profile = Path(tempfile.mkdtemp(prefix="chprof-"))
     try:
         cmd = [
@@ -63,13 +68,12 @@ def render_one(html_path: Path, shot: Path) -> None:
             "--disable-default-apps",
             "--no-first-run",
             f"--user-data-dir={profile}",
-            f"--window-size={W},{H}",
+            f"--window-size={w},{h}",
             "--force-device-scale-factor=1",
             "--virtual-time-budget=5000",
             f"--screenshot={shot}",
             f"file://{html_path}",
         ]
-        # Chrome often hangs after writing the screenshot; timeout 124 is OK if file exists.
         r = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if not shot.exists() or shot.stat().st_size < 1000:
             raise SystemExit(f"screenshot failed for {shot.name} (exit {r.returncode})")
@@ -89,31 +93,40 @@ def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix="rs-crops-") as work_s:
         work = Path(work_s)
-        for crop_id, filename in CROPS:
+        for crop_id, filename, w, h in CROPS:
             body = extract_crop(full, crop_id)
+            # Force exact size + keep phone class if present
+            is_phone = "phone" in crop_id
+            cls = "crop phone" if is_phone else "crop"
+            # Strip outer crop wrapper attributes; re-wrap cleanly
+            inner = re.sub(r"^<div[^>]*>", "", body)
+            inner = re.sub(r"</div>\s*$", "", inner)
             page = f"""<!DOCTYPE html><html><head><meta charset="utf-8"/>{fonts}
 <style>{style}
 body {{ margin: 0; background: #fff; }}
-.crop {{ margin: 0 !important; width: {W}px; height: {H}px; }}
-</style></head><body>{body}</body></html>"""
+.crop {{ margin: 0 !important; width: {w}px; height: {h}px; }}
+</style></head><body>
+<div class="{cls}" id="{crop_id}">{inner}</div>
+</body></html>"""
             html_path = work / f"{crop_id}.html"
             html_path.write_text(page)
             shot = work / filename
-            print(f"rendering {filename}", flush=True)
-            render_one(html_path, shot)
+            print(f"rendering {filename} ({w}x{h})", flush=True)
+            render_one(html_path, shot, w, h)
             im = Image.open(shot).convert("RGB")
-            if im.size != (W, H):
-                canvas = Image.new("RGB", (W, H), (255, 255, 255))
-                canvas.paste(im.crop((0, 0, min(W, im.width), min(H, im.height))), (0, 0))
+            if im.size != (w, h):
+                canvas = Image.new("RGB", (w, h), (255, 255, 255))
+                canvas.paste(im.crop((0, 0, min(w, im.width), min(h, im.height))), (0, 0))
                 im = canvas
             for dest in (PUBLIC, ARTIFACTS):
                 out = dest / filename
                 im.save(out, optimize=True)
                 print(f"wrote {out} {im.size}")
 
+        # Alias: keep how-orders-2x as lands-orders for any leftover refs
         for dest in (PUBLIC, ARTIFACTS):
-            shutil.copyfile(dest / "how-orders-2x.png", dest / "lands-orders-2x.png")
-            print(f"wrote {dest / 'lands-orders-2x.png'}")
+            shutil.copyfile(dest / "lands-orders-2x.png", dest / "how-orders-2x.png")
+            print(f"wrote {dest / 'how-orders-2x.png'} (alias of lands-orders)")
 
 
 if __name__ == "__main__":
