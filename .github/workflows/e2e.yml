@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: "Target URL (defaults to production)"
+        description: "Target URL (defaults to production). Ignored on pull_request (always localhost)."
         required: false
         default: "https://venture-mvp.vercel.app"
 
@@ -24,13 +24,13 @@ jobs:
       github.event_name != 'deployment_status' ||
       github.event.deployment_status.state == 'success'
     outputs:
+      mode: ${{ steps.url.outputs.mode }}
       base_url: ${{ steps.url.outputs.base_url }}
       bypass: ${{ steps.url.outputs.bypass }}
     steps:
       - name: Pick base URL
         id: url
         env:
-          GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
           DEPLOY_URL: ${{ github.event.deployment_status.environment_url }}
           INPUT_URL: ${{ github.event.inputs.base_url }}
@@ -39,17 +39,20 @@ jobs:
         run: |
           set -euo pipefail
           PRODUCTION="https://venture-mvp.vercel.app"
+          LOCAL="http://127.0.0.1:3000"
 
           pick() {
-            local url="$1"
-            local reason="$2"
+            local mode="$1"
+            local url="$2"
+            local reason="$3"
+            echo "mode=$mode" >> "$GITHUB_OUTPUT"
             echo "base_url=$url" >> "$GITHUB_OUTPUT"
-            if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+            if [ "$mode" = "remote" ] && [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
               echo "bypass=1" >> "$GITHUB_OUTPUT"
             else
               echo "bypass=0" >> "$GITHUB_OUTPUT"
             fi
-            echo "$reason → $url (bypass=${VERCEL_AUTOMATION_BYPASS_SECRET:+yes})"
+            echo "$reason → mode=$mode url=$url"
           }
 
           # Returns 0 if URL looks publicly reachable (or reachable with bypass).
@@ -75,41 +78,47 @@ jobs:
             return 0
           }
 
+          # PRs: no Vercel previews (git.deploymentEnabled main-only). Build locally.
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            pick "local" "$LOCAL" "pull_request (localhost next start)"
+            exit 0
+          fi
+
           if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "${INPUT_URL:-}" ]; then
             if is_reachable "$INPUT_URL"; then
-              pick "$INPUT_URL" "workflow_dispatch"
+              pick "remote" "$INPUT_URL" "workflow_dispatch"
             else
-              pick "$PRODUCTION" "workflow_dispatch URL protected — falling back to production"
+              pick "remote" "$PRODUCTION" "workflow_dispatch URL protected — falling back to production"
             fi
             exit 0
           fi
 
           if [ "$EVENT_NAME" = "deployment_status" ] && [ -n "${DEPLOY_URL:-}" ]; then
             if is_reachable "$DEPLOY_URL"; then
-              pick "$DEPLOY_URL" "Vercel deployment_status"
+              pick "remote" "$DEPLOY_URL" "Vercel deployment_status"
             else
-              pick "$PRODUCTION" "Preview protected by Vercel Authentication — falling back to production (add GitHub secret VERCEL_AUTOMATION_BYPASS_SECRET to test previews)"
+              pick "remote" "$PRODUCTION" "Preview protected — falling back to production"
             fi
             exit 0
           fi
 
           if [ -n "${E2E_BASE_URL_VAR:-}" ]; then
             if is_reachable "$E2E_BASE_URL_VAR"; then
-              pick "$E2E_BASE_URL_VAR" "vars.E2E_BASE_URL"
+              pick "remote" "$E2E_BASE_URL_VAR" "vars.E2E_BASE_URL"
             else
-              pick "$PRODUCTION" "vars.E2E_BASE_URL protected — falling back to production"
+              pick "remote" "$PRODUCTION" "vars.E2E_BASE_URL protected — falling back to production"
             fi
             exit 0
           fi
 
-          # pull_request / push: production (stable, public)
-          pick "$PRODUCTION" "${EVENT_NAME} event"
+          # push to main (and other remote triggers): live production
+          pick "remote" "$PRODUCTION" "${EVENT_NAME} event"
 
   playwright:
     name: Playwright E2E
     needs: resolve-url
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -124,6 +133,33 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
+      - name: Build Next.js app (PR localhost)
+        if: needs.resolve-url.outputs.mode == 'local'
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ needs.resolve-url.outputs.base_url }}
+        run: npm run build
+
+      - name: Start Next.js server (PR localhost)
+        if: needs.resolve-url.outputs.mode == 'local'
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ needs.resolve-url.outputs.base_url }}
+          PORT: "3000"
+          HOSTNAME: "127.0.0.1"
+        run: |
+          set -euo pipefail
+          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/next-start.log 2>&1 &
+          echo $! > /tmp/next-start.pid
+          for i in $(seq 1 90); do
+            if curl -sf "http://127.0.0.1:3000/" >/dev/null; then
+              echo "Next.js ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Next.js failed to become ready"
+          cat /tmp/next-start.log || true
+          exit 1
+
       - name: Run Playwright against ${{ needs.resolve-url.outputs.base_url }}
         env:
           BASE_URL: ${{ needs.resolve-url.outputs.base_url }}
@@ -131,6 +167,13 @@ jobs:
           LICENSE_API_SECRET: ${{ secrets.LICENSE_API_SECRET }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: npx playwright test
+
+      - name: Stop Next.js server
+        if: always() && needs.resolve-url.outputs.mode == 'local'
+        run: |
+          if [ -f /tmp/next-start.pid ]; then
+            kill "$(cat /tmp/next-start.pid)" 2>/dev/null || true
+          fi
 
       - name: Upload Playwright screenshots & report
         if: always()
@@ -147,7 +190,7 @@ jobs:
     name: Lighthouse CI (≥95)
     needs: resolve-url
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -159,11 +202,45 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build Next.js app (PR localhost)
+        if: needs.resolve-url.outputs.mode == 'local'
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ needs.resolve-url.outputs.base_url }}
+        run: npm run build
+
+      - name: Start Next.js server (PR localhost)
+        if: needs.resolve-url.outputs.mode == 'local'
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ needs.resolve-url.outputs.base_url }}
+          PORT: "3000"
+          HOSTNAME: "127.0.0.1"
+        run: |
+          set -euo pipefail
+          npm run start -- -H 127.0.0.1 -p 3000 > /tmp/next-start.log 2>&1 &
+          echo $! > /tmp/next-start.pid
+          for i in $(seq 1 90); do
+            if curl -sf "http://127.0.0.1:3000/" >/dev/null; then
+              echo "Next.js ready after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Next.js failed to become ready"
+          cat /tmp/next-start.log || true
+          exit 1
+
       - name: Run Lighthouse CI
         env:
           BASE_URL: ${{ needs.resolve-url.outputs.base_url }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: npx lhci autorun --config=lighthouserc.cjs
+
+      - name: Stop Next.js server
+        if: always() && needs.resolve-url.outputs.mode == 'local'
+        run: |
+          if [ -f /tmp/next-start.pid ]; then
+            kill "$(cat /tmp/next-start.pid)" 2>/dev/null || true
+          fi
 
       - name: Upload Lighthouse report
         if: always()
