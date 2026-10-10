@@ -64,7 +64,7 @@ export const pricing = {
     lead: "One MRR number across every store, refreshed while you sleep.",
     leadNote: "Auto-refresh as often as hourly",
     features: [
-      "All five sources in one sheet",
+      "Four stores plus CSV import",
       "Hourly, 6h, daily or weekly refresh",
       "Full history backfill",
       "MRR, churn, revenue by product",
