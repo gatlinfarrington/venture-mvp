@@ -38,7 +38,7 @@ export const comparePages: ComparePage[] = [
     title: "vs Baremetrics",
     description: `How ${brand.name} compares to Baremetrics: sheet-native MRR vs a hosted subscription analytics suite. Fair table with linked public sources.`,
     h1: "Baremetrics vs a sheet you own",
-    lede: `Baremetrics is a hosted subscription analytics product built around Stripe-shaped SaaS metrics, recovery tools, and planning. ${brand.name} is a Google Sheets add-on: it backfills Lemon Squeezy, Polar, and Gumroad into tabs you control and builds an MRR dashboard there. Pick Baremetrics when you want their cloud product; pick ${brand.name} when the ledger should stay in Sheets.`,
+    lede: `Baremetrics is a hosted subscription analytics product built around Stripe-shaped SaaS metrics, recovery tools, and planning. ${brand.name} is a Google Sheets add-on: it backfills Lemon Squeezy, Polar, Gumroad, or Stripe into tabs you control and builds an MRR dashboard there. Pick Baremetrics when you want their cloud product; pick ${brand.name} when the ledger should stay in Sheets.`,
     ogEyebrow: "Compare · Baremetrics",
     ogTitle: "Baremetrics vs a sheet you own",
     ogSubtitle: "Hosted SaaS analytics vs sheet-native sync for indie storefronts.",
@@ -53,7 +53,7 @@ export const comparePages: ComparePage[] = [
       },
       { feature: "Free tier", us: "Yes: 1 source, manual refresh", them: "Trial; no free-forever plan listed" },
       {
-        feature: "Indie storefronts (Lemon Squeezy / Polar / Gumroad)",
+        feature: "Indie storefronts (Lemon Squeezy / Polar / Gumroad / Stripe)",
         us: true,
         them: "Stripe-first; other billing via their integrations",
       },
@@ -72,7 +72,7 @@ export const comparePages: ComparePage[] = [
       {
         h2: `When ${brand.name} fits better`,
         paragraphs: [
-          "You sell on Lemon Squeezy, Polar, or Gumroad (or a mix), already model runway and tax in Google Sheets, and want scheduled sync plus an MRR tab without standing up another analytics SaaS.",
+          "You sell on Lemon Squeezy, Polar, Gumroad, or Stripe (or a mix), already model runway and tax in Google Sheets, and want scheduled sync plus an MRR tab without standing up another analytics SaaS.",
         ],
       },
     ],
@@ -106,7 +106,7 @@ export const comparePages: ComparePage[] = [
       },
       { feature: "Free tier", us: "Yes: 1 source, manual refresh", them: "Yes: up to $10K MRR" },
       {
-        feature: "Indie storefronts (Lemon Squeezy / Polar / Gumroad)",
+        feature: "Indie storefronts (Lemon Squeezy / Polar / Gumroad / Stripe)",
         us: true,
         them: "Billing sources + custom/third-party (incl. Sheets/Zapier as sources)",
       },
@@ -125,7 +125,7 @@ export const comparePages: ComparePage[] = [
       {
         h2: `When ${brand.name} fits better`,
         paragraphs: [
-          "You want the rows in a sheet you already share with an accountant or cofounder, syncing Lemon Squeezy, Polar, or Gumroad without adopting a full analytics platform.",
+          "You want the rows in a sheet you already share with an accountant or cofounder, syncing Lemon Squeezy, Polar, Gumroad, or Stripe without adopting a full analytics platform.",
         ],
       },
     ],

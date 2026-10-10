@@ -21,14 +21,18 @@ export default function GumroadSetupPage() {
         </p>
         <h2>Create an access token</h2>
         <ol>
-          <li>Sign in to Gumroad → Settings → Advanced → Application tokens.</li>
+          <li>
+            Sign in to Gumroad and open{" "}
+            <code className="ui-chip">Settings › Advanced › Application tokens</code>.
+          </li>
           <li>Create a token that can read sales.</li>
           <li>Copy it into a password manager before pasting into the add-on.</li>
         </ol>
         <h2>Connect and backfill</h2>
         <p>
-          Sidebar → Gumroad → paste token → Backfill. Sales land in Orders with product, email,
-          amount, and refund status. Re-running sync updates refunded rows instead of duplicating.
+          Open the {brand.name} sidebar, choose Gumroad, paste the token, then press Backfill. Sales
+          land in Orders with product, email, amount, and refund status. Re-running sync updates
+          refunded rows instead of duplicating.
         </p>
         <h2>Combine with other stores</h2>
         <p>
