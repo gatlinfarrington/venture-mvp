@@ -97,6 +97,8 @@ jobs:
         env:
           BASE_URL: ${{ needs.resolve-url.outputs.base_url }}
           CI: "true"
+          # Optional: same value as Vercel LICENSE_API_SECRET so verify E2E can auth
+          LICENSE_API_SECRET: ${{ secrets.LICENSE_API_SECRET }}
         run: npx playwright test
 
       - name: Upload Playwright screenshots & report

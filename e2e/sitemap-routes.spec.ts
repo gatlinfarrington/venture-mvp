@@ -56,12 +56,14 @@ test("covers every sitemap route at this viewport", async ({ page, request }, te
         contentType: "image/png",
       });
 
+      // Viewport snapshot (stable in CI). Full-page PNGs are saved as artifacts above.
       const snapBase =
         route === "/" ? "home" : route.slice(1).replace(/\//g, "_");
       await expect(page).toHaveScreenshot(`${snapBase}.png`, {
-        fullPage: true,
+        fullPage: false,
         maxDiffPixelRatio: 0.05,
         animations: "disabled",
+        caret: "hide",
       });
 
       consoleCollector.dispose();
