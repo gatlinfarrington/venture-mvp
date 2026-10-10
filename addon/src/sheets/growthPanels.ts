@@ -138,7 +138,9 @@ export function paintContinuousGoalBar(
       .setFontSize(8)
       .setFontColor(COLORS.inkMuted)
       .setBackground(COLORS.bg)
-      .setValue(`MRR GOAL  $${Math.round(goal.current)} / $${Math.round(goal.goal)}`);
+      .setValue(
+        `MRR GOAL  $${Math.round(goal.current).toLocaleString("en-US")} / $${Math.round(goal.goal).toLocaleString("en-US")}`,
+      );
   }
 
   const span = barEnd - barStart + 1;

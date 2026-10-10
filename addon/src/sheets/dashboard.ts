@@ -389,7 +389,8 @@ interface KpiDef {
 
 function paintKpiCard(sheet: GoogleAppsScript.Spreadsheet.Sheet, kpi: KpiDef): void {
   const [c1, c2] = kpi.cols;
-  const topBorder = kpi.inverse ? COLORS.danger : COLORS.ink;
+  // Ink top rule by default; red only when the headline number itself is negative.
+  const topBorder = kpi.value < 0 ? COLORS.danger : COLORS.ink;
   const span = c2 - c1 + 1;
 
   sheet
