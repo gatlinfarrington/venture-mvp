@@ -16,7 +16,7 @@ export function Hero() {
           <h1 className="display hero-reveal" style={{ animationDelay: "60ms" }}>
             All your stores,
             <br />
-            in a sheet you own.
+            in a sheet you&nbsp;own.
           </h1>
           <p className="body-lg muted hero-lede hero-reveal" style={{ animationDelay: "120ms" }}>
             {brand.description}
