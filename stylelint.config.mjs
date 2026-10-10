@@ -6,7 +6,7 @@
  */
 const exception = String.raw`design-exception:`;
 
-export default {
+const config = {
   extends: ["stylelint-config-standard"],
   ignoreFiles: [
     "design/tokens.css",
@@ -68,4 +68,5 @@ export default {
   },
 };
 
+export default config;
 export const DESIGN_EXCEPTION_MARKER = exception;

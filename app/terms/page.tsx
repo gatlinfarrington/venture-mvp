@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { brand } from "@/lib/brand";
+import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms of service",
-  description: `Terms for using the ${brand.name} Google Sheets add-on and website.`,
+  description: `Terms for using the ${brand.name} Google Sheets add-on and website, including acceptable use, billing, and Google user data.`,
+  alternates: { canonical: `${siteConfig.url}/terms` },
 };
 
 export default function TermsPage() {
@@ -13,46 +16,105 @@ export default function TermsPage() {
       <div className="prose">
         <p className="mono muted">Last updated: October 10, 2026</p>
         <p>
-          By installing {brand.name} or purchasing a license, you agree to these terms. If you do
-          not agree, do not use the add-on.
+          By installing {brand.name}, using {brand.domain}, or purchasing a license, you agree to
+          these terms. If you do not agree, do not use the add-on or website.
         </p>
+
         <h2>The service</h2>
         <p>
-          {brand.name} syncs commerce data from supported sources into Google Sheets and builds an
-          MRR-oriented dashboard tab. Features and source coverage may change; Free, Pro, and
-          Business tiers are described on the pricing page.
+          {brand.name} syncs commerce data from supported sources (currently Lemon Squeezy, Polar,
+          and Gumroad) into Google Sheets and builds an MRR-oriented dashboard tab. Features and
+          source coverage may change. Free, Pro, and Business tiers are described on the{" "}
+          <Link href="/pricing">pricing</Link> page.
         </p>
+
+        <h2>Accounts and eligibility</h2>
+        <p>
+          You must be able to enter into a binding agreement and have the right to connect any store
+          API keys you use. You are responsible for activity under your Google account and license
+          key.
+        </p>
+
+        <h2>Google user data</h2>
+        <p>
+          The add-on accesses Google user data only as described in our{" "}
+          <Link href="/privacy">Privacy policy</Link>, including the Google API Services Limited Use
+          disclosure. You authorize us to read and write the spreadsheet surfaces required to
+          operate sync and the dashboard. You must not use the add-on to process data you are not
+          allowed to store in Google Sheets.
+        </p>
+
         <h2>Your responsibilities</h2>
         <ul>
           <li>You must have the right to use any API keys you connect.</li>
-          <li>You are responsible for how you share spreadsheets that contain customer emails and order data.</li>
-          <li>You will not abuse rate limits or attempt to reverse-engineer source APIs through the add-on in ways that violate those platforms’ terms.</li>
+          <li>
+            You are responsible for how you share spreadsheets that contain customer emails and
+            order data.
+          </li>
+          <li>
+            You will not abuse rate limits or attempt to reverse-engineer source APIs through the
+            add-on in ways that violate those platforms’ terms.
+          </li>
+          <li>
+            You will not use the service for unlawful content, spam, or to circumvent another
+            product’s access controls.
+          </li>
         </ul>
-        <h2>Billing</h2>
+
+        <h2>Billing and licenses</h2>
         <p>
           Paid plans are billed through Stripe. Annual plans charge for ten months of the monthly
           price (two months free). Cancel anytime; access continues through the paid period unless a
-          refund is issued.
+          refund is issued. License keys are personal to you (or your organization on Business) and
+          may not be resold.
         </p>
+
         <h2>Refunds</h2>
         <p>
           First-time charges may be refunded within 14 days on request to{" "}
           {brand.legal.supportEmail}. After that, cancellations stop future renewals.
         </p>
+
+        <h2>Intellectual property</h2>
+        <p>
+          The website, add-on code, and branding are owned by {brand.legal.entity} or its licensors.
+          You retain ownership of your spreadsheet content and store data.
+        </p>
+
         <h2>Disclaimer</h2>
         <p>
           The dashboard and sync are provided “as is.” Example data on the marketing site is labeled
           and is not customer data. We do not guarantee uninterrupted sync if a source API changes
-          or is unavailable.
+          or is unavailable, or if Google Apps Script quotas are exceeded.
         </p>
+
         <h2>Limitation of liability</h2>
         <p>
           To the extent permitted by law, our total liability for claims relating to the service is
-          limited to the amounts you paid us in the three months before the claim.
+          limited to the amounts you paid us in the three months before the claim. We are not liable
+          for lost profits, lost data in your Google account (maintain your own Drive backups), or
+          indirect damages.
         </p>
+
+        <h2>Termination</h2>
+        <p>
+          You may stop using the add-on at any time and uninstall it. We may suspend access for
+          non-payment, abuse, or legal risk. Provisions on liability, IP, and privacy survive
+          termination.
+        </p>
+
+        <h2>Changes</h2>
+        <p>
+          We may update these terms. Continued use after the “Last updated” date constitutes
+          acceptance of material changes we notify through the site or add-on when required.
+        </p>
+
         <h2>Contact</h2>
         <p>
           <a href={`mailto:${brand.legal.supportEmail}`}>{brand.legal.supportEmail}</a>
+          <br />
+          Privacy:{" "}
+          <a href={`mailto:${brand.legal.privacyEmail}`}>{brand.legal.privacyEmail}</a>
         </p>
       </div>
     </main>

@@ -16,22 +16,25 @@ export function Footer() {
           <div className="footer-col">
             <h3>Product</h3>
             <Link href="/#how-it-works">How it works</Link>
-            <Link href="/#pricing">Pricing</Link>
+            <Link href="/pricing">Pricing</Link>
+            <Link href="/docs">Docs</Link>
+            <Link href="/changelog">Changelog</Link>
             <Link href="/#faq">FAQ</Link>
             <Link href="/success">License</Link>
           </div>
           <div className="footer-col">
             <h3>Sources</h3>
-            <Link href="/lemon-squeezy-to-google-sheets">Lemon Squeezy</Link>
-            <Link href="/polar-to-google-sheets">Polar</Link>
-            <Link href="/gumroad-to-google-sheets">Gumroad</Link>
+            <Link href="/lemon-squeezy-analytics">Lemon Squeezy</Link>
+            <Link href="/polar-analytics">Polar</Link>
+            <Link href="/gumroad-analytics-google-sheets">Gumroad</Link>
+            <Link href="/stripe-to-google-sheets">Stripe comparison</Link>
           </div>
           <div className="footer-col">
             <h3>Guides</h3>
-            <Link href="/mrr-spreadsheet-template">MRR template</Link>
-            <Link href="/polar-to-google-sheets">Polar → Sheets</Link>
-            <Link href="/lemon-squeezy-to-google-sheets">Lemon Squeezy → Sheets</Link>
-            <Link href="/gumroad-to-google-sheets">Gumroad → Sheets</Link>
+            <Link href="/docs/setup/lemon-squeezy">LS setup</Link>
+            <Link href="/docs/setup/polar">Polar setup</Link>
+            <Link href="/docs/setup/gumroad">Gumroad setup</Link>
+            <Link href="/docs/api-keys">API keys</Link>
           </div>
           <div className="footer-col">
             <h3>Legal</h3>

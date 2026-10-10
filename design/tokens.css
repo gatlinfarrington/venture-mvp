@@ -47,6 +47,7 @@
   --space-12:48px;
   --space-16:64px;
   --layout-hero-sheet-left:212px; /* Mobile hero sheet inset beside store pills */
+  --layout-docs-nav-top:calc(72px + var(--space-4)); /* Sticky docs nav below header */
   --radius-sm:6px;
   --radius-md:12px;
   --radius-lg:22px;
