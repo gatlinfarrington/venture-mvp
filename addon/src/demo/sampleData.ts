@@ -17,6 +17,7 @@ export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
     { name: "Sample E-book", source: "lemon_squeezy" as const, mrr: 9 },
   ];
 
+  const countries = ["US", "GB", "DE", "CA", "AU", "NL", "FR", "SE"];
   const subscriptions: NormalizedSubscription[] = [];
   const orders: NormalizedOrder[] = [];
   const customers: NormalizedCustomer[] = [];
@@ -41,6 +42,7 @@ export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
         ? new Date(Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth(), 2 + (i % 10)))
         : null;
 
+      const country = countries[subId % countries.length];
       subscriptions.push({
         id: `sample_sub_${subId}`,
         source: product.source,
@@ -49,10 +51,11 @@ export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
         customerEmail: email,
         mrr: product.mrr,
         currency: "USD",
-        status: cancel ? "cancelled" : i % 41 === 0 ? "past_due" : "active",
+        status: cancel ? "cancelled" : i % 41 === 0 ? "past_due" : i % 53 === 0 ? "trialing" : "active",
         cancelledAt: cancelledAt ? cancelledAt.toISOString() : null,
         interval: "month",
         rawId: String(subId),
+        country,
       });
 
       customers.push({
@@ -62,6 +65,7 @@ export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
         name: `Sample User ${subId}`,
         created: created.toISOString().slice(0, 10),
         rawId: String(subId),
+        country,
       });
 
       // Monthly renewal / purchase order
@@ -75,6 +79,7 @@ export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
         currency: "USD",
         status: "paid",
         rawId: String(orderId),
+        country,
       });
 
       subId += 1;
@@ -86,6 +91,7 @@ export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
     const product = products[i % products.length];
     const daysAgo = i % 28;
     const created = new Date(asOf.getTime() - daysAgo * 86400000);
+    const country = countries[i % countries.length];
     orders.push({
       id: `sample_order_${orderId++}`,
       source: product.source,
@@ -96,6 +102,7 @@ export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
       currency: "USD",
       status: i % 19 === 0 ? "refunded" : "paid",
       rawId: String(orderId),
+      country,
     });
     if (i % 19 === 0) {
       refunds.push({
@@ -107,6 +114,7 @@ export function buildSampleBundle(asOf: Date = new Date()): ImportBundle {
         currency: "USD",
         status: "refunded",
         rawId: String(i),
+        country,
       });
     }
   }

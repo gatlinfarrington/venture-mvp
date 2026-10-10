@@ -57,13 +57,21 @@ Declared in `src/appsscript.json`:
 
 ## Features
 
-- **Sidebar** — enter API keys + license key; stored in **User Properties** (per Google account, not in the sheet). Optional: include trialing + past due in headline MRR.
-- **Importers** — Lemon Squeezy, Polar, Gumroad: orders, subscriptions, customers, refunds. Resumable chunked backfill (persists `pageToken` / resource per source; continues on next sync when Apps Script time budget hits). Gumroad sales use `page_key` (not deprecated `page=`). Intervals (quarterly / biannual / yearly / …) normalize to monthly MRR.
-- **MRR** — headline MRR is **active only** by default; trialing and past due are shown as separate KPIs (opt-in to include them).
-- **Schedule** — hourly time-driven trigger (paid tier); also finishes incomplete backfills.
-- **Dashboard** — matches `SHEET-STYLE.md` launch v2 (white header + ink rule, greyscale charts, green for meaning only).
+- **Sidebar** — API keys + license; MRR goal; template picker (classic / growth); schedule cadence; CSV paste; opt-in weekly digest. Keys in **User Properties**.
+- **Importers** — Lemon Squeezy, Polar, Gumroad, Stripe (restricted read-only key), CSV fallback with column mapping. Resumable chunked backfill (`pageToken` / resource). Gumroad uses `page_key`. Intervals (quarterly / biannual / biennial / yearly / …) → monthly MRR.
+- **Metrics** — MRR (active-only by default), ARR, LTV, churn, cohort retention, refunds, top products, revenue by country, MRR goal progress bar.
+- **Schedule** — hourly / 6h / daily / weekly (paid tier); finishes incomplete backfills.
+- **Weekly digest** — opt-in MailApp email. Needs sensitive scope `script.send_mail` (**not** in default `appsscript.json`); document and re-auth to enable.
+- **Dashboard** — `SHEET-STYLE.md` launch v2 (white header + ink rule, greyscale charts, green only for positive deltas / Synced). Growth template adds ARR/LTV/cohorts/country panels.
 - **License** — free = 1 source, manual refresh; unreachable API degrades gracefully to free limits.
 - **Demo mode** — **Load example data** fills SAMPLE rows clearly labeled for screenshots.
+
+### Scope changes (Phase 2)
+
+| Scope | Status |
+|---|---|
+| Existing non-sensitive scopes | Unchanged in default manifest |
+| `https://www.googleapis.com/auth/script.send_mail` | **Optional / sensitive** — required only if weekly digest is enabled; not shipped in default `oauthScopes` |
 
 ## Marketplace publish checklist (owner)
 

@@ -17,6 +17,7 @@ const ORDER_HEADERS = [
   "Customer email",
   "Amount (USD)",
   "Status",
+  "Country",
 ];
 
 const SUB_HEADERS = [
@@ -29,9 +30,10 @@ const SUB_HEADERS = [
   "Status",
   "Cancelled",
   "Interval",
+  "Country",
 ];
 
-const CUST_HEADERS = ["Customer ID", "Created", "Source", "Email", "Name"];
+const CUST_HEADERS = ["Customer ID", "Created", "Source", "Email", "Name", "Country"];
 const REFUND_HEADERS = [
   "Refund ID",
   "Created",
@@ -39,6 +41,7 @@ const REFUND_HEADERS = [
   "Order ID",
   "Amount (USD)",
   "Status",
+  "Country",
 ];
 
 export function ensureDataSheets(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void {
@@ -113,7 +116,7 @@ export function writeImportBundle(
 }
 
 function orderRow(o: NormalizedOrder): unknown[] {
-  return [o.id, o.created, o.source, o.product, o.customerEmail, o.amount, o.status];
+  return [o.id, o.created, o.source, o.product, o.customerEmail, o.amount, o.status, o.country || ""];
 }
 function subRow(s: NormalizedSubscription): unknown[] {
   return [
@@ -126,13 +129,14 @@ function subRow(s: NormalizedSubscription): unknown[] {
     s.status,
     s.cancelledAt || "",
     s.interval,
+    s.country || "",
   ];
 }
 function custRow(c: NormalizedCustomer): unknown[] {
-  return [c.id, c.created, c.source, c.email, c.name];
+  return [c.id, c.created, c.source, c.email, c.name, c.country || ""];
 }
 function refundRow(r: NormalizedRefund): unknown[] {
-  return [r.id, r.created, r.source, r.orderId, r.amount, r.status];
+  return [r.id, r.created, r.source, r.orderId, r.amount, r.status, r.country || ""];
 }
 
 function writeTable(
@@ -279,6 +283,7 @@ export function readOrders(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): Normal
       currency: "USD",
       status: String(r[6]),
       rawId: String(r[0]),
+      country: r[7] ? String(r[7]) : undefined,
     }));
 }
 
@@ -302,6 +307,26 @@ export function readSubscriptions(
       cancelledAt: r[7] ? stringifyDate(r[7]) : null,
       interval: (String(r[8]) || "month") as NormalizedSubscription["interval"],
       rawId: String(r[0]),
+      country: r[9] ? String(r[9]) : undefined,
+    }));
+}
+
+export function readRefunds(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): NormalizedRefund[] {
+  const sheet = ss.getSheetByName(SHEET_NAMES.refunds);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  const values = sheet.getDataRange().getValues().slice(1);
+  return values
+    .filter((r) => r[0])
+    .map((r) => ({
+      id: String(r[0]),
+      created: stringifyDate(r[1]),
+      source: String(r[2]) as NormalizedRefund["source"],
+      orderId: String(r[3]),
+      amount: Number(r[4]) || 0,
+      currency: "USD",
+      status: String(r[5]),
+      rawId: String(r[0]),
+      country: r[6] ? String(r[6]) : undefined,
     }));
 }
 

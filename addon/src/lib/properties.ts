@@ -1,4 +1,9 @@
-import { SOURCES, type SourceId } from "./config";
+import {
+  SOURCES,
+  type DashboardTemplate,
+  type ScheduleCadence,
+  type SourceId,
+} from "./config";
 
 const LICENSE_KEY_PROP = "LICENSE_KEY";
 const CURRENCY_PROP = "DISPLAY_CURRENCY";
@@ -6,6 +11,11 @@ const CURSOR_PREFIX = "SYNC_CURSOR_";
 const LAST_SYNC_PROP = "LAST_SYNC_AT";
 const DEMO_MODE_PROP = "DEMO_MODE";
 const INCLUDE_TRIAL_PAST_DUE_PROP = "MRR_INCLUDE_TRIAL_PAST_DUE";
+const MRR_GOAL_PROP = "MRR_GOAL";
+const SCHEDULE_CADENCE_PROP = "SCHEDULE_CADENCE";
+const EMAIL_DIGEST_PROP = "EMAIL_DIGEST_OPT_IN";
+const TEMPLATE_PROP = "DASHBOARD_TEMPLATE";
+const CSV_MAP_PROP = "CSV_COLUMN_MAP";
 
 function userProps(): GoogleAppsScript.Properties.Properties {
   return PropertiesService.getUserProperties();
@@ -65,7 +75,6 @@ export function setSyncCursor(
   userProps().setProperty(CURSOR_PREFIX + source, JSON.stringify(cursor));
 }
 
-/** When true, trialing + past_due count toward headline MRR (default false). */
 export function getIncludeTrialingPastDue(): boolean {
   return userProps().getProperty(INCLUDE_TRIAL_PAST_DUE_PROP) === "1";
 }
@@ -96,24 +105,86 @@ export function setDemoMode(on: boolean): void {
   else userProps().deleteProperty(DEMO_MODE_PROP);
 }
 
-export function getAllSettingsForSidebar(): {
-  lemonSqueezy: string;
-  polar: string;
-  gumroad: string;
-  licenseKey: string;
-  currency: string;
-  lastSyncAt: string;
-  demoMode: boolean;
-  includeTrialingPastDue: boolean;
-} {
+export function getMrrGoal(): number {
+  const raw = userProps().getProperty(MRR_GOAL_PROP);
+  const n = raw ? Number(raw) : 0;
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+export function setMrrGoal(goal: number): void {
+  if (!goal || goal <= 0) userProps().deleteProperty(MRR_GOAL_PROP);
+  else userProps().setProperty(MRR_GOAL_PROP, String(goal));
+}
+
+export function getScheduleCadence(): ScheduleCadence {
+  const raw = userProps().getProperty(SCHEDULE_CADENCE_PROP) || "hourly";
+  if (raw === "every_6h" || raw === "daily" || raw === "weekly" || raw === "hourly") return raw;
+  return "hourly";
+}
+
+export function setScheduleCadence(cadence: ScheduleCadence): void {
+  userProps().setProperty(SCHEDULE_CADENCE_PROP, cadence);
+}
+
+export function isEmailDigestOptIn(): boolean {
+  return userProps().getProperty(EMAIL_DIGEST_PROP) === "1";
+}
+
+export function setEmailDigestOptIn(on: boolean): void {
+  if (on) userProps().setProperty(EMAIL_DIGEST_PROP, "1");
+  else userProps().deleteProperty(EMAIL_DIGEST_PROP);
+}
+
+export function getDashboardTemplate(): DashboardTemplate {
+  const raw = userProps().getProperty(TEMPLATE_PROP) || "classic";
+  return raw === "growth" ? "growth" : "classic";
+}
+
+export function setDashboardTemplate(template: DashboardTemplate): void {
+  userProps().setProperty(TEMPLATE_PROP, template);
+}
+
+export function getCsvColumnMap(): Record<string, string> {
+  const raw = userProps().getProperty(CSV_MAP_PROP);
+  if (!raw) {
+    return {
+      id: "id",
+      created: "created",
+      product: "product",
+      email: "email",
+      amount: "amount",
+      currency: "currency",
+      status: "status",
+      country: "country",
+      mrr: "mrr",
+      kind: "kind",
+    };
+  }
+  try {
+    return JSON.parse(raw) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+export function setCsvColumnMap(map: Record<string, string>): void {
+  userProps().setProperty(CSV_MAP_PROP, JSON.stringify(map));
+}
+
+export function getAllSettingsForSidebar(): Record<string, unknown> {
   return {
     lemonSqueezy: getApiKey("lemon_squeezy") ? "••••••••" : "",
     polar: getApiKey("polar") ? "••••••••" : "",
     gumroad: getApiKey("gumroad") ? "••••••••" : "",
+    stripe: getApiKey("stripe") ? "••••••••" : "",
     licenseKey: getLicenseKey() ? "••••••••" : "",
     currency: getDisplayCurrency(),
     lastSyncAt: getLastSyncAt(),
     demoMode: isDemoMode(),
     includeTrialingPastDue: getIncludeTrialingPastDue(),
+    mrrGoal: getMrrGoal() || "",
+    scheduleCadence: getScheduleCadence(),
+    emailDigest: isEmailDigestOptIn(),
+    template: getDashboardTemplate(),
   };
 }

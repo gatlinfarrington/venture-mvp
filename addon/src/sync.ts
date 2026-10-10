@@ -5,9 +5,12 @@ import {
   clearSyncCursor,
   getApiKey,
   getConnectedSources,
+  getDashboardTemplate,
   getDisplayCurrency,
   getIncludeTrialingPastDue,
   getLastSyncAt,
+  getMrrGoal,
+  getScheduleCadence,
   getSyncCursor,
   setDemoMode,
   setLastSyncAt,
@@ -15,15 +18,21 @@ import {
 } from "./lib/properties";
 import { BRAND } from "./lib/brand";
 import { COLORS } from "./lib/tokens";
+import {
+  installSchedule as installScheduleTrigger,
+  removeSchedule as removeScheduleTrigger,
+} from "./lib/schedule";
 import { fetchGumroadResultSync } from "./importers/gumroad";
 import { fetchLemonSqueezyResultSync } from "./importers/lemonSqueezy";
 import { fetchPolarResultSync } from "./importers/polar";
+import { fetchStripeResultSync } from "./importers/stripe";
 import type { ImportBundle, ImportResult, SyncCursor } from "./importers/types";
 import { buildSampleBundle } from "./demo/sampleData";
 import { buildDashboard } from "./sheets/dashboard";
 import {
   ensureDataSheets,
   readOrders,
+  readRefunds,
   readSubscriptions,
   writeImportBundle,
 } from "./sheets/dataTabs";
@@ -33,7 +42,6 @@ export interface SyncResult {
   message: string;
   sources: SourceId[];
   sample?: boolean;
-  /** True when at least one source still has pages left (resume on next run). */
   incomplete?: boolean;
 }
 
@@ -50,11 +58,7 @@ function mergeBundles(a: ImportBundle, b: ImportBundle): ImportBundle {
   };
 }
 
-function fetchSourceResult(
-  source: SourceId,
-  apiKey: string,
-  cursor: SyncCursor,
-): ImportResult {
+function fetchSourceResult(source: SourceId, apiKey: string, cursor: SyncCursor): ImportResult {
   switch (source) {
     case "lemon_squeezy":
       return fetchLemonSqueezyResultSync(apiKey, cursor);
@@ -62,6 +66,8 @@ function fetchSourceResult(
       return fetchPolarResultSync(apiKey, cursor);
     case "gumroad":
       return fetchGumroadResultSync(apiKey, cursor);
+    case "stripe":
+      return fetchStripeResultSync(apiKey, cursor);
     default:
       return {
         bundle: emptyBundle(),
@@ -71,7 +77,37 @@ function fetchSourceResult(
   }
 }
 
-/** Full backfill (full=true) or incremental sync. Incomplete backfills resume from saved cursors. */
+function scheduleLabelForUi(): string {
+  switch (getScheduleCadence()) {
+    case "every_6h":
+      return "EVERY 6H";
+    case "daily":
+      return "DAILY";
+    case "weekly":
+      return "WEEKLY";
+    default:
+      return "HOURLY";
+  }
+}
+
+function dashboardOpts(partial: {
+  sample?: boolean;
+  lastSyncAt: string;
+  sourceLabels: string[];
+  scheduleLabel: string;
+  studioLabel?: string;
+  licenseNote?: string;
+  backfillIncomplete?: boolean;
+}) {
+  return {
+    ...partial,
+    currency: getDisplayCurrency(),
+    includeTrialingPastDue: getIncludeTrialingPastDue(),
+    template: getDashboardTemplate(),
+    mrrGoal: getMrrGoal(),
+  };
+}
+
 export function runSync(opts: { full?: boolean } = {}): SyncResult {
   const ss = SpreadsheetApp.getActive();
   ensureDataSheets(ss);
@@ -114,7 +150,6 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
     }
   }
 
-  // Fresh full backfill clears on the first chunk; resumed chunks merge.
   writeImportBundle(ss, bundle, {
     merge: !opts.full || resuming,
     currency: getDisplayCurrency(),
@@ -122,23 +157,27 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
 
   const orders = readOrders(ss);
   const subscriptions = readSubscriptions(ss);
+  const refunds = readRefunds(ss);
   const now = new Date();
   setLastSyncAt(now.toISOString());
   setDemoMode(false);
 
   const labels = limited.allowed.map((id) => SOURCES.find((s) => s.id === id)?.label || id);
 
-  buildDashboard(ss, orders, subscriptions, bundle.refunds, {
-    sample: false,
-    lastSyncAt: Utilities.formatDate(now, ss.getSpreadsheetTimeZone(), "HH:mm"),
-    sourceLabels: labels,
-    scheduleLabel: license.allowSchedule ? "HOURLY" : "MANUAL",
-    currency: getDisplayCurrency(),
-    licenseNote: license.degraded ? license.message : "",
-    stale: false,
-    includeTrialingPastDue: getIncludeTrialingPastDue(),
-    backfillIncomplete: incompleteSources.length > 0,
-  });
+  buildDashboard(
+    ss,
+    orders,
+    subscriptions,
+    refunds,
+    dashboardOpts({
+      sample: false,
+      lastSyncAt: Utilities.formatDate(now, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm"),
+      sourceLabels: labels,
+      scheduleLabel: license.allowSchedule ? scheduleLabelForUi() : "MANUAL",
+      licenseNote: license.degraded ? license.message : "",
+      backfillIncomplete: incompleteSources.length > 0,
+    }),
+  );
 
   ensureSettingsSheet(ss, license);
 
@@ -164,15 +203,19 @@ export function runDemoMode(): SyncResult {
   setDemoMode(true);
   setLastSyncAt(new Date().toISOString());
 
-  buildDashboard(ss, bundle.orders, bundle.subscriptions, bundle.refunds, {
-    sample: true,
-    lastSyncAt: "10:02",
-    sourceLabels: ["Lemon Squeezy", "Polar", "Gumroad"],
-    scheduleLabel: "HOURLY",
-    studioLabel: "EXAMPLE STUDIO",
-    currency: "USD",
-    includeTrialingPastDue: getIncludeTrialingPastDue(),
-  });
+  buildDashboard(
+    ss,
+    bundle.orders,
+    bundle.subscriptions,
+    bundle.refunds,
+    dashboardOpts({
+      sample: true,
+      lastSyncAt: "2026-10-09 10:02",
+      sourceLabels: ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"],
+      scheduleLabel: "HOURLY",
+      studioLabel: "EXAMPLE STUDIO",
+    }),
+  );
 
   ensureSettingsSheet(ss, {
     tier: "free",
@@ -186,30 +229,17 @@ export function runDemoMode(): SyncResult {
   return {
     ok: true,
     message: "Loaded EXAMPLE DATA (sample). Not real customers.",
-    sources: ["lemon_squeezy", "polar", "gumroad"],
+    sources: ["lemon_squeezy", "polar", "gumroad", "stripe"],
     sample: true,
   };
 }
 
 export function installSchedule(): string {
-  const license = checkLicenseSync();
-  if (!license.allowSchedule) {
-    return "Scheduled refresh requires a paid plan. Connect a license key in Settings.";
-  }
-  removeScheduleTriggers_();
-  ScriptApp.newTrigger(CONFIG.SYNC_TRIGGER_HANDLER).timeBased().everyHours(1).create();
-  return "Hourly refresh scheduled.";
+  return installScheduleTrigger();
 }
 
 export function removeSchedule(): string {
-  removeScheduleTriggers_();
-  return "Scheduled refresh removed.";
-}
-
-function removeScheduleTriggers_(): void {
-  for (const t of ScriptApp.getProjectTriggers()) {
-    if (t.getHandlerFunction() === CONFIG.SYNC_TRIGGER_HANDLER) ScriptApp.deleteTrigger(t);
-  }
+  return removeScheduleTrigger();
 }
 
 export function runScheduledSync(): void {
@@ -218,7 +248,6 @@ export function runScheduledSync(): void {
     console.warn("Scheduled sync skipped — license does not allow schedule.");
     return;
   }
-  // Prefer finishing incomplete backfills; otherwise incremental.
   runSync({ full: false });
 }
 
@@ -230,6 +259,7 @@ function colorDataTabs(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void {
   ss.getSheetByName(SHEET_NAMES.refunds)?.setTabColor(COLORS.danger);
   ss.getSheetByName(SHEET_NAMES.settings)?.setTabColor(COLORS.settingsTab);
   ss.getSheetByName(SHEET_NAMES.mrrMonthly)?.setTabColor(COLORS.settingsTab);
+  ss.getSheetByName(SHEET_NAMES.cohorts)?.setTabColor(COLORS.settingsTab);
 }
 
 function ensureSettingsSheet(
@@ -246,6 +276,9 @@ function ensureSettingsSheet(
     ["License tier", license.tier],
     ["License status", license.message],
     ["Schedule allowed", license.allowSchedule ? "yes" : "no"],
+    ["Schedule cadence", getScheduleCadence()],
+    ["Dashboard template", getDashboardTemplate()],
+    ["MRR goal", getMrrGoal() || "—"],
     ["Currency", getDisplayCurrency()],
     ["MRR includes trial/past_due", getIncludeTrialingPastDue() ? "yes" : "no (default)"],
     ["Connected sources", getConnectedSources().join(", ") || "—"],

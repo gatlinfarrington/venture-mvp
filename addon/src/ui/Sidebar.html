@@ -129,23 +129,50 @@
     <input id="polar" type="password" placeholder="polar_oat_…" autocomplete="off" />
     <label for="gumroad">Gumroad</label>
     <input id="gumroad" type="password" placeholder="access_token" autocomplete="off" />
+    <label for="stripe">Stripe (restricted read-only key)</label>
+    <input id="stripe" type="password" placeholder="rk_live_… or rk_test_…" autocomplete="off" />
 
-    <div class="eb">License</div>
+    <div class="eb">License & display</div>
     <label for="license">License key</label>
     <input id="license" type="password" placeholder="rs_live_… (optional)" autocomplete="off" />
     <label for="currency">Display currency</label>
     <input id="currency" type="text" placeholder="USD" maxlength="3" />
-    <label for="includeTrial" style="display:flex;gap:8px;align-items:center;margin:8px 0 12px;font-weight:500;">
+    <label for="mrrGoal">MRR goal</label>
+    <input id="mrrGoal" type="number" placeholder="e.g. 10000" min="0" step="1" />
+    <label for="template">Dashboard template</label>
+    <select id="template" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-bottom:10px;font:400 13px 'JetBrains Mono',monospace;background:#fff;">
+      <option value="classic">Classic (launch v2)</option>
+      <option value="growth">Growth (+ ARR, LTV, cohorts, country)</option>
+    </select>
+    <label for="cadence">Auto-refresh cadence</label>
+    <select id="cadence" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-bottom:10px;font:400 13px 'JetBrains Mono',monospace;background:#fff;">
+      <option value="hourly">Hourly</option>
+      <option value="every_6h">Every 6 hours</option>
+      <option value="daily">Daily</option>
+      <option value="weekly">Weekly</option>
+    </select>
+    <label for="includeTrial" style="display:flex;gap:8px;align-items:center;margin:8px 0 8px;font-weight:500;">
       <input id="includeTrial" type="checkbox" style="width:auto;margin:0;" />
       Include trialing + past due in MRR
     </label>
+    <label for="emailDigest" style="display:flex;gap:8px;align-items:center;margin:0 0 12px;font-weight:500;">
+      <input id="emailDigest" type="checkbox" style="width:auto;margin:0;" />
+      Weekly email digest (opt-in)
+    </label>
+    <div class="hint" id="digestHint">Digest needs sensitive scope script.send_mail — not in the default manifest.</div>
 
-    <button class="btn" id="saveBtn" onclick="save()">Save keys</button>
+    <div class="eb">CSV fallback</div>
+    <label for="csvText">Paste CSV</label>
+    <textarea id="csvText" rows="4" placeholder="id,created,product,email,amount,currency,status,country,kind" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font:400 11px 'JetBrains Mono',monospace;margin-bottom:10px;"></textarea>
+
+    <button class="btn" id="saveBtn" onclick="save()">Save settings</button>
     <button class="btn2" id="syncBtn" onclick="syncNow()">Sync now</button>
     <button class="btn2" onclick="fullBackfill()">Full backfill</button>
     <button class="btn2" onclick="demo()">Load example data</button>
-    <button class="btn2" onclick="scheduleOn()">Enable hourly refresh</button>
+    <button class="btn2" onclick="importCsv()">Import CSV</button>
+    <button class="btn2" onclick="scheduleOn()">Enable scheduled refresh</button>
     <button class="btn2" onclick="scheduleOff()">Disable schedule</button>
+    <button class="btn2" onclick="sendDigest()">Send weekly digest now</button>
 
     <div class="status" id="status">Keys are stored in your Google account (User Properties), not in the sheet.</div>
 
@@ -161,9 +188,22 @@
           .withSuccessHandler(function (s) {
             document.getElementById("brandName").textContent = s.brandName || "RevenueSheet";
             document.getElementById("currency").value = s.currency || "USD";
+            document.getElementById("mrrGoal").value = s.mrrGoal || "";
+            document.getElementById("template").value = s.template || "classic";
+            document.getElementById("cadence").value = s.scheduleCadence || "hourly";
             document.getElementById("includeTrial").checked = !!s.includeTrialingPastDue;
+            document.getElementById("emailDigest").checked = !!s.emailDigest;
+            if (s.emailDigestScope) {
+              document.getElementById("digestHint").textContent =
+                "Digest needs sensitive scope " + s.emailDigestScope + " — not in the default manifest.";
+            }
             var html = "";
-            [["Lemon Squeezy", s.lemonSqueezy], ["Polar", s.polar], ["Gumroad", s.gumroad]].forEach(function (pair) {
+            [
+              ["Lemon Squeezy", s.lemonSqueezy],
+              ["Polar", s.polar],
+              ["Gumroad", s.gumroad],
+              ["Stripe", s.stripe],
+            ].forEach(function (pair) {
               var on = !!pair[1];
               html +=
                 '<div class="src"><div><b>' +
@@ -199,9 +239,14 @@
             lemonSqueezy: document.getElementById("ls").value,
             polar: document.getElementById("polar").value,
             gumroad: document.getElementById("gumroad").value,
+            stripe: document.getElementById("stripe").value,
             licenseKey: document.getElementById("license").value,
             currency: document.getElementById("currency").value,
+            mrrGoal: document.getElementById("mrrGoal").value,
+            template: document.getElementById("template").value,
+            scheduleCadence: document.getElementById("cadence").value,
             includeTrialingPastDue: document.getElementById("includeTrial").checked,
+            emailDigest: document.getElementById("emailDigest").checked,
           });
       }
 
@@ -264,6 +309,35 @@
             setStatus(String(e), "err");
           })
           .sidebarDisableSchedule();
+      }
+
+      function importCsv() {
+        var text = document.getElementById("csvText").value;
+        if (!text || !text.trim()) {
+          setStatus("Paste CSV text first.", "err");
+          return;
+        }
+        setStatus("Importing CSV…");
+        google.script.run
+          .withSuccessHandler(function (r) {
+            setStatus(r.message, r.ok ? "ok" : "err");
+          })
+          .withFailureHandler(function (e) {
+            setStatus(String(e), "err");
+          })
+          .sidebarImportCsv(text);
+      }
+
+      function sendDigest() {
+        setStatus("Sending digest…");
+        google.script.run
+          .withSuccessHandler(function (r) {
+            setStatus(r.message, r.ok ? "ok" : "err");
+          })
+          .withFailureHandler(function (e) {
+            setStatus(String(e), "err");
+          })
+          .sidebarSendDigest();
       }
 
       load();
