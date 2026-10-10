@@ -28,7 +28,7 @@ export default function LemonSetupPage() {
         <h2>2. Paste it in the add-on</h2>
         <p>
           Open your Google Sheet → Extensions → {brand.name} → Open sidebar. Choose Lemon Squeezy
-          and paste the key. Keys are stored in Apps Script Properties for that spreadsheet project
+          and paste the key. Keys are stored in Apps Script User Properties for your Google account
           — see <Link href="/docs/api-keys">API keys</Link>.
         </p>
         <h2>3. Run Backfill</h2>

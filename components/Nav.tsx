@@ -25,6 +25,7 @@ export function Nav() {
           <Link href="/#how-it-works">How it works</Link>
           <Link href="/#faq">FAQ</Link>
           <Link href="/docs">Docs</Link>
+          <Link href="/changelog">Changelog</Link>
         </nav>
         <div className="nav-actions">
           <a className="btn btn-primary btn-sm" href={siteConfig.installUrl}>
@@ -53,6 +54,7 @@ export function Nav() {
           <Link href="/#how-it-works" onClick={() => setOpen(false)}>How it works</Link>
           <Link href="/#faq" onClick={() => setOpen(false)}>FAQ</Link>
           <Link href="/docs" onClick={() => setOpen(false)}>Docs</Link>
+          <Link href="/changelog" onClick={() => setOpen(false)}>Changelog</Link>
           <a href={siteConfig.installUrl}>Install free</a>
         </div>
       ) : null}
