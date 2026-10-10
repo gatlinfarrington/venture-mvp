@@ -353,12 +353,17 @@ function writeCohortSheet(
   ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
   cohorts: ReturnType<typeof computeCohortRetention>,
 ): void {
+  if (!cohorts.length) {
+    writeEmptyCohortSheet(ss);
+    return;
+  }
   let sheet = ss.getSheetByName(SHEET_NAMES.cohorts);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAMES.cohorts);
   sheet.clear();
-  sheet.setTabColor(COLORS.settingsTab);
-  const maxAge = Math.max(0, ...cohorts.map((c) => c.cells.length - 1));
-  const headers = ["Cohort", "Starting", ...Array.from({ length: maxAge + 1 }, (_, i) => `M${i}`)];
+  sheet.clearConditionalFormatRules();
+  sheet.setTabColor(COLORS.ink);
+  const maxAge = Math.max(11, ...cohorts.map((c) => c.cells.length - 1));
+  const headers = ["COHORT", "N", ...Array.from({ length: maxAge + 1 }, (_, i) => `M${i}`)];
   const rows: unknown[][] = [headers];
   for (const c of cohorts) {
     const row: unknown[] = [c.cohortMonth, c.starting];
@@ -369,4 +374,62 @@ function writeCohortSheet(
     rows.push(row);
   }
   sheet.getRange(1, 1, rows.length, headers.length).setValues(rows);
+  sheet
+    .getRange(1, 1, 1, headers.length)
+    .setFontFamily(FONTS.mono)
+    .setFontSize(8)
+    .setFontWeight("bold")
+    .setFontColor(COLORS.inkMuted)
+    .setBackground(COLORS.bg)
+    .setBorder(false, false, true, false, false, false, COLORS.ink, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  applyCohortRampRules(sheet, headers.length);
+}
+
+/** Empty Cohorts tab: headers + note; greyscale ramp rules stay live. */
+export function writeEmptyCohortSheet(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void {
+  let sheet = ss.getSheetByName(SHEET_NAMES.cohorts);
+  if (!sheet) sheet = ss.insertSheet(SHEET_NAMES.cohorts);
+  sheet.clear();
+  sheet.clearConditionalFormatRules();
+  sheet.setTabColor(COLORS.ink);
+  const headers = ["COHORT", "N", ...Array.from({ length: 12 }, (_, i) => `M${i}`)];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet
+    .getRange(1, 1, 1, headers.length)
+    .setFontFamily(FONTS.mono)
+    .setFontSize(8)
+    .setFontWeight("bold")
+    .setFontColor(COLORS.inkMuted)
+    .setBackground(COLORS.bg)
+    .setBorder(false, false, true, false, false, false, COLORS.ink, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+  sheet.getRange(3, 1, 1, headers.length).merge();
+  sheet
+    .getRange(3, 1)
+    .setFontFamily(FONTS.sans)
+    .setFontSize(10)
+    .setFontColor(COLORS.inkMuted)
+    .setValue("Cohorts appear after a full month of subscription data.");
+  applyCohortRampRules(sheet, headers.length);
+}
+
+/** Greyscale conditional format ramp on M0… cells (data rows). */
+function applyCohortRampRules(
+  sheet: GoogleAppsScript.Spreadsheet.Sheet,
+  colCount: number,
+): void {
+  // Data starts at col 3 (M0); leave room for many cohort rows.
+  const range = sheet.getRange(2, 3, 200, colCount - 2);
+  const rules = [
+    { min: 0.99, color: "#CCCCCC" },
+    { min: 0.9, color: "#D9D9D9" },
+    { min: 0.85, color: "#E6E6E6" },
+    { min: 0.8, color: "#F2F2F2" },
+  ].map(({ min, color }) =>
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenNumberGreaterThanOrEqualTo(min)
+      .setBackground(color)
+      .setRanges([range])
+      .build(),
+  );
+  sheet.setConditionalFormatRules(rules);
 }

@@ -110,6 +110,10 @@ export function writeImportBundle(
       "rs_subs",
       ss.getSheetByName(SHEET_NAMES.subscriptions)!.getDataRange(),
     );
+    ss.setNamedRange(
+      "rs_customers",
+      ss.getSheetByName(SHEET_NAMES.customers)!.getDataRange(),
+    );
   } catch {
     /* named range may already exist with different range */
   }

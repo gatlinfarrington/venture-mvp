@@ -110,6 +110,8 @@ export interface ImportResult {
   cursor: SyncCursor;
   /** True when more pages remain — caller should persist cursor and continue next run. */
   incomplete: boolean;
+  /** Absolute total when the API reports one (powers "~N" in the syncing status band). */
+  totalCount?: number;
 }
 
 export interface Importer {
