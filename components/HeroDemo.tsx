@@ -167,17 +167,38 @@ export function HeroDemo() {
 
     let visible = true;
     let pageVisible = document.visibilityState === "visible";
+    let started = false;
+    let startTimer: number | null = null;
 
-    const maybeRun = () => {
-      if (visible && pageVisible) run();
-      else clearTimers();
+    // Delay the sync loop so the animated MRR counter is not the LCP element.
+    // Reduced-motion jumps straight to the final sheet state.
+    const scheduleStart = () => {
+      if (started || !visible || !pageVisible) return;
+      if (prefersReducedMotion()) {
+        started = true;
+        run();
+        return;
+      }
+      if (startTimer != null) return;
+      startTimer = window.setTimeout(() => {
+        started = true;
+        run();
+      }, 1800);
+    };
+
+    const stop = () => {
+      if (startTimer != null) {
+        window.clearTimeout(startTimer);
+        startTimer = null;
+      }
+      clearTimers();
     };
 
     const io = new IntersectionObserver(
       ([entry]) => {
         visible = Boolean(entry?.isIntersecting);
-        if (visible && pageVisible) run();
-        else clearTimers();
+        if (visible && pageVisible) scheduleStart();
+        else stop();
       },
       { threshold: 0.2 },
     );
@@ -185,14 +206,16 @@ export function HeroDemo() {
 
     const onVis = () => {
       pageVisible = document.visibilityState === "visible";
-      maybeRun();
+      if (pageVisible) scheduleStart();
+      else stop();
     };
     document.addEventListener("visibilitychange", onVis);
+    scheduleStart();
 
     return () => {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
-      clearTimers();
+      stop();
     };
   }, [clearTimers, run]);
 

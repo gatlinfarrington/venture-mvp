@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { HeroDemo } from "@/components/HeroDemo";
+import { HeroDemoLazy } from "@/components/HeroDemoLazy";
 import { Pricing } from "@/components/Pricing";
 import { Reveal } from "@/components/Reveal";
 import { brand } from "@/lib/brand";
@@ -39,7 +39,7 @@ export function Hero() {
           </p>
         </div>
         <div className="hero-frame hero-reveal" style={{ animationDelay: "300ms" }}>
-          <HeroDemo />
+          <HeroDemoLazy />
         </div>
       </div>
     </section>
@@ -85,7 +85,14 @@ export function HowItWorks() {
               <h3 className="h3">{step.title}</h3>
               <p className="muted">{step.body}</p>
               <div className="step-frame">
-                <Image src={step.img} alt={step.alt} width={640} height={400} />
+                <Image
+                  src={step.img}
+                  alt={step.alt}
+                  width={640}
+                  height={400}
+                  sizes="(max-width: 900px) 100vw, 33vw"
+                  quality={70}
+                />
               </div>
             </Reveal>
           ))}
@@ -128,6 +135,8 @@ export function WhatLands() {
               alt="Orders tab with example product rows and amounts"
               width={960}
               height={640}
+              sizes="(max-width: 900px) 100vw, 55vw"
+              quality={70}
             />
           </Reveal>
         </div>
