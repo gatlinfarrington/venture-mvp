@@ -9,6 +9,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     "",
     "/pricing",
+    "/about",
+    "/security",
     "/docs",
     "/docs/setup/lemon-squeezy",
     "/docs/setup/polar",
@@ -20,12 +22,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/changelog",
     "/privacy",
     "/terms",
+    "/vs/baremetrics",
+    "/vs/chartmogul",
+    "/vs/zapier",
     // /success is post-checkout only — kept out of the sitemap and disallowed in robots.ts
   ].map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
-    priority: path === "" ? 1 : path.startsWith("/docs") ? 0.7 : 0.6,
+    priority:
+      path === ""
+        ? 1
+        : path.startsWith("/docs")
+          ? 0.7
+          : path.startsWith("/vs/")
+            ? 0.75
+            : 0.6,
   }));
 
   const guides = seoPages.map((p) => ({

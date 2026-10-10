@@ -21,6 +21,8 @@ export function Footer() {
             <h3>Product</h3>
             <Link href="/#how-it-works">How it works</Link>
             <Link href="/pricing">Pricing</Link>
+            <Link href="/about">About</Link>
+            <Link href="/security">Security</Link>
             <Link href="/docs">Docs</Link>
             <Link href="/blog">Blog</Link>
             <Link href="/changelog">Changelog</Link>
@@ -39,6 +41,9 @@ export function Footer() {
             <Link href="/docs/setup/gumroad">Gumroad setup</Link>
             <Link href="/docs/api-keys">API keys</Link>
             <Link href="/stripe-to-google-sheets">Stripe comparison</Link>
+            <Link href="/vs/baremetrics">vs Baremetrics</Link>
+            <Link href="/vs/chartmogul">vs ChartMogul</Link>
+            <Link href="/vs/zapier">vs Zapier</Link>
           </div>
           <div className="footer-col">
             <h3>Legal</h3>

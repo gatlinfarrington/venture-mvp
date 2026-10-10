@@ -7,6 +7,7 @@ const files = [
   "components/Pricing.tsx",
   "app/docs/faq/page.tsx",
   "app/privacy/page.tsx",
+  "app/security/page.tsx",
   "app/terms/page.tsx",
   "lib/seo-pages.ts",
 ];
@@ -43,6 +44,21 @@ describe("OAuth scope copy", () => {
     expect(privacy).toContain("script.container.ui");
     expect(privacy).toContain("script.external_request");
     expect(privacy).toContain("spreadsheets.currentonly");
+  });
+
+  it("names the same scopes on the security page", () => {
+    const security = readFileSync("app/security/page.tsx", "utf8");
+    expect(security).toContain("script.scriptapp");
+    expect(security).toContain("script.container.ui");
+    expect(security).toContain("script.external_request");
+    expect(security).toContain("spreadsheets.currentonly");
+    expect(security).toMatch(/User Properties|getUserProperties/i);
+    expect(security).toMatch(/license verify|\/api\/license\/verify/i);
+    expect(security).toContain("Vercel");
+    expect(security).toContain("Upstash");
+    expect(security).toContain("Stripe");
+    expect(security).toMatch(/do not claim SOC|No SOC\s*2/i);
+    expect(security).not.toMatch(/\bSOC\s*2 Type II certified\b/i);
   });
 });
 

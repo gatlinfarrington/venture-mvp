@@ -2,6 +2,8 @@
 export const SITEMAP_ROUTES_FALLBACK = [
   "/",
   "/pricing",
+  "/about",
+  "/security",
   "/docs",
   "/docs/setup/lemon-squeezy",
   "/docs/setup/polar",
@@ -18,6 +20,9 @@ export const SITEMAP_ROUTES_FALLBACK = [
   "/stripe-to-google-sheets",
   "/polar-analytics",
   "/lemon-squeezy-analytics",
+  "/vs/baremetrics",
+  "/vs/chartmogul",
+  "/vs/zapier",
 ] as const;
 
 /** Key marketing pages for Lighthouse CI budgets (≥95). */
