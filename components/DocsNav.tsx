@@ -14,6 +14,8 @@ const groups = [
       { href: "/docs/setup/lemon-squeezy", label: "Lemon Squeezy setup" },
       { href: "/docs/setup/polar", label: "Polar setup" },
       { href: "/docs/setup/gumroad", label: "Gumroad setup" },
+      { href: "/docs/setup/stripe", label: "Stripe setup" },
+      { href: "/docs/csv-import", label: "CSV import" },
       { href: "/docs/api-keys", label: "API keys" },
     ],
   },

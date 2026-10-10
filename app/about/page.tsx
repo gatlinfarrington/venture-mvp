@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
-  description: `Why ${brand.name} puts Lemon Squeezy, Polar, and Gumroad revenue in a Google Sheet you own instead of another dashboard SaaS.`,
+  description: `Why ${brand.name} puts Lemon Squeezy, Polar, Gumroad, or Stripe revenue in a Google Sheet you own instead of another dashboard SaaS.`,
   alternates: { canonical: `${siteConfig.url}/about` },
   openGraph: {
     title: `About · ${brand.name}`,
@@ -28,8 +28,9 @@ export default function AboutPage() {
       <div className="prose">
         <h2>The problem storefront dashboards leave open</h2>
         <p>
-          Lemon Squeezy, Polar, and Gumroad each answer “what sold today.” None of them is the
-          runway model, the tax worksheet, or the investor update you already maintain in Sheets.
+          Whether you sell on Lemon Squeezy, Polar, Gumroad, or Stripe, each storefront answers
+          “what sold today.” None of them is the runway model, the tax worksheet, or the investor
+          update you already maintain in Sheets.
         </p>
         <p>
           Exporting CSVs works until Monday, when the paste is already stale. Append-only

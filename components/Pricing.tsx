@@ -13,7 +13,7 @@ type Props = {
 };
 
 export function Pricing({ variant = "section" }: Props) {
-  // Monthly only — annual prices are not offered on the direct Checkout path.
+  // Monthly only — annual toggle and $90/$190 are unconfirmed; hide until locked.
   const interval: BillingInterval = "month";
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [pendingTier, setPendingTier] = useState<string | null>(null);

@@ -850,21 +850,22 @@ a.chip[aria-current="page"] {
 }
 
 .hero-sheet tr.new {
-  animation: hero-rowin 140ms var(--ease-out);
+  animation: hero-rowin 220ms var(--ease-out);
 }
 
 .hero-sheet tr.new td {
   animation: hero-hl 1.2s var(--ease-standard);
+  overflow: hidden;
 }
 
 @keyframes hero-rowin {
   from {
+    height: 0;
     opacity: 0;
-    transform: translateY(-8px);
   }
   to {
+    height: var(--hero-row-height, 36px);
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -895,7 +896,7 @@ a.chip[aria-current="page"] {
   pointer-events: none;
 }
 
-/* Last 160ms of 900ms ≈ 82.2%: opacity 1→0 and scale 1→0.9 (ease-out) as the row inserts. */
+/* Travel only: dissolve starts after arrival so the pill never covers row text. */
 @keyframes hero-fly {
   0% {
     opacity: 0;
@@ -906,15 +907,26 @@ a.chip[aria-current="page"] {
     opacity: 1;
     transform: scale(1);
   }
-  82.2% {
+  100% {
     opacity: 1;
     offset-distance: 100%;
     transform: scale(1);
   }
-  100% {
+}
+
+.hero-packet.is-dissolving {
+  offset-distance: 100%;
+  animation: hero-packet-dissolve 160ms var(--ease-out) forwards;
+}
+
+@keyframes hero-packet-dissolve {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
     opacity: 0;
-    offset-distance: 100%;
-    transform: scale(0.9);
+    transform: scale(0.92);
   }
 }
 
@@ -1073,21 +1085,22 @@ a.chip[aria-current="page"] {
   background: var(--c-surface);
 }
 
-.responsive-crop-phone {
+/* Scoped under .responsive-crop so phone/desktop toggles beat .lands-frame img. */
+.responsive-crop .responsive-crop-phone {
   display: none;
 }
 
 @media (max-width: 600px) {
-  .responsive-crop-desktop {
+  .responsive-crop .responsive-crop-desktop {
     display: none;
   }
 
-  .responsive-crop-phone {
+  .responsive-crop .responsive-crop-phone {
     display: block;
   }
 
   /* Steps 01/02 use a single image (no phone swap). */
-  .step-frame .responsive-crop-desktop.responsive-crop-only {
+  .step-frame .responsive-crop .responsive-crop-desktop.responsive-crop-only {
     display: block;
   }
 }
@@ -1184,6 +1197,13 @@ a.chip[aria-current="page"] {
   font: 400 13px/1.5 var(--font-mono);
   color: var(--c-ink);
   grid-column: 1 / -1;
+}
+
+@media (max-width: 600px) {
+  .why-formula {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
 }
 
 .why-result {
@@ -1370,7 +1390,7 @@ a.chip[aria-current="page"] {
 .price-card {
   border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
-  padding: var(--space-6);
+  padding: var(--space-5); /* 20px */
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1381,6 +1401,10 @@ a.chip[aria-current="page"] {
   display: flex;
   flex-direction: column;
   gap: var(--space-4); /* eyebrow → price 16px */
+}
+
+.price-card-top > * {
+  margin: 0;
 }
 
 .price-card .price-features {
@@ -1427,7 +1451,7 @@ a.chip[aria-current="page"] {
 }
 
 .price-annual {
-  margin-top: var(--space-2);
+  margin-top: var(--space-2); /* 8px; kept when annual prices are shown */
 }
 
 .price-features {
@@ -1478,7 +1502,8 @@ a.chip[aria-current="page"] {
   max-width: 48ch;
 }
 
-@media (max-width: 900px) {
+/* 3-up from 720px; stack below. */
+@media (max-width: 719px) {
   .pricing-grid {
     grid-template-columns: 1fr;
   }
