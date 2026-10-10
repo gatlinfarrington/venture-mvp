@@ -1,7 +1,7 @@
 ---
-title: "Blog MDX pipeline and Stripe go-live readiness"
+title: "Blog and simpler paid checkout"
 date: "2026-10-10"
-tags: ["site", "billing"]
+tags: ["billing", "writing"]
 ---
 
-Blog posts author from `content/blog/*.mdx` with tags, RSS, JSON-LD, and OG images. Changelog entries move to `content/changelog/*.mdx`. Stripe checkout looks up or creates prices by lookup_key so go-live is paste-keys-only; see `docs/GO-LIVE.md`.
+New blog posts publish from Markdown files. Paid plans turn on when you add Stripe keys — prices are created automatically, so go-live does not require hunting for Price IDs.

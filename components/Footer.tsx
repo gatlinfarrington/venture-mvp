@@ -21,21 +21,20 @@ export function Footer() {
             <Link href="/blog">Blog</Link>
             <Link href="/changelog">Changelog</Link>
             <Link href="/#faq">FAQ</Link>
-            <Link href="/success">License</Link>
           </div>
           <div className="footer-col">
             <h3>Sources</h3>
             <Link href="/lemon-squeezy-analytics">Lemon Squeezy</Link>
             <Link href="/polar-analytics">Polar</Link>
             <Link href="/gumroad-analytics-google-sheets">Gumroad</Link>
-            <Link href="/stripe-to-google-sheets">Stripe comparison</Link>
           </div>
           <div className="footer-col">
             <h3>Guides</h3>
-            <Link href="/docs/setup/lemon-squeezy">LS setup</Link>
+            <Link href="/docs/setup/lemon-squeezy">Lemon Squeezy setup</Link>
             <Link href="/docs/setup/polar">Polar setup</Link>
             <Link href="/docs/setup/gumroad">Gumroad setup</Link>
             <Link href="/docs/api-keys">API keys</Link>
+            <Link href="/stripe-to-google-sheets">Stripe comparison</Link>
           </div>
           <div className="footer-col">
             <h3>Legal</h3>

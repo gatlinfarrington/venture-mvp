@@ -14,7 +14,9 @@ export function Hero() {
             {brand.taglineShort}
           </p>
           <h1 className="display hero-reveal" style={{ animationDelay: "60ms" }}>
-            All your stores,<br className="br-lg" /> in a sheet you own.
+            All your stores,
+            <br />
+            in a sheet you own.
           </h1>
           <p className="body-lg muted hero-lede hero-reveal" style={{ animationDelay: "120ms" }}>
             {brand.description}
@@ -52,21 +54,21 @@ export function HowItWorks() {
       n: "01",
       title: "Connect",
       body: "Paste an API key from Lemon Squeezy, Polar, or Gumroad. No OAuth dance with those stores — the add-on reads what you grant.",
-      img: "/design/screenshot-2-connect.png",
+      img: "/design/how-connect-2x.png",
       alt: "Connect sources panel with example store connections",
     },
     {
       n: "02",
       title: "Backfill",
       body: "We pull full order history into named tabs, not just new rows from today. Then scheduled sync keeps the sheet current.",
-      img: "/design/screenshot-3-products.png",
+      img: "/design/how-orders-2x.png",
       alt: "Orders tab filling with product and amount columns",
     },
     {
       n: "03",
       title: "Dashboard",
       body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data — formulas you can audit and extend.",
-      img: "/design/screenshot-1-dashboard.png",
+      img: "/design/how-dashboard-2x.png",
       alt: "MRR dashboard with KPIs and stacked source chart",
     },
   ];
@@ -88,10 +90,10 @@ export function HowItWorks() {
                 <Image
                   src={step.img}
                   alt={step.alt}
-                  width={640}
-                  height={400}
+                  width={1200}
+                  height={900}
                   sizes="(max-width: 900px) 100vw, 33vw"
-                  quality={70}
+                  quality={75}
                 />
               </div>
             </Reveal>
@@ -131,10 +133,10 @@ export function WhatLands() {
           </Reveal>
           <Reveal className="lands-frame" delay={60}>
             <Image
-              src="/design/screenshot-3-products.png"
+              src="/design/lands-orders-2x.png"
               alt="Orders tab with example product rows and amounts"
-              width={960}
-              height={640}
+              width={1200}
+              height={450}
               sizes="(max-width: 900px) 100vw, 55vw"
               quality={70}
             />
@@ -214,13 +216,13 @@ export function Comparison() {
               {rows.map((r) => (
                 <tr key={r.feature}>
                   <td>{r.feature}</td>
-                  <td className={r.rs === true ? "yes" : "no"}>
+                  <td data-label={brand.name} className={r.rs === true ? "yes" : "no"}>
                     {r.rs === true ? "Yes" : String(r.rs)}
                   </td>
-                  <td className={r.zapier === true ? "yes" : "no"}>
+                  <td data-label="Zapier / Make" className={r.zapier === true ? "yes" : "no"}>
                     {r.zapier === true ? "Yes" : r.zapier === false ? "No" : r.zapier}
                   </td>
-                  <td className={r.csv === true ? "yes" : "no"}>
+                  <td data-label="CSV templates" className={r.csv === true ? "yes" : "no"}>
                     {r.csv === true ? "Yes" : r.csv === false ? "No" : r.csv}
                   </td>
                 </tr>
