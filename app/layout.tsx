@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     default: `${brand.name} · ${brand.pitch}`,
     template: `%s · ${brand.name}`,
   },
-  description: brand.description,
+  description: brand.metaDescription,
   applicationName: brand.name,
   icons: {
     icon: [{ url: brand.logo.icon32 }, { url: brand.logo.icon128, sizes: "128x128" }],
@@ -38,13 +38,13 @@ export const metadata: Metadata = {
     type: "website",
     siteName: brand.name,
     title: `${brand.name} · ${brand.pitch}`,
-    description: brand.description,
+    description: brand.metaDescription,
     url: siteConfig.url,
   },
   twitter: {
     card: "summary_large_image",
     title: `${brand.name} · ${brand.pitch}`,
-    description: brand.description,
+    description: brand.metaDescription,
   },
   alternates: {
     canonical: siteConfig.url,

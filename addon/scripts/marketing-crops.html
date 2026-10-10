@@ -44,10 +44,10 @@
       position: relative;
     }
 
-    /* —— Connect: SOURCES + 4 cards, no brand header —— */
+    /* —— Connect: 28px inset, SOURCES + 4 cards —— */
     .connect {
       height: 100%;
-      padding: 14px 14px 12px;
+      padding: 28px;
       display: flex;
       flex-direction: column;
     }
@@ -69,7 +69,7 @@
     .src {
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 9px 10px;
+      padding: 8px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -88,10 +88,10 @@
     .src-state { font-weight: 500; white-space: nowrap; font-size: 12px; }
     .src-state.off { color: var(--muted); }
 
-    /* —— Backfill —— */
+    /* —— Backfill: 28px inset, bottom pad 28px, fade —— */
     .backfill {
       height: 100%;
-      padding: 14px 14px 0;
+      padding: 28px;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -125,12 +125,13 @@
       min-height: 0;
       overflow: hidden;
       position: relative;
+      padding-bottom: 0;
     }
     .bf-row {
       display: grid;
-      grid-template-columns: 1.15fr 1.1fr 0.55fr;
+      grid-template-columns: 0.85fr 1.35fr 0.5fr;
       gap: 6px;
-      padding: 8px 2px;
+      padding: 7px 2px;
       border-bottom: 1px solid var(--hairline);
       font: 400 11px/1.2 "JetBrains Mono", monospace;
     }
@@ -146,22 +147,24 @@
       pointer-events: none;
     }
 
-    /* —— Dashboard 300×300 —— */
+    /* —— Dashboard 300×300, 28px inset, full chart —— */
     .dash {
       height: 100%;
-      padding: 12px 12px 12px;
+      padding: 28px;
       display: flex;
       flex-direction: column;
+      justify-content: flex-start;
+      overflow: hidden;
     }
     .dash-status {
-      height: 26px;
+      height: 18px;
       display: flex;
       align-items: center;
       background: var(--surface2);
       font: 400 10px/1 "JetBrains Mono", monospace;
       color: var(--ink);
       padding: 0 8px;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
       overflow: hidden;
       white-space: nowrap;
       flex: none;
@@ -171,59 +174,77 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
       flex: none;
     }
     .kpi {
       border: 1px solid var(--hairline);
       border-top: 2px solid var(--ink);
-      padding: 8px 8px 10px;
+      padding: 8px 12px;
       background: #fff;
+      position: relative;
+      min-height: 0;
     }
     .kpi .lab {
       font: 400 9px/1 "JetBrains Mono", monospace;
       color: var(--muted);
       text-transform: uppercase;
-      margin-bottom: 6px;
+      margin-bottom: 2px;
+      padding-right: 48px;
     }
     .kpi .val {
-      font-size: 18px;
+      font-size: 28px;
       font-weight: 600;
       letter-spacing: -0.03em;
-      margin-bottom: 4px;
+      line-height: 1;
     }
     .kpi .delta {
+      position: absolute;
+      top: 8px;
+      right: 10px;
       font: 600 10px/1 "JetBrains Mono", monospace;
       color: var(--signal);
     }
     .sec {
       font-size: 11px;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin: 0 0 2px;
       flex: none;
     }
     .chart-wrap {
-      flex: 1;
-      min-height: 0;
-      padding-right: 24px; /* 24px clear of right edge */
+      flex: none;
+      margin-top: 0;
     }
     .bars {
       display: flex;
       align-items: flex-end;
-      gap: 4px;
-      height: 100%;
-      min-height: 72px;
+      gap: 6px;
+      height: 64px;
+      border-bottom: 1px solid var(--hairline);
     }
-    .bar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      height: 100%;
+      position: relative;
+    }
     .seg { width: 100%; }
     .seg.a { background: #0d0d0d; }
     .seg.b { background: #5c5c5c; }
     .seg.c { background: #8c8c8c; }
     .bar-label {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
       text-align: center;
-      margin-top: 3px;
-      font: 400 8px/1 "JetBrains Mono", monospace;
+      font: 400 11px/1 "JetBrains Mono", monospace;
       color: var(--muted);
+    }
+    .chart-labels-spacer {
+      height: 17px; /* 6px gap + 11px label */
       flex: none;
     }
 
@@ -293,8 +314,11 @@
       height: 26px;
       border-bottom: 1.5px solid var(--border);
     }
+    table.orders th.num,
+    table.orders td.num,
+    table.orders th:last-child,
+    table.orders td:last-child { text-align: right; }
     table.orders td.name { font-family: "Inter Tight", sans-serif; }
-    table.orders td.num { text-align: right; }
   </style>
 </head>
 <body>
@@ -318,12 +342,14 @@
         <div class="bf-track"><div class="bf-fill"></div></div>
       </div>
       <div class="bf-rows">
-        <div class="bf-row"><span class="prod">Demo SaaS · Team</span><span>sample.user412</span><span class="amt">79.00</span></div>
-        <div class="bf-row"><span class="prod">Example Course</span><span>sample.user411</span><span class="amt">49.00</span></div>
-        <div class="bf-row"><span class="prod">Demo SaaS · Pro</span><span>sample.user410</span><span class="amt">29.00</span></div>
-        <div class="bf-row"><span class="prod">Template Kit</span><span>sample.user409</span><span class="amt">19.00</span></div>
-        <div class="bf-row"><span class="prod">Sample E-book</span><span>sample.user408</span><span class="amt">9.00</span></div>
-        <div class="bf-row"><span class="prod">Icon Pack</span><span>sample.user407</span><span class="amt">12.00</span></div>
+        <div class="bf-row"><span>EX-10450</span><span class="prod">Demo SaaS · Pro</span><span class="amt">29.00</span></div>
+        <div class="bf-row"><span>EX-10449</span><span class="prod">Example Course</span><span class="amt">49.00</span></div>
+        <div class="bf-row"><span>EX-10448</span><span class="prod">Sample Icon Pack</span><span class="amt">12.00</span></div>
+        <div class="bf-row"><span>EX-10447</span><span class="prod">Demo SaaS · Team</span><span class="amt">19.00</span></div>
+        <div class="bf-row"><span>EX-10446</span><span class="prod">Template Kit</span><span class="amt">9.00</span></div>
+        <div class="bf-row"><span>EX-10445</span><span class="prod">Demo SaaS · Pro</span><span class="amt">29.00</span></div>
+        <div class="bf-row"><span>EX-10444</span><span class="prod">Sample Icon Pack</span><span class="amt">12.00</span></div>
+        <div class="bf-row"><span>EX-10443</span><span class="prod">Example Course</span><span class="amt">19.00</span></div>
         <div class="bf-fade"></div>
       </div>
     </div>
@@ -342,14 +368,16 @@
       </div>
       <div class="sec">MRR by source · 6 months</div>
       <div class="chart-wrap">
+        <!-- Stepping up L→R; stacked segments; ~64px bars on hairline baseline -->
         <div class="bars">
-          <div class="bar-col"><div class="seg a" style="height:42%"></div><div class="seg b" style="height:24%"></div><div class="seg c" style="height:12%"></div><div class="bar-label">M</div></div>
-          <div class="bar-col"><div class="seg a" style="height:48%"></div><div class="seg b" style="height:26%"></div><div class="seg c" style="height:13%"></div><div class="bar-label">J</div></div>
-          <div class="bar-col"><div class="seg a" style="height:54%"></div><div class="seg b" style="height:28%"></div><div class="seg c" style="height:14%"></div><div class="bar-label">J</div></div>
-          <div class="bar-col"><div class="seg a" style="height:60%"></div><div class="seg b" style="height:30%"></div><div class="seg c" style="height:15%"></div><div class="bar-label">A</div></div>
-          <div class="bar-col"><div class="seg a" style="height:66%"></div><div class="seg b" style="height:32%"></div><div class="seg c" style="height:16%"></div><div class="bar-label">S</div></div>
-          <div class="bar-col"><div class="seg a" style="height:72%"></div><div class="seg b" style="height:34%"></div><div class="seg c" style="height:17%"></div><div class="bar-label">O</div></div>
+          <div class="bar-col"><div class="seg a" style="height:22px"></div><div class="seg b" style="height:10px"></div><div class="seg c" style="height:5px"></div><div class="bar-label">May</div></div>
+          <div class="bar-col"><div class="seg a" style="height:26px"></div><div class="seg b" style="height:12px"></div><div class="seg c" style="height:6px"></div><div class="bar-label">Jun</div></div>
+          <div class="bar-col"><div class="seg a" style="height:30px"></div><div class="seg b" style="height:13px"></div><div class="seg c" style="height:7px"></div><div class="bar-label">Jul</div></div>
+          <div class="bar-col"><div class="seg a" style="height:34px"></div><div class="seg b" style="height:14px"></div><div class="seg c" style="height:7px"></div><div class="bar-label">Aug</div></div>
+          <div class="bar-col"><div class="seg a" style="height:38px"></div><div class="seg b" style="height:15px"></div><div class="seg c" style="height:8px"></div><div class="bar-label">Sep</div></div>
+          <div class="bar-col"><div class="seg a" style="height:40px"></div><div class="seg b" style="height:16px"></div><div class="seg c" style="height:8px"></div><div class="bar-label">Oct</div></div>
         </div>
+        <div class="chart-labels-spacer"></div>
       </div>
     </div>
   </div>
@@ -365,20 +393,20 @@
     <table class="orders">
       <thead>
         <tr>
-          <th>Order ID</th><th>Created</th><th>Source</th><th>Product</th><th>Amount</th>
+          <th>Order ID</th><th>Created</th><th>Source</th><th>Product</th><th class="num">Amount</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td>sample_order_412</td><td>2026-10-08</td><td>polar</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
-        <tr><td>sample_order_411</td><td>2026-10-08</td><td>lemon_squeezy</td><td class="name">Example Course</td><td class="num">49.00</td></tr>
-        <tr><td>sample_order_410</td><td>2026-10-07</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td class="num">29.00</td></tr>
-        <tr><td>sample_order_409</td><td>2026-10-07</td><td>gumroad</td><td class="name">Template Kit</td><td class="num">19.00</td></tr>
-        <tr><td>sample_order_408</td><td>2026-10-06</td><td>lemon_squeezy</td><td class="name">Sample E-book</td><td class="num">9.00</td></tr>
-        <tr><td>sample_order_407</td><td>2026-10-06</td><td>stripe</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
-        <tr><td>sample_order_406</td><td>2026-10-05</td><td>gumroad</td><td class="name">Icon Pack</td><td class="num">12.00</td></tr>
-        <tr><td>sample_order_405</td><td>2026-10-05</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td class="num">29.00</td></tr>
-        <tr><td>sample_order_404</td><td>2026-10-04</td><td>lemon_squeezy</td><td class="name">Example Course</td><td class="num">49.00</td></tr>
-        <tr><td>sample_order_403</td><td>2026-10-04</td><td>stripe</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+        <tr><td>EX-10412</td><td>2026-10-08</td><td>polar</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+        <tr><td>EX-10411</td><td>2026-10-08</td><td>lemon_squeezy</td><td class="name">Example Course</td><td class="num">49.00</td></tr>
+        <tr><td>EX-10410</td><td>2026-10-07</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td class="num">29.00</td></tr>
+        <tr><td>EX-10409</td><td>2026-10-07</td><td>gumroad</td><td class="name">Template Kit</td><td class="num">19.00</td></tr>
+        <tr><td>EX-10408</td><td>2026-10-06</td><td>lemon_squeezy</td><td class="name">Sample Icon Pack</td><td class="num">12.00</td></tr>
+        <tr><td>EX-10407</td><td>2026-10-06</td><td>stripe</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+        <tr><td>EX-10406</td><td>2026-10-05</td><td>gumroad</td><td class="name">Sample Icon Pack</td><td class="num">12.00</td></tr>
+        <tr><td>EX-10405</td><td>2026-10-05</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td class="num">29.00</td></tr>
+        <tr><td>EX-10404</td><td>2026-10-04</td><td>lemon_squeezy</td><td class="name">Example Course</td><td class="num">49.00</td></tr>
+        <tr><td>EX-10403</td><td>2026-10-04</td><td>stripe</td><td class="name">Template Kit</td><td class="num">9.00</td></tr>
       </tbody>
     </table>
   </div>
@@ -393,18 +421,18 @@
     <table class="orders">
       <thead>
         <tr>
-          <th>Order</th><th>Source</th><th>Amount</th>
+          <th>Order</th><th>Source</th><th class="num">Amount</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td>#412</td><td>polar</td><td class="num">79.00</td></tr>
-        <tr><td>#411</td><td>lemon_squeezy</td><td class="num">49.00</td></tr>
-        <tr><td>#410</td><td>polar</td><td class="num">29.00</td></tr>
-        <tr><td>#409</td><td>gumroad</td><td class="num">19.00</td></tr>
-        <tr><td>#408</td><td>lemon_squeezy</td><td class="num">9.00</td></tr>
-        <tr><td>#407</td><td>stripe</td><td class="num">79.00</td></tr>
-        <tr><td>#406</td><td>gumroad</td><td class="num">12.00</td></tr>
-        <tr><td>#405</td><td>polar</td><td class="num">29.00</td></tr>
+        <tr><td>EX-10412</td><td>polar</td><td class="num">79.00</td></tr>
+        <tr><td>EX-10411</td><td>lemon_squeezy</td><td class="num">49.00</td></tr>
+        <tr><td>EX-10410</td><td>polar</td><td class="num">29.00</td></tr>
+        <tr><td>EX-10409</td><td>gumroad</td><td class="num">19.00</td></tr>
+        <tr><td>EX-10408</td><td>lemon_squeezy</td><td class="num">12.00</td></tr>
+        <tr><td>EX-10407</td><td>stripe</td><td class="num">79.00</td></tr>
+        <tr><td>EX-10406</td><td>gumroad</td><td class="num">12.00</td></tr>
+        <tr><td>EX-10405</td><td>polar</td><td class="num">29.00</td></tr>
       </tbody>
     </table>
   </div>

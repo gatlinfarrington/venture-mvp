@@ -658,7 +658,7 @@ a.chip[aria-current="page"] {
 .hero-stores-col {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: stretch;
   gap: var(--space-4);
   width: 168px;
@@ -675,7 +675,7 @@ a.chip[aria-current="page"] {
 .hero-stores-foot {
   display: flex;
   flex-direction: column;
-  margin-top: auto;
+  margin-top: 0;
 }
 
 .hero-stores-foot .hero-demo-foot {
@@ -767,6 +767,7 @@ a.chip[aria-current="page"] {
   margin: 0;
   font-size: var(--t-eyebrow-size);
   color: var(--c-ink-muted);
+  white-space: nowrap;
 }
 
 .hero-replay {

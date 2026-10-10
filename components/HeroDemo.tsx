@@ -374,7 +374,7 @@ export function HeroDemo() {
         ref={stageRef}
         className="hero-stage"
         role="img"
-        aria-label="four stores"
+        aria-label="Animation: four stores sync orders into one spreadsheet while MRR rises (example data)"
       >
         <div className="hero-stores-col" aria-hidden="true">
           <div className="hero-stores">

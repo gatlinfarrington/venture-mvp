@@ -39,7 +39,7 @@ Motion explains what changed and where data went. It never decorates. Tokens liv
 | 0.6s | Lemon Squeezy dot turns signal green with a soft pulse ring. An order "packet" pill (`+$29`) travels along a curved path (`offset-path`, 900ms, `--ease-in-out`) from the store card into the sheet. |
 | 1.4s | Packet lands: a new row slides in at the top (8px, `--dur-slow`), its cells flash `signal-tint` then fade (1.2s). The MRR counter tweens up (ease-out quart, 700ms, tabular numerals so width never jitters). The current-month green bar grows. |
 | 1.0–6.5s | Polar and Gumroad join and orders alternate every 420ms; the table keeps 9 rows and old rows drop off the bottom. |
-| end | Everything rests with all three stores live (steady pulse). A "Replay" button restarts. The caption "Example data · no real customers" is always visible. |
+| end | Everything rests with all four stores live (steady pulse). A "Replay" button restarts. The caption "Example data · no real customers" is always visible. |
 
 ## Reduced motion (`prefers-reduced-motion: reduce`)
 - Tokens collapse: durations go to 0, reveal distance to 0, press scale to 1.
