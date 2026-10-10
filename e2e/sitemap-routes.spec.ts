@@ -5,23 +5,33 @@ import {
   expectNoHorizontalOverflow,
   saveFullPageScreenshot,
 } from "./helpers";
-import { SITEMAP_ROUTES } from "./routes";
+import {
+  EXTRA_SMOKE_ROUTES,
+  fetchAllSmokeRoutes,
+  SITEMAP_ROUTES_FALLBACK,
+} from "./routes";
 
 const baseURL =
   process.env.BASE_URL ||
   process.env.PLAYWRIGHT_BASE_URL ||
   "https://venture-mvp.vercel.app";
 
-for (const route of SITEMAP_ROUTES) {
-  test.describe(`sitemap route ${route}`, () => {
-    test(`returns 200, no console errors, no overflow, nav resolves, screenshot`, async ({
-      page,
-      request,
-    }, testInfo) => {
-      const viewport = testInfo.project.name.includes("mobile")
-        ? "mobile-390"
-        : "desktop-1440";
+test.describe.configure({ mode: "serial" });
 
+let routes: string[] = [...SITEMAP_ROUTES_FALLBACK, ...EXTRA_SMOKE_ROUTES];
+
+test.beforeAll(async () => {
+  routes = await fetchAllSmokeRoutes(baseURL);
+  expect(routes.length, "sitemap should expose at least one route").toBeGreaterThan(0);
+});
+
+test("covers every sitemap route at this viewport", async ({ page, request }, testInfo) => {
+  const viewport = testInfo.project.name.includes("mobile")
+    ? "mobile-390"
+    : "desktop-1440";
+
+  for (const route of routes) {
+    await test.step(route, async () => {
       const consoleCollector = attachConsoleErrorCollector(page);
 
       const response = await page.goto(route, {
@@ -30,26 +40,22 @@ for (const route of SITEMAP_ROUTES) {
       expect(response, `navigation to ${route}`).not.toBeNull();
       expect(response!.status(), `${route} HTTP status`).toBe(200);
 
-      // Also assert via API request for a clean status check
       const head = await request.get(new URL(route, baseURL).toString());
       expect(head.status(), `${route} request status`).toBe(200);
 
       await page.waitForLoadState("load");
       await expect(page.locator("body")).toBeVisible();
-      // Settle layout / fonts before overflow + screenshot checks
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(400);
 
       await expectNoHorizontalOverflow(page);
       await expectInternalNavLinksResolve(page, baseURL);
 
-      // Artifact screenshot for CI upload (desktop + mobile)
       const artifactPath = await saveFullPageScreenshot(page, route, viewport);
-      await testInfo.attach(`screenshot-${viewport}`, {
+      await testInfo.attach(`${viewport}${route === "/" ? "/home" : route}`, {
         path: artifactPath,
         contentType: "image/png",
       });
 
-      // Playwright visual snapshot (project name is appended automatically)
       const snapBase =
         route === "/" ? "home" : route.slice(1).replace(/\//g, "_");
       await expect(page).toHaveScreenshot(`${snapBase}.png`, {
@@ -64,5 +70,5 @@ for (const route of SITEMAP_ROUTES) {
         `Console errors on ${route}:\n${consoleCollector.errors.join("\n")}`,
       ).toEqual([]);
     });
-  });
-}
+  }
+});

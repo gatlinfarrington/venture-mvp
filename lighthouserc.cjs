@@ -3,7 +3,8 @@ const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ||
   "https://venture-mvp.vercel.app";
 
-const routes = ["/", "/privacy", "/terms", "/success"];
+/** Key marketing pages — must score ≥95 on all Lighthouse categories. */
+const routes = ["/", "/pricing", "/docs", "/privacy"];
 
 module.exports = {
   ci: {

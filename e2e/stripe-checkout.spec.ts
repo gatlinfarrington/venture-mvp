@@ -25,7 +25,7 @@ test.describe("Stripe test checkout → license", () => {
   test("completes checkout, webhook issues license, verify succeeds", async ({
     page,
     request,
-  }) => {
+  }, testInfo) => {
     test.setTimeout(180_000);
 
     const checkoutRes = await request.post("/api/checkout", {
@@ -46,18 +46,18 @@ test.describe("Stripe test checkout → license", () => {
       const reason =
         checkoutBody.error ||
         `Checkout returned HTTP ${checkoutRes.status()} without a session URL`;
-      test.skip(
-        true,
-        `Stripe test checkout skipped — keys/prices not configured on this deployment. ${reason}. Set STRIPE_SECRET_KEY (sk_test_…), STRIPE_WEBHOOK_SECRET, and STRIPE_PRICE_* in Vercel to enable.`,
-      );
+      const msg = `BLOCKED (owner): Stripe test checkout skipped — keys/prices not configured on this deployment (${reason}). Set STRIPE_SECRET_KEY (sk_test_…), STRIPE_WEBHOOK_SECRET, and STRIPE_PRICE_* in Vercel to enable.`;
+      console.warn(msg);
+      testInfo.annotations.push({ type: "skip", description: msg });
+      test.skip(true, msg);
       return;
     }
 
     if (isStripeNotConfigured(checkoutBody.error)) {
-      test.skip(
-        true,
-        `Stripe test checkout skipped — ${checkoutBody.error}. Configure Stripe test keys in Vercel.`,
-      );
+      const msg = `BLOCKED (owner): Stripe test checkout skipped — ${checkoutBody.error}. Configure Stripe test keys in Vercel.`;
+      console.warn(msg);
+      testInfo.annotations.push({ type: "skip", description: msg });
+      test.skip(true, msg);
       return;
     }
 
