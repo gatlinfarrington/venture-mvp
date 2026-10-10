@@ -1865,10 +1865,7 @@ body:has(.success-shell) .admin-stripe-banner {
   outline: none;
 }
 
-.success-h1:focus {
-  outline: none;
-}
-
+.success-h1:focus,
 .success-h1:focus-visible {
   outline: none;
 }
