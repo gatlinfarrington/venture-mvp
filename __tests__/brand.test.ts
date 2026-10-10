@@ -55,8 +55,8 @@ describe("brand config", () => {
     else process.env.NEXT_PUBLIC_INSTALL_URL = prevI;
   });
 
-  it("keeps pre-launch hero copy without forcing Stripe into the lede", () => {
-    expect(brand.taglineShort).toMatch(/pre-launch/i);
+  it("keeps the Sheets add-on eyebrow without forcing Stripe into the lede", () => {
+    expect(brand.taglineShort).toMatch(/^Google Sheets add-on$/i);
     expect(brand.description).toMatch(/Lemon Squeezy, Polar and Gumroad/);
     expect(brand.description).not.toMatch(/Stripe/);
   });

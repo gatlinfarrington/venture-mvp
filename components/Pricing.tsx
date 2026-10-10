@@ -21,6 +21,7 @@ export function Pricing({ variant = "section" }: Props) {
   const listing = marketplaceUrlClient();
   const paidCheckoutReady = checkoutEnabled;
   const launchHref = variant === "page" ? "#launch" : "/#launch";
+  const showLaunchCaption = !listing && !paidCheckoutReady;
 
   async function startCheckout(tier: "pro" | "business", billing: BillingInterval) {
     if (!checkoutEnabled) return;
@@ -99,6 +100,7 @@ export function Pricing({ variant = "section" }: Props) {
                   ? plan.monthly
                   : Math.round(plan.annual / 12);
             const featured = plan.tier === "pro";
+            const btnClass = featured ? "btn btn-primary" : "btn btn-secondary";
             return (
               <Reveal
                 key={plan.tier}
@@ -129,21 +131,18 @@ export function Pricing({ variant = "section" }: Props) {
                 {plan.tier === "free" ? (
                   <div className="price-cta-stack">
                     <InstallCta
-                      className="btn btn-primary"
+                      className={btnClass}
                       source="pricing-free"
                       launchHref={launchHref}
                     >
                       {listing ? "Install free" : "Join the launch list"}
                     </InstallCta>
-                    {!listing ? (
-                      <p className="price-cta-caption mono">Opens with the Marketplace listing</p>
-                    ) : null}
                   </div>
                 ) : paidCheckoutReady ? (
                   <div className="price-cta-stack">
                     <button
                       type="button"
-                      className={featured ? "btn btn-primary" : "btn btn-secondary"}
+                      className={btnClass}
                       disabled={pendingTier === plan.tier}
                       onClick={() => startCheckout(plan.tier, interval)}
                     >
@@ -154,19 +153,23 @@ export function Pricing({ variant = "section" }: Props) {
                 ) : (
                   <div className="price-cta-stack">
                     <InstallCta
-                      className="btn btn-secondary"
+                      className={btnClass}
                       source={`pricing-${plan.tier}`}
                       launchHref={launchHref}
                     >
                       Join the launch list
                     </InstallCta>
-                    <p className="price-cta-caption mono">Opens with the Marketplace listing</p>
                   </div>
                 )}
               </Reveal>
             );
           })}
         </div>
+        {showLaunchCaption ? (
+          <p className="pricing-grid-caption mono muted">
+            Opens with the Marketplace listing
+          </p>
+        ) : null}
         {checkoutMessage ? (
           <p role="status" className="checkout-status">
             {checkoutMessage}

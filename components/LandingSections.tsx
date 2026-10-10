@@ -1,4 +1,5 @@
 import { HeroDemoLazy } from "@/components/HeroDemoLazy";
+import { HeroRevealBoot } from "@/components/HeroRevealBoot";
 import { InstallCta } from "@/components/InstallCta";
 import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
@@ -12,10 +13,11 @@ export function Hero() {
 
   return (
     <section className="hero">
+      <HeroRevealBoot />
       <div className="container hero-grid">
         <div className="hero-copy">
           <p className="eyebrow hero-reveal" style={{ animationDelay: "0ms" }}>
-            {brand.taglineShort}
+            Google Sheets add-on
           </p>
           <h1 className="display hero-reveal" style={{ animationDelay: "60ms" }}>
             All your stores,

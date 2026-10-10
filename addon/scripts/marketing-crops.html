@@ -46,28 +46,27 @@
       background: var(--bg);
     }
 
-    /* —— Shared sidebar —— */
-    .stage-grey {
+    /* —— Shared sidebar (fills the crop; no grey stage) —— */
+    .stage-sidebar {
       width: 100%;
       height: 100%;
-      background: #ebebeb;
+      background: #fff;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 48px;
+      align-items: stretch;
+      justify-content: stretch;
     }
-    .phone .stage-grey { padding: 24px; align-items: flex-start; padding-top: 40px; }
     .sidebar {
-      width: 560px;
+      width: 100%;
       max-width: 100%;
       background: #fff;
-      border: 2px solid var(--hairline);
-      padding: 40px 36px 44px;
-      box-shadow: 0 18px 60px rgba(0,0,0,0.12);
+      border: 0;
+      padding: 28px 24px 32px;
+      box-shadow: none;
+      overflow: hidden;
     }
     .phone .sidebar {
       width: 100%;
-      padding: 28px 24px 32px;
+      padding: 24px 20px 28px;
     }
     .brand {
       display: flex;
@@ -253,13 +252,11 @@
     }
     table.orders td.name { font-family: "Inter Tight", sans-serif; }
     table.orders td.num { text-align: right; }
-    table.orders col.c1 { width: 14%; }
-    table.orders col.c2 { width: 12%; }
-    table.orders col.c3 { width: 14%; }
-    table.orders col.c4 { width: 22%; }
-    table.orders col.c5 { width: 20%; }
-    table.orders col.c6 { width: 10%; }
-    table.orders col.c7 { width: 8%; }
+    table.orders col.c1 { width: 22%; }
+    table.orders col.c2 { width: 16%; }
+    table.orders col.c3 { width: 18%; }
+    table.orders col.c4 { width: 30%; }
+    table.orders col.c6 { width: 14%; }
     /* Phone: fewer columns, full words */
     .phone-only { display: none; }
     .phone .phone-only { display: table-cell; }
@@ -404,7 +401,7 @@
 
   <div class="crop" id="crop-connect">
     <div class="crop-inner">
-      <div class="stage-grey">
+      <div class="stage-sidebar">
         <div class="sidebar">
           <div class="brand">
             <svg viewBox="0 0 40 40" aria-hidden="true">
@@ -441,7 +438,7 @@
 
   <div class="crop" id="crop-backfill">
     <div class="crop-inner">
-      <div class="stage-grey">
+      <div class="stage-sidebar">
         <div class="sidebar">
           <div class="brand">
             <svg viewBox="0 0 40 40" aria-hidden="true">
@@ -486,40 +483,26 @@
       <div class="note">Managed by RevenueSheet: edits are overwritten on sync. Add your own columns to the right.</div>
       <table class="orders">
         <colgroup>
-          <col class="c1"/><col class="c2"/><col class="c3"/><col class="c4"/>
-          <col class="c5"/><col class="c6"/><col class="c7"/>
+          <col class="c1"/><col class="c2"/><col class="c3"/><col class="c4"/><col class="c6"/>
         </colgroup>
         <thead>
           <tr>
-            <th>Order ID</th><th>Created</th><th>Source</th><th>Product</th>
-            <th>Customer email</th><th>Amount</th><th>Status</th>
+            <th>Order</th><th>Created</th><th>Source</th><th>Product</th><th>Amount</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>sample_order_412</td><td>2026-10-08</td><td>polar</td><td class="name">Demo SaaS · Team</td><td>sample.user412@example.com</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td>sample_order_411</td><td>2026-10-08</td><td>lemon_squeezy</td><td class="name">Example Course Bundle</td><td>sample.user411@example.com</td><td class="num">49.00</td><td>paid</td></tr>
-          <tr><td>sample_order_410</td><td>2026-10-07</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td>sample.user410@example.com</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td>sample_order_409</td><td>2026-10-07</td><td>gumroad</td><td class="name">Template Kit</td><td>sample.user409@example.com</td><td class="num">19.00</td><td>paid</td></tr>
-          <tr><td>sample_order_408</td><td>2026-10-06</td><td>lemon_squeezy</td><td class="name">Sample E-book</td><td>sample.user408@example.com</td><td class="num">9.00</td><td>paid</td></tr>
-          <tr><td>sample_order_407</td><td>2026-10-06</td><td>polar</td><td class="name">Demo SaaS · Team</td><td>sample.user407@example.com</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td>sample_order_406</td><td>2026-10-05</td><td>gumroad</td><td class="name">Sample Icon Pack</td><td>sample.user406@example.com</td><td class="num">12.00</td><td>paid</td></tr>
-          <tr><td>sample_order_405</td><td>2026-10-05</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td>sample.user405@example.com</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td>sample_order_404</td><td>2026-10-04</td><td>lemon_squeezy</td><td class="name">Example Course Bundle</td><td>sample.user404@example.com</td><td class="num">49.00</td><td>paid</td></tr>
-          <tr><td>sample_order_403</td><td>2026-10-04</td><td>polar</td><td class="name">Demo SaaS · Team</td><td>sample.user403@example.com</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td>sample_order_402</td><td>2026-10-03</td><td>gumroad</td><td class="name">Template Kit</td><td>sample.user402@example.com</td><td class="num">19.00</td><td>paid</td></tr>
-          <tr><td>sample_order_401</td><td>2026-10-03</td><td>lemon_squeezy</td><td class="name">Sample E-book</td><td>sample.user401@example.com</td><td class="num">9.00</td><td>paid</td></tr>
-          <tr><td>sample_order_400</td><td>2026-10-02</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td>sample.user400@example.com</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td>sample_order_399</td><td>2026-10-02</td><td>polar</td><td class="name">Demo SaaS · Team</td><td>sample.user399@example.com</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td>sample_order_398</td><td>2026-10-01</td><td>gumroad</td><td class="name">Sample Icon Pack</td><td>sample.user398@example.com</td><td class="num">12.00</td><td>paid</td></tr>
-          <tr><td>sample_order_397</td><td>2026-10-01</td><td>lemon_squeezy</td><td class="name">Example Course Bundle</td><td>sample.user397@example.com</td><td class="num">49.00</td><td>paid</td></tr>
-          <tr><td>sample_order_396</td><td>2026-09-30</td><td>polar</td><td class="name">Demo SaaS · Team</td><td>sample.user396@example.com</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td>sample_order_395</td><td>2026-09-30</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td>sample.user395@example.com</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td>sample_order_394</td><td>2026-09-29</td><td>gumroad</td><td class="name">Template Kit</td><td>sample.user394@example.com</td><td class="num">19.00</td><td>paid</td></tr>
-          <tr><td>sample_order_393</td><td>2026-09-29</td><td>lemon_squeezy</td><td class="name">Sample E-book</td><td>sample.user393@example.com</td><td class="num">9.00</td><td>paid</td></tr>
-          <tr><td>sample_order_392</td><td>2026-09-28</td><td>polar</td><td class="name">Demo SaaS · Team</td><td>sample.user392@example.com</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td>sample_order_391</td><td>2026-09-28</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td>sample.user391@example.com</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td>sample_order_390</td><td>2026-09-27</td><td>gumroad</td><td class="name">Sample Icon Pack</td><td>sample.user390@example.com</td><td class="num">12.00</td><td>paid</td></tr>
-          <tr><td>sample_order_389</td><td>2026-09-27</td><td>lemon_squeezy</td><td class="name">Example Course Bundle</td><td>sample.user389@example.com</td><td class="num">49.00</td><td>paid</td></tr>
+          <tr><td>sample_order_412</td><td>2026-10-08</td><td>polar</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+          <tr><td>sample_order_411</td><td>2026-10-08</td><td>lemon_squeezy</td><td class="name">Example Course Bundle</td><td class="num">49.00</td></tr>
+          <tr><td>sample_order_410</td><td>2026-10-07</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td class="num">29.00</td></tr>
+          <tr><td>sample_order_409</td><td>2026-10-07</td><td>gumroad</td><td class="name">Template Kit</td><td class="num">19.00</td></tr>
+          <tr><td>sample_order_408</td><td>2026-10-06</td><td>lemon_squeezy</td><td class="name">Sample E-book</td><td class="num">9.00</td></tr>
+          <tr><td>sample_order_407</td><td>2026-10-06</td><td>polar</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+          <tr><td>sample_order_406</td><td>2026-10-05</td><td>gumroad</td><td class="name">Sample Icon Pack</td><td class="num">12.00</td></tr>
+          <tr><td>sample_order_405</td><td>2026-10-05</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td class="num">29.00</td></tr>
+          <tr><td>sample_order_404</td><td>2026-10-04</td><td>lemon_squeezy</td><td class="name">Example Course Bundle</td><td class="num">49.00</td></tr>
+          <tr><td>sample_order_403</td><td>2026-10-04</td><td>polar</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+          <tr><td>sample_order_402</td><td>2026-10-03</td><td>gumroad</td><td class="name">Template Kit</td><td class="num">19.00</td></tr>
+          <tr><td>sample_order_401</td><td>2026-10-03</td><td>lemon_squeezy</td><td class="name">Sample E-book</td><td class="num">9.00</td></tr>
         </tbody>
       </table>
     </div>
@@ -579,7 +562,7 @@
 
   <div class="crop phone" id="crop-connect-phone">
     <div class="crop-inner">
-      <div class="stage-grey">
+      <div class="stage-sidebar">
         <div class="sidebar">
           <div class="brand">
             <svg viewBox="0 0 40 40" aria-hidden="true">
@@ -614,7 +597,7 @@
 
   <div class="crop phone" id="crop-backfill-phone">
     <div class="crop-inner">
-      <div class="stage-grey">
+      <div class="stage-sidebar">
         <div class="sidebar">
           <div class="brand">
             <svg viewBox="0 0 40 40" aria-hidden="true">
@@ -653,36 +636,30 @@
         <div class="tab on">Orders</div>
         <div class="tab">Subs</div>
         <div class="tab">Customers</div>
-        <div class="tab">Dashboard</div>
       </div>
-      <div class="note">Managed by RevenueSheet · example data</div>
+      <div class="note">Managed by RevenueSheet.</div>
       <table class="orders">
+        <colgroup>
+          <col class="c1"/><col class="c2"/><col class="c3"/><col class="c4"/><col class="c6"/>
+        </colgroup>
         <thead>
           <tr>
-            <th>Product</th><th>Source</th><th>Amount</th><th>Status</th>
+            <th>Order</th><th>Created</th><th>Source</th><th>Product</th><th>Amount</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td class="name">Demo SaaS · Team</td><td>polar</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td class="name">Example Course Bundle</td><td>lemon_squeezy</td><td class="num">49.00</td><td>paid</td></tr>
-          <tr><td class="name">Demo SaaS · Pro</td><td>polar</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td class="name">Template Kit</td><td>gumroad</td><td class="num">19.00</td><td>paid</td></tr>
-          <tr><td class="name">Sample E-book</td><td>lemon_squeezy</td><td class="num">9.00</td><td>paid</td></tr>
-          <tr><td class="name">Demo SaaS · Team</td><td>polar</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td class="name">Sample Icon Pack</td><td>gumroad</td><td class="num">12.00</td><td>paid</td></tr>
-          <tr><td class="name">Demo SaaS · Pro</td><td>polar</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td class="name">Example Course Bundle</td><td>lemon_squeezy</td><td class="num">49.00</td><td>paid</td></tr>
-          <tr><td class="name">Demo SaaS · Team</td><td>polar</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td class="name">Template Kit</td><td>gumroad</td><td class="num">19.00</td><td>paid</td></tr>
-          <tr><td class="name">Sample E-book</td><td>lemon_squeezy</td><td class="num">9.00</td><td>paid</td></tr>
-          <tr><td class="name">Demo SaaS · Pro</td><td>polar</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td class="name">Demo SaaS · Team</td><td>polar</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td class="name">Sample Icon Pack</td><td>gumroad</td><td class="num">12.00</td><td>paid</td></tr>
-          <tr><td class="name">Example Course Bundle</td><td>lemon_squeezy</td><td class="num">49.00</td><td>paid</td></tr>
-          <tr><td class="name">Demo SaaS · Team</td><td>polar</td><td class="num">79.00</td><td>paid</td></tr>
-          <tr><td class="name">Demo SaaS · Pro</td><td>polar</td><td class="num">29.00</td><td>paid</td></tr>
-          <tr><td class="name">Template Kit</td><td>gumroad</td><td class="num">19.00</td><td>paid</td></tr>
-          <tr><td class="name">Sample E-book</td><td>lemon_squeezy</td><td class="num">9.00</td><td>paid</td></tr>
+          <tr><td>sample_order_412</td><td>2026-10-08</td><td>polar</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+          <tr><td>sample_order_411</td><td>2026-10-08</td><td>lemon_squeezy</td><td class="name">Example Course</td><td class="num">49.00</td></tr>
+          <tr><td>sample_order_410</td><td>2026-10-07</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td class="num">29.00</td></tr>
+          <tr><td>sample_order_409</td><td>2026-10-07</td><td>gumroad</td><td class="name">Template Kit</td><td class="num">19.00</td></tr>
+          <tr><td>sample_order_408</td><td>2026-10-06</td><td>lemon_squeezy</td><td class="name">Sample E-book</td><td class="num">9.00</td></tr>
+          <tr><td>sample_order_407</td><td>2026-10-06</td><td>polar</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+          <tr><td>sample_order_406</td><td>2026-10-05</td><td>gumroad</td><td class="name">Icon Pack</td><td class="num">12.00</td></tr>
+          <tr><td>sample_order_405</td><td>2026-10-05</td><td>polar</td><td class="name">Demo SaaS · Pro</td><td class="num">29.00</td></tr>
+          <tr><td>sample_order_404</td><td>2026-10-04</td><td>lemon_squeezy</td><td class="name">Example Course</td><td class="num">49.00</td></tr>
+          <tr><td>sample_order_403</td><td>2026-10-04</td><td>polar</td><td class="name">Demo SaaS · Team</td><td class="num">79.00</td></tr>
+          <tr><td>sample_order_402</td><td>2026-10-03</td><td>gumroad</td><td class="name">Template Kit</td><td class="num">19.00</td></tr>
+          <tr><td>sample_order_401</td><td>2026-10-03</td><td>lemon_squeezy</td><td class="name">Sample E-book</td><td class="num">9.00</td></tr>
         </tbody>
       </table>
     </div>

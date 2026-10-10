@@ -9,7 +9,11 @@ type Props = {
   delay?: number;
 };
 
-/** IntersectionObserver reveal per MOTION.md: once, 15% visible. */
+/**
+ * IntersectionObserver reveal per MOTION.md: once, 15% visible.
+ * Content stays visible without JS / with reduced motion so crawlers and
+ * full-page captures never see empty sections.
+ */
 export function Reveal({
   children,
   className,
@@ -23,9 +27,10 @@ export function Reveal({
     if (!el) return;
 
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      el.classList.add("is-visible");
       return;
     }
+
+    el.classList.add("reveal-motion");
 
     const io = new IntersectionObserver(
       ([entry]) => {
