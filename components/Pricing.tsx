@@ -101,12 +101,9 @@ export function Pricing({ variant = "section" }: Props) {
                   : Math.round(plan.annual / 12);
             const featured = plan.tier === "pro";
             const btnClass = featured ? "btn btn-primary" : "btn btn-secondary";
-            return (
-              <Reveal
-                key={plan.tier}
-                className={`price-card${featured ? " is-featured" : ""}`}
-                delay={Math.min(i, 4) * 60}
-              >
+            const cardClass = `price-card${featured ? " is-featured" : ""}`;
+            const body = (
+              <>
                 <div className="price-card-top">
                   <p className="eyebrow">{plan.name}</p>
                   <p className="price-amount">
@@ -161,6 +158,23 @@ export function Pricing({ variant = "section" }: Props) {
                     </InstallCta>
                   </div>
                 )}
+              </>
+            );
+            // /pricing is a page-top layout: no Reveal on cards. Home keeps Reveal (below fold).
+            if (variant === "page") {
+              return (
+                <div key={plan.tier} className={cardClass}>
+                  {body}
+                </div>
+              );
+            }
+            return (
+              <Reveal
+                key={plan.tier}
+                className={cardClass}
+                delay={Math.min(i, 4) * 60}
+              >
+                {body}
               </Reveal>
             );
           })}

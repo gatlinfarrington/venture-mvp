@@ -74,7 +74,7 @@ export function HowItWorks() {
       body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe, or import CSV for anything else. No OAuth dance with those stores: the add-on reads what you grant.",
       src: "/design/how-connect-2x.png",
       w: 600,
-      h: 1508,
+      h: 600,
       alt: "Connect sources panel with example store connections",
     },
     {
@@ -91,8 +91,8 @@ export function HowItWorks() {
       title: "Dashboard",
       body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data (formulas you can audit and extend).",
       src: "/design/how-dashboard-2x.png",
-      w: 672,
-      h: 480,
+      w: 600,
+      h: 600,
       alt: "MRR dashboard with KPIs and stacked source chart",
     },
   ];
@@ -160,10 +160,10 @@ export function WhatLands() {
               desktop="/design/lands-orders-2x.png"
               phone="/design/lands-orders-phone-2x.png"
               alt="Orders tab with Order ID, Created, Source, Product, and Amount"
-              width={1264}
-              height={749}
-              phoneWidth={654}
-              phoneHeight={605}
+              width={1200}
+              height={685}
+              phoneWidth={590}
+              phoneHeight={600}
               sizes="(max-width: 900px) 100vw, 55vw"
               quality={70}
             />

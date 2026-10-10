@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad"] as const;
+const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"] as const;
 const PRODUCTS = [
   "Demo SaaS · Pro",
   "Example Course",
@@ -30,7 +30,7 @@ type Row = {
 };
 
 type OrderSpec = {
-  source: 0 | 1 | 2;
+  source: 0 | 1 | 2 | 3;
   product: (typeof PRODUCTS)[number];
   amount: number;
 };
@@ -40,11 +40,11 @@ const SEED_SPECS: OrderSpec[] = [
   { source: 0, product: "Demo SaaS · Pro", amount: 29 },
   { source: 1, product: "Example Course", amount: 49 },
   { source: 2, product: "Sample Icon Pack", amount: 12 },
-  { source: 0, product: "Demo SaaS · Team", amount: 19 },
+  { source: 3, product: "Demo SaaS · Team", amount: 19 },
   { source: 1, product: "Template Kit", amount: 9 },
   { source: 2, product: "Demo SaaS · Pro", amount: 29 },
   { source: 0, product: "Sample Icon Pack", amount: 12 },
-  { source: 1, product: "Example Course", amount: 19 },
+  { source: 3, product: "Example Course", amount: 19 },
   { source: 2, product: "Demo SaaS · Team", amount: 9 },
 ];
 
@@ -53,15 +53,15 @@ const LANDING_SPECS: OrderSpec[] = [
   { source: 0, product: "Demo SaaS · Pro", amount: 29 },
   { source: 1, product: "Example Course", amount: 19 },
   { source: 2, product: "Sample Icon Pack", amount: 12 },
-  { source: 0, product: "Demo SaaS · Team", amount: 9 },
+  { source: 3, product: "Demo SaaS · Team", amount: 9 },
   { source: 1, product: "Template Kit", amount: 29 },
   { source: 2, product: "Demo SaaS · Pro", amount: 19 },
   { source: 0, product: "Sample Icon Pack", amount: 12 },
-  { source: 1, product: "Example Course", amount: 9 },
+  { source: 3, product: "Example Course", amount: 9 },
   { source: 2, product: "Demo SaaS · Team", amount: 29 },
   { source: 0, product: "Template Kit", amount: 19 },
   { source: 1, product: "Sample Icon Pack", amount: 12 },
-  { source: 2, product: "Demo SaaS · Pro", amount: 9 },
+  { source: 3, product: "Demo SaaS · Pro", amount: 9 },
   { source: 0, product: "Example Course", amount: 29 },
   { source: 1, product: "Demo SaaS · Team", amount: 15 },
 ];
@@ -137,7 +137,7 @@ export function HeroDemo() {
   const [mrr, setMrr] = useState(START_MRR);
   const [delta, setDelta] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>(SEED_ROWS);
-  const [activeStores, setActiveStores] = useState([false, false, false]);
+  const [activeStores, setActiveStores] = useState([false, false, false, false]);
   const [barHeights, setBarHeights] = useState(
     () => BASE_BARS.map((h) => (h - 40) * 2),
   );
@@ -286,7 +286,7 @@ export function HeroDemo() {
     setMrr(START_MRR);
     setDelta(null);
     setRows(SEED_ROWS);
-    setActiveStores([false, false, false]);
+    setActiveStores([false, false, false, false]);
     setBarHeights(BASE_BARS.map((h) => (h - 40) * 2));
     setPackets([]);
     packetBusy.current = false;
@@ -298,7 +298,7 @@ export function HeroDemo() {
       setMrr(FINAL_MRR);
       setDelta(deltaLabel(FINAL_MRR));
       setRows(finalRows());
-      setActiveStores([true, true, true]);
+      setActiveStores([true, true, true, true]);
       setBarHeights(BASE_BARS.map((h) => Math.min(98, (h - 40) * 2 + 14)));
       return;
     }
@@ -374,7 +374,7 @@ export function HeroDemo() {
         ref={stageRef}
         className="hero-stage"
         role="img"
-        aria-label="Animation: three stores sync orders into one spreadsheet while MRR rises (example data)"
+        aria-label="four stores"
       >
         <div className="hero-stores-col" aria-hidden="true">
           <div className="hero-stores">
@@ -382,6 +382,7 @@ export function HeroDemo() {
               { name: "Lemon Squeezy", store: "example-store" },
               { name: "Polar", store: "example-org" },
               { name: "Gumroad", store: "example-seller" },
+              { name: "Stripe", store: "example-acct" },
             ].map((s, i) => (
               <div
                 key={s.name}

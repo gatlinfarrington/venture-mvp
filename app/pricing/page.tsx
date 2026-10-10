@@ -27,8 +27,8 @@ const compareRows = [
   {
     label: "Sources",
     free: String(pricing.free.sources),
-    pro: "LS, Polar, Gumroad, Stripe + CSV",
-    business: "LS, Polar, Gumroad, Stripe + CSV",
+    pro: "All four stores and CSV",
+    business: "All four stores and CSV",
   },
   {
     label: "Refresh",

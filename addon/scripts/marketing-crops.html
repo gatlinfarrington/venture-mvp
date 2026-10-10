@@ -12,8 +12,7 @@
       --border: #8c8c8c;
       --surface2: #f2f2f2;
       --signal: #0a7a55;
-      --danger: #b42318;
-      --pad: 16px;
+      --surface: #ffffff;
     }
     * { box-sizing: border-box; }
     body {
@@ -23,119 +22,86 @@
       color: var(--ink);
     }
 
-    /* Sidebar crops: native add-on width 300 CSS px; content height + 16px pad. */
-    .crop.sidebar {
+    /* All step crops: 300×300 CSS → 600×600 @ DPR 2 */
+    .crop.step {
       width: 300px;
-      background: #fff;
+      height: 300px;
+      background: var(--surface);
       margin: 24px;
-      padding: var(--pad);
       overflow: hidden;
-    }
-    .crop.sidebar.backfill { height: 300px; }
-
-    /* Dashboard crop: ~336×240 CSS */
-    .crop.dash {
-      width: 336px;
-      height: 240px;
-      background: #fff;
-      margin: 24px;
-      padding: var(--pad);
-      overflow: hidden;
+      position: relative;
     }
 
-    /* Orders desktop: 600 CSS; phone: 295 CSS */
     .crop.orders {
       width: 600px;
-      background: #fff;
+      background: var(--surface);
       margin: 24px;
-      padding: 0;
       overflow: hidden;
     }
-    .crop.orders.phone { width: 295px; }
+    .crop.orders.phone {
+      width: 295px;
+      height: 300px;
+      position: relative;
+    }
 
-    /* —— Real add-on sidebar tokens (Sidebar.html) —— */
-    .sidebar {
-      width: 100%;
-      font-size: 14px;
-      background: #fff;
-    }
-    .brand {
+    /* —— Connect: SOURCES + 4 cards, no brand header —— */
+    .connect {
+      height: 100%;
+      padding: 14px 14px 12px;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 600;
-      font-size: 16px;
-      letter-spacing: -0.02em;
-      margin-bottom: 4px;
+      flex-direction: column;
     }
-    .brand svg { width: 24px; height: 24px; flex: 0 0 auto; }
-    .pitch { color: var(--muted); font-size: 12px; margin-bottom: 18px; }
     .eb {
       font: 500 11px/1 "JetBrains Mono", monospace;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--muted);
-      margin: 14px 0 8px;
+      margin: 0 0 8px;
+      flex: none;
+    }
+    .src-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      min-height: 0;
     }
     .src {
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      margin-bottom: 8px;
+      border-radius: 10px;
+      padding: 9px 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 13px;
+      flex: 1;
+      min-height: 0;
     }
     .src small {
       display: block;
-      font: 400 11px/1.3 "JetBrains Mono", monospace;
+      font: 400 11px/1.25 "JetBrains Mono", monospace;
       color: var(--muted);
       margin-top: 2px;
     }
     .dot { color: var(--signal); font-weight: 500; }
     .dot.off { color: var(--muted); }
-    .src-state { font-weight: 500; white-space: nowrap; }
+    .src-state { font-weight: 500; white-space: nowrap; font-size: 12px; }
     .src-state.off { color: var(--muted); }
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-    .field {
-      width: 100%;
-      height: 40px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0 12px;
-      font: 400 13px/1 "JetBrains Mono", monospace;
-      color: var(--muted);
-      background: #fff;
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-    .btn, .btn2 {
-      width: 100%;
-      height: 44px;
-      border-radius: 999px;
-      font: 500 15px "Inter Tight", sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 8px;
-    }
-    .btn { border: 0; background: var(--ink); color: #fff; }
-    .btn2 { border: 1px solid var(--border); background: #fff; color: var(--ink); }
 
+    /* —— Backfill —— */
+    .backfill {
+      height: 100%;
+      padding: 14px 14px 0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
     .bf-status {
       background: var(--surface2);
       border-radius: 8px;
       padding: 10px 12px;
       margin-bottom: 10px;
+      flex: none;
     }
     .bf-status .line {
       font: 500 11px/1.35 "JetBrains Mono", monospace;
@@ -154,79 +120,101 @@
       background: var(--ink);
       border-radius: 999px;
     }
+    .bf-rows {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      position: relative;
+    }
     .bf-row {
       display: grid;
       grid-template-columns: 1.15fr 1.1fr 0.55fr;
       gap: 6px;
-      padding: 7px 2px;
+      padding: 8px 2px;
       border-bottom: 1px solid var(--hairline);
       font: 400 11px/1.2 "JetBrains Mono", monospace;
     }
     .bf-row .prod { font-family: "Inter Tight", sans-serif; overflow: hidden; white-space: nowrap; }
     .bf-row .amt { text-align: right; }
-    .bf-row.f1 { opacity: 1; }
-    .bf-row.f2 { opacity: 0.85; }
-    .bf-row.f3 { opacity: 0.7; }
-    .bf-row.f4 { opacity: 0.55; }
-    .bf-row.f5 { opacity: 0.4; }
-    .bf-row.f6 { opacity: 0.25; }
+    .bf-fade {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 48px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), var(--surface));
+      pointer-events: none;
+    }
 
-    /* Dashboard compact */
+    /* —— Dashboard 300×300 —— */
+    .dash {
+      height: 100%;
+      padding: 12px 12px 12px;
+      display: flex;
+      flex-direction: column;
+    }
     .dash-status {
-      height: 28px;
+      height: 26px;
       display: flex;
       align-items: center;
       background: var(--surface2);
-      font: 400 9px/1 "JetBrains Mono", monospace;
+      font: 400 10px/1 "JetBrains Mono", monospace;
       color: var(--ink);
       padding: 0 8px;
       margin-bottom: 10px;
       overflow: hidden;
       white-space: nowrap;
+      flex: none;
     }
-    .dash-status .dot { color: var(--signal); }
+    .dash-status .dot { color: var(--signal); margin-right: 4px; }
     .kpis {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      margin-bottom: 8px;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex: none;
     }
     .kpi {
       border: 1px solid var(--hairline);
       border-top: 2px solid var(--ink);
-      padding: 6px 6px 8px;
+      padding: 8px 8px 10px;
       background: #fff;
-      min-height: 0;
     }
     .kpi .lab {
-      font: 400 8px/1 "JetBrains Mono", monospace;
+      font: 400 9px/1 "JetBrains Mono", monospace;
       color: var(--muted);
       text-transform: uppercase;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
     .kpi .val {
-      font-size: 14px;
+      font-size: 18px;
       font-weight: 600;
       letter-spacing: -0.03em;
       margin-bottom: 4px;
     }
     .kpi .delta {
-      font: 600 9px/1 "JetBrains Mono", monospace;
+      font: 600 10px/1 "JetBrains Mono", monospace;
       color: var(--signal);
     }
-    .kpi .delta.neg { color: var(--danger); }
     .sec {
       font-size: 11px;
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+      flex: none;
+    }
+    .chart-wrap {
+      flex: 1;
+      min-height: 0;
+      padding-right: 24px; /* 24px clear of right edge */
     }
     .bars {
       display: flex;
       align-items: flex-end;
       gap: 4px;
-      height: 72px;
+      height: 100%;
+      min-height: 72px;
     }
-    .bar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
     .seg { width: 100%; }
     .seg.a { background: #0d0d0d; }
     .seg.b { background: #5c5c5c; }
@@ -236,9 +224,10 @@
       margin-top: 3px;
       font: 400 8px/1 "JetBrains Mono", monospace;
       color: var(--muted);
+      flex: none;
     }
 
-    /* Orders sheet */
+    /* —— Orders —— */
     .sheet-chrome {
       height: 36px;
       border-bottom: 1px solid var(--hairline);
@@ -247,6 +236,8 @@
       padding: 0 6px;
       gap: 2px;
       background: var(--surface2);
+      position: relative;
+      overflow: hidden;
     }
     .tab {
       font: 500 11px/1 "Inter Tight", sans-serif;
@@ -254,14 +245,24 @@
       color: var(--muted);
       border-radius: 6px 6px 0 0;
       white-space: nowrap;
+      flex: none;
     }
-    .phone .tab { font-size: 10px; padding: 7px 7px 9px; }
+    .phone .tab { font-size: 11px; padding: 8px 9px 10px; }
     .tab.on {
       background: #fff;
       color: var(--ink);
       border: 1px solid var(--hairline);
       border-bottom-color: #fff;
       margin-bottom: -1px;
+    }
+    .tab-fade {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 40px;
+      background: linear-gradient(to right, rgba(242,242,242,0), var(--surface2));
+      pointer-events: none;
     }
     table.orders {
       width: 100%;
@@ -279,8 +280,8 @@
     }
     .phone table.orders th, .phone table.orders td {
       font-size: 11px;
-      height: 26px;
-      padding: 0 6px;
+      height: 28px;
+      padding: 0 8px;
     }
     table.orders th {
       background: var(--surface2);
@@ -298,91 +299,58 @@
 </head>
 <body>
 
-  <div class="crop sidebar" id="crop-connect">
-    <div class="sidebar">
-      <div class="brand">
-        <svg viewBox="0 0 40 40" aria-hidden="true">
-          <rect x="6" y="6" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="6" y="16" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="6" y="26" width="8" height="8" rx="1" fill="#0D0D0D"/>
-          <rect x="16" y="6" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="16" y="16" width="8" height="8" rx="1" fill="#0D0D0D"/>
-          <rect x="16" y="26" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="26" y="6" width="8" height="8" rx="1" fill="#0A7A55"/>
-          <rect x="26" y="16" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="26" y="26" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-        </svg>
-        <span>RevenueSheet</span>
-      </div>
-      <div class="pitch">All your stores, in a sheet you own.</div>
+  <div class="crop step" id="crop-connect">
+    <div class="connect">
       <div class="eb">Sources</div>
-      <div class="src"><div>Lemon Squeezy<small>Connected</small></div><span class="src-state"><span class="dot">●</span> On</span></div>
-      <div class="src"><div>Polar<small>Connected</small></div><span class="src-state"><span class="dot">●</span> On</span></div>
-      <div class="src"><div>Gumroad<small>Not connected</small></div><span class="src-state off"><span class="dot off">○</span> Off</span></div>
-      <div class="src"><div>Stripe<small>Connected</small></div><span class="src-state"><span class="dot">●</span> On</span></div>
-      <div class="eb">API keys</div>
-      <label>Lemon Squeezy</label>
-      <div class="field">ls_api_••••••••••••</div>
-      <label>Polar</label>
-      <div class="field">polar_oat_••••••••</div>
-      <label>Gumroad</label>
-      <div class="field">access_token</div>
-      <label>Stripe</label>
-      <div class="field">rk_test_••••••••</div>
-      <div class="btn">Save settings</div>
-      <div class="btn2">Sync now</div>
+      <div class="src-list">
+        <div class="src"><div>Lemon Squeezy<small>Connected</small></div><span class="src-state"><span class="dot">●</span> On</span></div>
+        <div class="src"><div>Polar<small>Connected</small></div><span class="src-state"><span class="dot">●</span> On</span></div>
+        <div class="src"><div>Gumroad<small>Not connected</small></div><span class="src-state off"><span class="dot off">○</span> Off</span></div>
+        <div class="src"><div>Stripe<small>Connected</small></div><span class="src-state"><span class="dot">●</span> On</span></div>
+      </div>
     </div>
   </div>
 
-  <div class="crop sidebar backfill" id="crop-backfill">
-    <div class="sidebar">
-      <div class="brand">
-        <svg viewBox="0 0 40 40" aria-hidden="true">
-          <rect x="6" y="6" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="6" y="16" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="6" y="26" width="8" height="8" rx="1" fill="#0D0D0D"/>
-          <rect x="16" y="6" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="16" y="16" width="8" height="8" rx="1" fill="#0D0D0D"/>
-          <rect x="16" y="26" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="26" y="6" width="8" height="8" rx="1" fill="#0A7A55"/>
-          <rect x="26" y="16" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-          <rect x="26" y="26" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
-        </svg>
-        <span>RevenueSheet</span>
-      </div>
-      <div class="pitch">Full history backfill in progress.</div>
+  <div class="crop step" id="crop-backfill">
+    <div class="backfill">
       <div class="bf-status">
-        <div class="line">Backfilling Lemon Squeezy · 2,431 of 3,120 orders</div>
+        <div class="line">Lemon Squeezy · 2,431 / 3,120 orders</div>
         <div class="bf-track"><div class="bf-fill"></div></div>
       </div>
-      <div class="eb">Writing to Orders</div>
-      <div class="bf-row f1"><span class="prod">Demo SaaS · Team</span><span>sample.user412</span><span class="amt">79.00</span></div>
-      <div class="bf-row f2"><span class="prod">Example Course</span><span>sample.user411</span><span class="amt">49.00</span></div>
-      <div class="bf-row f3"><span class="prod">Demo SaaS · Pro</span><span>sample.user410</span><span class="amt">29.00</span></div>
-      <div class="bf-row f4"><span class="prod">Template Kit</span><span>sample.user409</span><span class="amt">19.00</span></div>
-      <div class="bf-row f5"><span class="prod">Sample E-book</span><span>sample.user408</span><span class="amt">9.00</span></div>
-      <div class="bf-row f6"><span class="prod">Icon Pack</span><span>sample.user407</span><span class="amt">12.00</span></div>
+      <div class="bf-rows">
+        <div class="bf-row"><span class="prod">Demo SaaS · Team</span><span>sample.user412</span><span class="amt">79.00</span></div>
+        <div class="bf-row"><span class="prod">Example Course</span><span>sample.user411</span><span class="amt">49.00</span></div>
+        <div class="bf-row"><span class="prod">Demo SaaS · Pro</span><span>sample.user410</span><span class="amt">29.00</span></div>
+        <div class="bf-row"><span class="prod">Template Kit</span><span>sample.user409</span><span class="amt">19.00</span></div>
+        <div class="bf-row"><span class="prod">Sample E-book</span><span>sample.user408</span><span class="amt">9.00</span></div>
+        <div class="bf-row"><span class="prod">Icon Pack</span><span>sample.user407</span><span class="amt">12.00</span></div>
+        <div class="bf-fade"></div>
+      </div>
     </div>
   </div>
 
-  <div class="crop dash" id="crop-dashboard">
-    <div class="dash-status">
-      <span><span class="dot">●</span> SYNCED 10:02 · LEMON SQUEEZY, POLAR, GUMROAD · HOURLY</span>
-    </div>
-    <div class="kpis">
-      <div class="kpi"><div class="lab">MRR</div><div class="val">$11.7k</div><span class="delta">▲ 4.2%</span></div>
-      <div class="kpi"><div class="lab">Net · 30d</div><div class="val">$3,624</div><span class="delta">▲ 6.1%</span></div>
-      <div class="kpi"><div class="lab">Active</div><div class="val">342</div><span class="delta">▲ 24</span></div>
-      <div class="kpi"><div class="lab">Churn</div><div class="val">1.9%</div><span class="delta">▼ 0.3</span></div>
-    </div>
-    <div class="sec">MRR by source · 12 months</div>
-    <div class="bars">
-      <div class="bar-col"><div class="seg a" style="height:28px"></div><div class="seg b" style="height:16px"></div><div class="seg c" style="height:8px"></div><div class="bar-label">M</div></div>
-      <div class="bar-col"><div class="seg a" style="height:32px"></div><div class="seg b" style="height:18px"></div><div class="seg c" style="height:9px"></div><div class="bar-label">J</div></div>
-      <div class="bar-col"><div class="seg a" style="height:36px"></div><div class="seg b" style="height:20px"></div><div class="seg c" style="height:10px"></div><div class="bar-label">J</div></div>
-      <div class="bar-col"><div class="seg a" style="height:40px"></div><div class="seg b" style="height:22px"></div><div class="seg c" style="height:11px"></div><div class="bar-label">A</div></div>
-      <div class="bar-col"><div class="seg a" style="height:44px"></div><div class="seg b" style="height:24px"></div><div class="seg c" style="height:12px"></div><div class="bar-label">S</div></div>
-      <div class="bar-col"><div class="seg a" style="height:48px"></div><div class="seg b" style="height:26px"></div><div class="seg c" style="height:13px"></div><div class="bar-label">O</div></div>
+  <div class="crop step" id="crop-dashboard">
+    <div class="dash">
+      <div class="dash-status">
+        <span class="dot">●</span> SYNCED 10:02 · HOURLY
+      </div>
+      <div class="kpis">
+        <div class="kpi"><div class="lab">MRR</div><div class="val">$11.7k</div><span class="delta">▲ 4.2%</span></div>
+        <div class="kpi"><div class="lab">Net · 30d</div><div class="val">$3,624</div><span class="delta">▲ 6.1%</span></div>
+        <div class="kpi"><div class="lab">Active</div><div class="val">342</div><span class="delta">▲ 24</span></div>
+        <div class="kpi"><div class="lab">Churn</div><div class="val">1.9%</div><span class="delta">▼ 0.3</span></div>
+      </div>
+      <div class="sec">MRR by source · 6 months</div>
+      <div class="chart-wrap">
+        <div class="bars">
+          <div class="bar-col"><div class="seg a" style="height:42%"></div><div class="seg b" style="height:24%"></div><div class="seg c" style="height:12%"></div><div class="bar-label">M</div></div>
+          <div class="bar-col"><div class="seg a" style="height:48%"></div><div class="seg b" style="height:26%"></div><div class="seg c" style="height:13%"></div><div class="bar-label">J</div></div>
+          <div class="bar-col"><div class="seg a" style="height:54%"></div><div class="seg b" style="height:28%"></div><div class="seg c" style="height:14%"></div><div class="bar-label">J</div></div>
+          <div class="bar-col"><div class="seg a" style="height:60%"></div><div class="seg b" style="height:30%"></div><div class="seg c" style="height:15%"></div><div class="bar-label">A</div></div>
+          <div class="bar-col"><div class="seg a" style="height:66%"></div><div class="seg b" style="height:32%"></div><div class="seg c" style="height:16%"></div><div class="bar-label">S</div></div>
+          <div class="bar-col"><div class="seg a" style="height:72%"></div><div class="seg b" style="height:34%"></div><div class="seg c" style="height:17%"></div><div class="bar-label">O</div></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -418,24 +386,25 @@
   <div class="crop orders phone" id="crop-orders-phone">
     <div class="sheet-chrome">
       <div class="tab on">Orders</div>
-      <div class="tab">Subs</div>
-      <div class="tab">Dash</div>
+      <div class="tab">Subscriptions</div>
+      <div class="tab">Customers</div>
+      <div class="tab-fade"></div>
     </div>
     <table class="orders">
       <thead>
         <tr>
-          <th>Order ID</th><th>Source</th><th>Amount</th>
+          <th>Order</th><th>Source</th><th>Amount</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td>sample_order_412</td><td>polar</td><td class="num">79.00</td></tr>
-        <tr><td>sample_order_411</td><td>lemon_squeezy</td><td class="num">49.00</td></tr>
-        <tr><td>sample_order_410</td><td>polar</td><td class="num">29.00</td></tr>
-        <tr><td>sample_order_409</td><td>gumroad</td><td class="num">19.00</td></tr>
-        <tr><td>sample_order_408</td><td>lemon_squeezy</td><td class="num">9.00</td></tr>
-        <tr><td>sample_order_407</td><td>stripe</td><td class="num">79.00</td></tr>
-        <tr><td>sample_order_406</td><td>gumroad</td><td class="num">12.00</td></tr>
-        <tr><td>sample_order_405</td><td>polar</td><td class="num">29.00</td></tr>
+        <tr><td>#412</td><td>polar</td><td class="num">79.00</td></tr>
+        <tr><td>#411</td><td>lemon_squeezy</td><td class="num">49.00</td></tr>
+        <tr><td>#410</td><td>polar</td><td class="num">29.00</td></tr>
+        <tr><td>#409</td><td>gumroad</td><td class="num">19.00</td></tr>
+        <tr><td>#408</td><td>lemon_squeezy</td><td class="num">9.00</td></tr>
+        <tr><td>#407</td><td>stripe</td><td class="num">79.00</td></tr>
+        <tr><td>#406</td><td>gumroad</td><td class="num">12.00</td></tr>
+        <tr><td>#405</td><td>polar</td><td class="num">29.00</td></tr>
       </tbody>
     </table>
   </div>

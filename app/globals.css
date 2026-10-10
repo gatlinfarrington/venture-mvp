@@ -669,7 +669,7 @@ a.chip[aria-current="page"] {
 .hero-stores {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .hero-stores-foot {
@@ -1612,6 +1612,14 @@ a.chip[aria-current="page"] {
 
 .footer-col a:hover {
   color: var(--c-ink);
+}
+
+.footer-note {
+  margin: var(--space-2) 0 0;
+  max-width: 28ch;
+  font-size: var(--t-caption-size);
+  line-height: var(--t-caption-lh);
+  color: var(--c-ink-muted);
 }
 
 .footer-bottom {
