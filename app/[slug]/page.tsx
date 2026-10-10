@@ -57,7 +57,7 @@ export default async function SeoMarketingPage({ params }: Props) {
         ))}
         <p>
           <InstallCta className="btn btn-primary" source={`seo-${page.slug}`}>
-            Install for Google Sheets
+            Join the launch list
           </InstallCta>
         </p>
       </div>

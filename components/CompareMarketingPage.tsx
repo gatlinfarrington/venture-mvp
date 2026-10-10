@@ -76,7 +76,7 @@ export function CompareMarketingPage({ page }: { page: ComparePage }) {
         <p className="mono muted">Sources checked {page.checkedOn}.</p>
         <p>
           <InstallCta className="btn btn-primary" source={`vs-${page.slug}`}>
-            Install for Google Sheets
+            Join the launch list
           </InstallCta>
         </p>
       </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { InstallCta } from "@/components/InstallCta";
 import { Reveal } from "@/components/Reveal";
 import { REFUND_LINE } from "@/lib/copy";
+import { marketplaceUrlClient } from "@/lib/marketplace-client";
 import { checkoutEnabled, pricing, type BillingInterval } from "@/lib/site";
 
 type Props = {
@@ -17,8 +18,9 @@ export function Pricing({ variant = "section" }: Props) {
   const [pendingTier, setPendingTier] = useState<string | null>(null);
 
   const plans = [pricing.free, pricing.pro, pricing.business];
-  /** Live Checkout when Stripe publishable key is set; secret + prices resolve server-side. */
+  const listing = marketplaceUrlClient();
   const paidCheckoutReady = checkoutEnabled;
+  const launchHref = variant === "page" ? "#launch" : "/#launch";
 
   async function startCheckout(tier: "pro" | "business", billing: BillingInterval) {
     if (!checkoutEnabled) return;
@@ -54,17 +56,17 @@ export function Pricing({ variant = "section" }: Props) {
         {variant === "page" ? (
           <header className="pricing-page-head">
             <p className="eyebrow">Pricing</p>
-            <h1>Free to try. Pay when you schedule sync.</h1>
-            <p className="muted body-lg pricing-page-lede">
-              Free, $9, and $19. Annual billing is ten months of the monthly price (two months free).
+            <h1>Free to start. Paid plans open at launch.</h1>
+            <p className="mono muted pricing-ann">
+              Prices are estimates until launch. Annual billing is two months free.
             </p>
           </header>
         ) : (
           <Reveal className="section-head">
             <p className="eyebrow">Pricing</p>
-            <h2 className="h2">Free to try. Pay when you schedule sync.</h2>
-            <p className="muted body-lg">
-              Free, $9, and $19. Annual billing is ten months of the monthly price (two months free).
+            <h2 className="h2">Free to start. Paid plans open at launch.</h2>
+            <p className="mono muted pricing-ann">
+              Prices are estimates until launch. Annual billing is two months free.
             </p>
           </Reveal>
         )}
@@ -72,6 +74,7 @@ export function Pricing({ variant = "section" }: Props) {
         <div className="billing-toggle" role="group" aria-label="Billing interval">
           <button
             type="button"
+            className="chip"
             aria-pressed={interval === "month"}
             onClick={() => setInterval("month")}
           >
@@ -79,6 +82,7 @@ export function Pricing({ variant = "section" }: Props) {
           </button>
           <button
             type="button"
+            className="chip"
             aria-pressed={interval === "year"}
             onClick={() => setInterval("year")}
           >
@@ -123,9 +127,18 @@ export function Pricing({ variant = "section" }: Props) {
                   ))}
                 </ul>
                 {plan.tier === "free" ? (
-                  <InstallCta className="btn btn-secondary" source="pricing-free">
-                    Start free
-                  </InstallCta>
+                  <div className="price-cta-stack">
+                    <InstallCta
+                      className="btn btn-primary"
+                      source="pricing-free"
+                      launchHref={launchHref}
+                    >
+                      {listing ? "Install free" : "Join the launch list"}
+                    </InstallCta>
+                    {!listing ? (
+                      <p className="price-cta-caption mono">Opens with the Marketplace listing</p>
+                    ) : null}
+                  </div>
                 ) : paidCheckoutReady ? (
                   <div className="price-cta-stack">
                     <button
@@ -141,12 +154,13 @@ export function Pricing({ variant = "section" }: Props) {
                 ) : (
                   <div className="price-cta-stack">
                     <InstallCta
-                      className={featured ? "btn btn-primary" : "btn btn-secondary"}
+                      className="btn btn-secondary"
                       source={`pricing-${plan.tier}`}
+                      launchHref={launchHref}
                     >
-                      Opens at launch
+                      Join the launch list
                     </InstallCta>
-                    <p className="price-cta-caption mono muted">{REFUND_LINE}</p>
+                    <p className="price-cta-caption mono">Opens with the Marketplace listing</p>
                   </div>
                 )}
               </Reveal>

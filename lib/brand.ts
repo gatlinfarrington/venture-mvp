@@ -10,8 +10,8 @@ export const brand = {
   nameStatus: "placeholder" as const,
   pitch: "All your stores, in a sheet you own.",
   description:
-    "Lemon Squeezy, Polar, Gumroad and Stripe revenue, synced on a schedule into Google Sheets, with an MRR dashboard built for you.",
-  taglineShort: "Google Sheets add-on",
+    "Lemon Squeezy, Polar and Gumroad revenue, synced on a schedule into Google Sheets, with an MRR dashboard built for you.",
+  taglineShort: "Google Sheets add-on · pre-launch",
   /** Logo concept currently shipping (Ledger Cell = c3). */
   logo: {
     concept: "Ledger Cell",

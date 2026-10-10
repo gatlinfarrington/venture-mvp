@@ -57,7 +57,7 @@ export const pricing = {
     refresh: "Scheduled (hourly)",
     stores: 1,
     features: [
-      "All connected sources",
+      "All three sources",
       "Scheduled refresh",
       "Full history backfill",
       "MRR, churn, revenue by product",

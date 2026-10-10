@@ -14,7 +14,28 @@ export const metadata: Metadata = {
   },
 };
 
-const cards = [
+const quickstart = [
+  {
+    n: "01",
+    title: "Install",
+    body: "Add RevenueSheet from the Workspace Marketplace (or join the launch list until listing day).",
+    href: "/#launch",
+  },
+  {
+    n: "02",
+    title: "Connect a store with an API key",
+    body: "Paste a Lemon Squeezy, Polar, or Gumroad key in the sidebar.",
+    href: "/docs/api-keys",
+  },
+  {
+    n: "03",
+    title: "Run backfill",
+    body: "Pull full history into Orders, Subscriptions, Customers, and Refunds.",
+    href: "/docs/setup/lemon-squeezy",
+  },
+] as const;
+
+const setup = [
   {
     href: "/docs/setup/lemon-squeezy",
     title: "Lemon Squeezy setup",
@@ -35,6 +56,9 @@ const cards = [
     title: "API keys",
     body: "Where keys are stored, how to rotate them, and what never leaves your sheet.",
   },
+] as const;
+
+const help = [
   {
     href: "/docs/faq",
     title: "FAQ",
@@ -53,21 +77,55 @@ export default function DocsIndexPage() {
       <p className="eyebrow">Help center</p>
       <h1>Docs</h1>
       <p className="body-lg muted docs-lede">
-        Setup for each source, API key handling, FAQ, and fixes when sync stalls. Install the add-on
-        from the Workspace Marketplace, then return here when a step is unclear.
+        Setup for each source, API key handling, FAQ, and fixes when sync stalls.
       </p>
-      <ul className="docs-card-list">
-        {cards.map((card) => (
-          <li key={card.href}>
-            <Link href={card.href}>
-              <span className="docs-card-title">{card.title}</span>
-              <span className="muted">{card.body}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-      <p className="muted docs-support">
-        Still stuck? See <Link href="/support">Support</Link>.
+
+      <section className="docs-start">
+        <h2 className="h3">Start here</h2>
+        <ol className="docs-quickstart">
+          {quickstart.map((step) => (
+            <li key={step.n}>
+              <Link href={step.href}>
+                <span className="docs-quickstart-n mono">{step.n}</span>
+                <span className="docs-card-title">{step.title}</span>
+                <span className="muted">{step.body}</span>
+              </Link>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <div className="docs-groups">
+        <section>
+          <h2 className="docs-group-label mono">Setup</h2>
+          <ul className="docs-card-list">
+            {setup.map((card) => (
+              <li key={card.href}>
+                <Link href={card.href}>
+                  <span className="docs-card-title">{card.title}</span>
+                  <span className="muted">{card.body}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section>
+          <h2 className="docs-group-label mono">Help</h2>
+          <ul className="docs-card-list">
+            {help.map((card) => (
+              <li key={card.href}>
+                <Link href={card.href}>
+                  <span className="docs-card-title">{card.title}</span>
+                  <span className="muted">{card.body}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <p className="docs-support-row">
+        Can&apos;t find it? See <Link href="/support">Support</Link>.
       </p>
     </main>
   );

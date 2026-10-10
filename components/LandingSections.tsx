@@ -1,13 +1,15 @@
 import { HeroDemoLazy } from "@/components/HeroDemoLazy";
 import { InstallCta } from "@/components/InstallCta";
+import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
 import { ResponsiveCrop } from "@/components/ResponsiveCrop";
 import { Reveal } from "@/components/Reveal";
-import { brand } from "@/lib/brand";
+import { brand, marketplaceUrl } from "@/lib/brand";
 import { REFUND_LINE } from "@/lib/copy";
-import { siteConfig } from "@/lib/site";
 
 export function Hero() {
+  const listing = marketplaceUrl();
+
   return (
     <section className="hero">
       <div className="container hero-grid">
@@ -25,21 +27,36 @@ export function Hero() {
           <p className="body-lg muted hero-lede hero-reveal" style={{ animationDelay: "120ms" }}>
             {brand.description}
           </p>
-          <div className="hero-pills hero-reveal" style={{ animationDelay: "180ms" }}>
-            {siteConfig.sources.map((s) => (
-              <span key={s} className="pill">
-                {s}
-              </span>
-            ))}
+          <div className="hero-ctas hero-reveal" style={{ animationDelay: "180ms" }}>
+            {listing ? (
+              <>
+                <InstallCta className="btn btn-primary" source="hero">
+                  Install for Google Sheets
+                </InstallCta>
+                <a className="btn btn-secondary" href="#dashboard">
+                  See the dashboard
+                </a>
+              </>
+            ) : (
+              <LaunchInvite id="launch" source="hero" />
+            )}
           </div>
-          <div className="hero-ctas hero-reveal" style={{ animationDelay: "240ms" }}>
-            <InstallCta className="btn btn-primary" source="hero">
-              Install for Google Sheets
-            </InstallCta>
-            <a className="btn btn-secondary" href="#dashboard">
-              See the dashboard
-            </a>
-          </div>
+          {!listing ? (
+            <dl className="hero-facts hero-reveal" style={{ animationDelay: "240ms" }}>
+              <div>
+                <dt>Status</dt>
+                <dd>Built and in testing. Not yet on the Marketplace.</dd>
+              </div>
+              <div>
+                <dt>Sources</dt>
+                <dd>Lemon Squeezy, Polar, Gumroad</dd>
+              </div>
+              <div>
+                <dt>Free plan</dt>
+                <dd>1 source, manual refresh</dd>
+              </div>
+            </dl>
+          ) : null}
         </div>
         <div className="hero-frame hero-reveal" style={{ animationDelay: "300ms" }}>
           <HeroDemoLazy />
@@ -154,19 +171,10 @@ export function WhatLands() {
 }
 
 export function WhySheet() {
-  const cols = [
-    {
-      title: "You own the data",
-      body: "Rows live in your Google account. Export, share, or delete without asking a vendor dashboard for a CSV.",
-    },
-    {
-      title: "Use your own formulas",
-      body: "Named ranges like rs_orders and rs_mrr_monthly are ready for QUERY, FILTER, and the models you already trust.",
-    },
-    {
-      title: "No new dashboard to learn",
-      body: "If you already live in Sheets for taxes, investor updates, or cohort math, keep that habit. We fill the cells.",
-    },
+  const claims = [
+    "You own the data in your Google account.",
+    "Named ranges ready for QUERY and FILTER.",
+    "No new dashboard to learn.",
   ];
 
   return (
@@ -176,14 +184,40 @@ export function WhySheet() {
           <p className="eyebrow">Why a sheet</p>
           <h2 className="h2">A spreadsheet you control beats another login.</h2>
         </Reveal>
-        <div className="why-grid">
-          {cols.map((c, i) => (
-            <Reveal key={c.title} className="why-col" delay={Math.min(i, 4) * 60}>
-              <h3 className="h3">{c.title}</h3>
-              <p className="muted">{c.body}</p>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal className="why-artifact">
+          <pre className="why-formula" tabIndex={0}>
+            <code>
+              {`=QUERY(rs_orders, "select C, sum(F) where G = 'paid' group by C label sum(F) 'Revenue'")`}
+            </code>
+          </pre>
+          <table className="why-result">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Lifetime deal</td>
+                <td className="num">$4,280</td>
+              </tr>
+              <tr>
+                <td>Pro annual</td>
+                <td className="num">$2,160</td>
+              </tr>
+              <tr>
+                <td>Starter monthly</td>
+                <td className="num">$890</td>
+              </tr>
+            </tbody>
+          </table>
+          <ul className="why-claims">
+            {claims.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+        </Reveal>
       </div>
     </section>
   );
@@ -292,18 +326,33 @@ export function FAQ() {
 }
 
 export function FinalCTA() {
+  const listing = marketplaceUrl();
+
   return (
     <section className="section">
       <div className="container">
         <Reveal className="final-cta">
-          <h2 className="h2">
-            Your revenue,
-            <br />
-            finally in one place.
-          </h2>
-          <InstallCta className="btn btn-primary" source="final-cta">
-            Install for Google Sheets
-          </InstallCta>
+          {listing ? (
+            <>
+              <h2 className="h2">
+                Your revenue,
+                <br />
+                finally in one place.
+              </h2>
+              <InstallCta className="btn btn-primary" source="final-cta">
+                Install for Google Sheets
+              </InstallCta>
+            </>
+          ) : (
+            <>
+              <h2 className="h2 final-cta-title">
+                Be first in when the
+                <br />
+                listing goes live.
+              </h2>
+              <LaunchInvite source="final-cta" />
+            </>
+          )}
         </Reveal>
       </div>
     </section>

@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { InstallCta } from "@/components/InstallCta";
+import { marketplaceUrlClient } from "@/lib/marketplace-client";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const listing = marketplaceUrlClient();
+  const ctaLabel = listing ? "Install free" : "Join the launch list";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -29,8 +32,8 @@ export function Nav() {
           <Link href="/changelog">Changelog</Link>
         </nav>
         <div className="nav-actions">
-          <InstallCta className="btn btn-primary btn-sm" source="nav">
-            Install free
+          <InstallCta className="btn btn-primary btn-sm nav-cta-desktop" source="nav">
+            {ctaLabel}
           </InstallCta>
           <button
             type="button"
@@ -59,6 +62,9 @@ export function Nav() {
       </div>
       {open ? (
         <div className="mobile-drawer container">
+          <InstallCta source="nav-mobile" onClick={() => setOpen(false)}>
+            {ctaLabel}
+          </InstallCta>
           <Link href="/pricing" onClick={() => setOpen(false)}>
             Pricing
           </Link>
@@ -77,7 +83,6 @@ export function Nav() {
           <Link href="/changelog" onClick={() => setOpen(false)}>
             Changelog
           </Link>
-          <InstallCta source="nav-mobile">Install free</InstallCta>
         </div>
       ) : null}
     </header>

@@ -43,8 +43,7 @@ describe("brand config", () => {
     expect(siteHostname()).not.toBe("revenuesheet.app");
   });
 
-  it("lists Stripe and returns null install URL when marketplace unset", () => {
-    expect(brand.sources).toContain("Stripe");
+  it("returns null install URL when marketplace unset", () => {
     const prevM = process.env.NEXT_PUBLIC_MARKETPLACE_URL;
     const prevI = process.env.NEXT_PUBLIC_INSTALL_URL;
     delete process.env.NEXT_PUBLIC_MARKETPLACE_URL;
@@ -54,5 +53,11 @@ describe("brand config", () => {
     else process.env.NEXT_PUBLIC_MARKETPLACE_URL = prevM;
     if (prevI === undefined) delete process.env.NEXT_PUBLIC_INSTALL_URL;
     else process.env.NEXT_PUBLIC_INSTALL_URL = prevI;
+  });
+
+  it("keeps pre-launch hero copy without forcing Stripe into the lede", () => {
+    expect(brand.taglineShort).toMatch(/pre-launch/i);
+    expect(brand.description).toMatch(/Lemon Squeezy, Polar and Gumroad/);
+    expect(brand.description).not.toMatch(/Stripe/);
   });
 });
