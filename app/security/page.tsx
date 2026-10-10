@@ -5,7 +5,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Security",
-  description: `How ${brand.name} handles Google scopes, API keys, license checks, encryption in transit, and subprocessors — verified against the add-on and API code.`,
+  description: `How ${brand.name} handles Google scopes, API keys, license checks, encryption in transit, and subprocessors. Verified against the add-on and API code.`,
   alternates: { canonical: `${siteConfig.url}/security` },
   openGraph: {
     title: `Security · ${brand.name}`,
@@ -20,10 +20,8 @@ export default function SecurityPage() {
       <p className="eyebrow">Trust</p>
       <h1>Security</h1>
       <p className="body-lg muted page-lede">
-        What the add-on can access, where keys live, and what reaches {brand.name} servers. Claims
-        below match <code>addon/src/appsscript.json</code>, Apps Script user properties, and the
-        license verify API — not marketing inventiveness. We do not claim SOC 2, ISO, or similar
-        certifications.
+        What the add-on can access, where your keys live, and the one thing that reaches our
+        servers. We don&apos;t hold SOC 2 or ISO certifications yet.
       </p>
 
       <div className="prose">
@@ -34,18 +32,18 @@ export default function SecurityPage() {
         </p>
         <ul>
           <li>
-            <code>spreadsheets.currentonly</code> — read and write only the spreadsheet the add-on
+            <code>spreadsheets.currentonly</code>: read and write only the spreadsheet the add-on
             is opened from
           </li>
           <li>
-            <code>script.external_request</code> — outbound HTTPS to Lemon Squeezy, Polar, Gumroad,
-            and our license API
+            <code>script.external_request</code>: outbound HTTPS to Lemon Squeezy, Polar, Gumroad,
+            Stripe, and our license API
           </li>
           <li>
-            <code>script.scriptapp</code> — install time-driven triggers for scheduled refresh
+            <code>script.scriptapp</code>: install time-driven triggers for scheduled refresh
           </li>
           <li>
-            <code>script.container.ui</code> — sidebar and menu UI inside Sheets
+            <code>script.container.ui</code>: sidebar and menu UI inside Sheets
           </li>
         </ul>
         <p>
@@ -56,12 +54,12 @@ export default function SecurityPage() {
         <h2>API keys stay in your Google account</h2>
         <p>
           Source API keys and tokens you paste in the sidebar are stored with{" "}
-          <code>PropertiesService.getUserProperties()</code> for your Google account — not in sheet
+          <code>PropertiesService.getUserProperties()</code> for your Google account, not in sheet
           cells, and not in our license database or marketing backend. Sync calls leave Apps Script
           and go straight to the source APIs over HTTPS.
         </p>
         <p>
-          Details and rotation steps: <Link href="/docs/api-keys">API keys</Link>.
+          <Link href="/docs/api-keys">How to rotate a key</Link>.
         </p>
 
         <h2>What reaches {brand.name} servers</h2>
@@ -69,7 +67,7 @@ export default function SecurityPage() {
           From the add-on sync path, the only {brand.name} endpoint contacted is the license verify
           API (<code>POST /api/license/verify</code>). The add-on sends the license key (and, when
           configured, a shared <code>x-license-secret</code> header). The response is tier, status,
-          and limits — enough to enforce Free / Pro / Business caps. Store rows and source API keys
+          and limits: enough to enforce Free / Pro / Business caps. Store rows and source API keys
           are not uploaded to us for sync.
         </p>
         <p>
@@ -90,20 +88,20 @@ export default function SecurityPage() {
         <h2>Subprocessors</h2>
         <ul>
           <li>
-            <strong>Vercel</strong> — hosts the marketing site and API routes
+            <strong>Vercel</strong>: hosts the marketing site and API routes
           </li>
           <li>
-            <strong>Upstash</strong> — Redis store for license records in production
+            <strong>Upstash</strong>: Redis store for license records in production
           </li>
           <li>
-            <strong>Stripe</strong> — Checkout, Customer Portal, and payment methods (card data
+            <strong>Stripe</strong>: Checkout, Customer Portal, and payment methods (card data
             never touches our servers)
           </li>
         </ul>
         <p>
           Google Workspace / Apps Script and Google Sheets are the runtime for the add-on and your
-          spreadsheet data. Source platforms (Lemon Squeezy, Polar, Gumroad) receive the API calls
-          you authorize with your own keys.
+          spreadsheet data. Source platforms (Lemon Squeezy, Polar, Gumroad, Stripe) receive the API
+          calls you authorize with your own keys.
         </p>
 
         <h2>What we do not claim</h2>

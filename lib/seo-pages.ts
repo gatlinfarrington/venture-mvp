@@ -16,9 +16,9 @@ export const seoPages: SeoPage[] = [
     slug: "gumroad-analytics-google-sheets",
     title: "Gumroad analytics in Google Sheets",
     description:
-      "Build Gumroad analytics in Google Sheets: sales history, refunds, and product breakdowns that refresh on a schedule — without pasting CSVs every week.",
+      "Build Gumroad analytics in Google Sheets: sales history, refunds, and product breakdowns that refresh on a schedule, without pasting CSVs every week.",
     h1: "Gumroad analytics that live in Google Sheets",
-    lede: `Gumroad’s seller dashboard answers “what sold today.” ${brand.name} answers “what does my sheet say about the last eighteen months?” — with rows you can filter, QUERY, and hand to an accountant.`,
+    lede: `Gumroad’s seller dashboard answers “what sold today.” ${brand.name} answers “what does my sheet say about the last eighteen months?” (with rows you can filter, QUERY, and hand to an accountant).`,
     ogEyebrow: "Gumroad · Google Sheets",
     ogTitle: "Gumroad analytics in a sheet you own",
     sections: [
@@ -30,7 +30,7 @@ export const seoPages: SeoPage[] = [
         bullets: [
           "Full sales history backfill on first connect",
           "Refunds update existing rows by id instead of duplicating",
-          "Example marketing data is labeled — your sheet uses your store",
+          "Example marketing data is labeled: your sheet uses your store",
         ],
       },
       {
@@ -49,7 +49,7 @@ export const seoPages: SeoPage[] = [
   },
   {
     slug: "stripe-to-google-sheets",
-    title: "Stripe to Google Sheets — sync charges, subs, and MRR",
+    title: "Stripe to Google Sheets: sync charges, subs, and MRR",
     description: `Import Stripe charges, subscriptions, customers, and refunds into Google Sheets with ${brand.name}. Stack Stripe MRR beside Lemon Squeezy, Polar, and Gumroad.`,
     h1: "Stripe revenue, synced into Google Sheets",
     lede: `Stripe’s Dashboard is the system of record for payouts and disputes. ${brand.name} pulls charges, subscriptions, customers, and refunds into named tabs so you can QUERY, share, and stack MRR with Lemon Squeezy, Polar, and Gumroad in one sheet.`,
@@ -59,7 +59,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "What syncs from Stripe",
         paragraphs: [
-          "Connect a restricted read-only Stripe API key. The add-on backfills charges (as orders), subscriptions with MRR contribution, customers, and refunds into stable column headers — then scheduled sync keeps the sheet current on Pro and Business.",
+          "Connect a restricted read-only Stripe API key. The add-on backfills charges (as orders), subscriptions with MRR contribution, customers, and refunds into stable column headers, then scheduled sync keeps the sheet current on Pro and Business.",
         ],
         bullets: [
           "Charges → Orders tab (amount, email, status, country)",
@@ -88,11 +88,11 @@ export const seoPages: SeoPage[] = [
   },
   {
     slug: "polar-analytics",
-    title: "Polar analytics — MRR and orders in Google Sheets",
+    title: "Polar analytics: MRR and orders in Google Sheets",
     description:
       "Polar.sh analytics in Google Sheets: orders, subscriptions, refunds, and an MRR dashboard that stacks Polar with Lemon Squeezy or Gumroad.",
     h1: "Polar analytics without leaving your spreadsheet",
-    lede: `Polar’s product UI is built for shipping. ${brand.name} is built for the operators who still open a Sheet every Monday — backfilling Polar history into named tabs and keeping MRR honest across orgs and marketplaces.`,
+    lede: `Polar’s product UI is built for shipping. ${brand.name} is built for the operators who still open a Sheet every Monday, backfilling Polar history into named tabs and keeping MRR honest across orgs and marketplaces.`,
     ogEyebrow: "Polar.sh",
     ogTitle: "Polar analytics in Google Sheets",
     sections: [
@@ -110,7 +110,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "Why not the Polar dashboard alone?",
         paragraphs: [
-          "Polar is excellent for one organization. When you also sell on Lemon Squeezy or Gumroad — or you want QUERY against every invoice — a sheet with scheduled refresh beats exporting CSVs before every board update.",
+          "Polar is excellent for one organization. When you also sell on Lemon Squeezy or Gumroad, or you want QUERY against every invoice, a sheet with scheduled refresh beats exporting CSVs before every board update.",
         ],
       },
       {

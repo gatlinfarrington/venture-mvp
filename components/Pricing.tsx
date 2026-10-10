@@ -23,7 +23,7 @@ export function Pricing({ variant = "section" }: Props) {
 
   async function startCheckout(tier: "pro" | "business", billing: BillingInterval) {
     if (!checkoutEnabled) {
-      setCheckoutMessage("Checkout opens at launch — Stripe keys are not configured yet.");
+      setCheckoutMessage("Checkout opens at launch. Stripe keys are not configured yet.");
       return;
     }
     setPendingTier(tier);
@@ -60,7 +60,7 @@ export function Pricing({ variant = "section" }: Props) {
             <p className="eyebrow">Pricing</p>
             <h1>Free to try. Pay when you schedule sync.</h1>
             <p className="muted body-lg pricing-page-lede">
-              Free, $9, and $19. Annual billing is ten months of the monthly price — two months free.
+              Free, $9, and $19. Annual billing is ten months of the monthly price (two months free).
             </p>
           </header>
         ) : (
@@ -68,7 +68,7 @@ export function Pricing({ variant = "section" }: Props) {
             <p className="eyebrow">Pricing</p>
             <h2 className="h2">Free to try. Pay when you schedule sync.</h2>
             <p className="muted body-lg">
-              Free, $9, and $19. Annual billing is ten months of the monthly price — two months free.
+              Free, $9, and $19. Annual billing is ten months of the monthly price (two months free).
             </p>
           </Reveal>
         )}

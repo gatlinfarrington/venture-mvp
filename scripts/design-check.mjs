@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * RevenueSheet design CI — LANDING.md A1–A18 companion to stylelint.
+ * RevenueSheet design CI: LANDING.md A1–A18 (+ A19 em dash) companion to stylelint.
  *
  * Fails on:
  * - linear/radial/conic gradients or glow-like text-shadow/box-shadow (outside exceptions)
@@ -21,12 +21,15 @@ import path from "node:path";
 const ROOT = process.cwd();
 const TOKENS_PATH = path.join(ROOT, "design/tokens.css");
 const SCAN_DIRS = ["app", "components"];
+/** Em-dash ban (A19) applies only to app/ and content/. */
+const EM_DASH_DIRS = ["app", "content"];
 const TOKEN_FILES = new Set([
   path.normalize("design/tokens.css"),
   path.normalize("design/tokens.json"),
 ]);
 
 const EXCEPTION_RE = /design-exception:\s*([A-Za-z0-9_-]+)/i;
+const EM_DASH_RE = /\u2014/g;
 const GRADIENT_RE =
   /\b(linear-gradient|radial-gradient|conic-gradient|repeating-linear-gradient|repeating-radial-gradient)\s*\(/gi;
 const GLOW_SHADOW_RE =
@@ -177,6 +180,21 @@ function scanFile(file) {
     if (EMOJI_RE.test(line) && !lineHasException(lines, i, "A2")) {
       report(file, n, "A2", "emoji in UI source");
     }
+
+    const underEmDashScope = EM_DASH_DIRS.some(
+      (dir) => normalized === dir || normalized.startsWith(`${dir}${path.sep}`),
+    );
+    if (underEmDashScope) {
+      EM_DASH_RE.lastIndex = 0;
+      if (EM_DASH_RE.test(line) && !lineHasException(lines, i, "A19")) {
+        report(
+          file,
+          n,
+          "A19",
+          "em dash U+2014 disallowed; rewrite with period, comma, colon, or parentheses",
+        );
+      }
+    }
   });
 
   if (isCss) {
@@ -266,6 +284,26 @@ function main() {
     for (const file of walk(path.join(ROOT, dir))) scanFile(file);
   }
 
+  // A19: also walk content/ (not in SCAN_DIRS for other rules).
+  for (const dir of EM_DASH_DIRS) {
+    if (SCAN_DIRS.includes(dir)) continue;
+    for (const file of walk(path.join(ROOT, dir))) {
+      const text = fs.readFileSync(file, "utf8");
+      const lines = text.split(/\r?\n/);
+      lines.forEach((line, i) => {
+        EM_DASH_RE.lastIndex = 0;
+        if (EM_DASH_RE.test(line) && !lineHasException(lines, i, "A19")) {
+          report(
+            file,
+            i + 1,
+            "A19",
+            "em dash U+2014 disallowed; rewrite with period, comma, colon, or parentheses",
+          );
+        }
+      });
+    }
+  }
+
   if (errors.length) {
     console.error(`design-check failed (${errors.length} issue${errors.length === 1 ? "" : "s"}):\n`);
     for (const e of errors) console.error(`  ${e}`);
@@ -274,7 +312,7 @@ function main() {
     );
     process.exit(1);
   }
-  console.log("design-check passed (A1–A18 gates + WCAG AA token pairs)");
+  console.log("design-check passed (A1–A19 gates + WCAG AA token pairs)");
 }
 
 main();

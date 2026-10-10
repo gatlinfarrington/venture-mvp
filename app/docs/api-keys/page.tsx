@@ -29,7 +29,7 @@ export default function ApiKeysPage() {
         <p>
           A <strong>license key</strong> from Checkout proves your Free / Pro / Business tier. A{" "}
           <strong>source API key</strong> proves access to Lemon Squeezy, Polar, or Gumroad. They
-          are different credentials — never paste a license key into a source field or the reverse.
+          are different credentials: never paste a license key into a source field or the reverse.
         </p>
         <h2>Rotation</h2>
         <ol>

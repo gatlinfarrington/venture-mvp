@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: "What if Lemon Squeezy moves features toward Stripe?",
-    a: "Keep history in Sheets so platform changes do not erase your analytics trail. You can also connect Stripe directly — see the Stripe guide for the sheet-native workflow beside Stripe’s payment tools.",
+    a: "Keep history in Sheets so platform changes do not erase your analytics trail. You can also connect Stripe directly: see the Stripe guide for the sheet-native workflow beside Stripe’s payment tools.",
   },
   {
     q: "How do refunds and cancellations work for my license?",

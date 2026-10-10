@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { brand } from "@/lib/brand";
 import { OgFrame, ogSize } from "@/lib/og";
 
-export const alt = `${brand.name} — ${brand.pitch}`;
+export const alt = `${brand.name} · ${brand.pitch}`;
 export const size = ogSize;
 export const contentType = "image/png";
 

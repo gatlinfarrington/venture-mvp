@@ -28,7 +28,7 @@ export default function PolarSetupPage() {
         <h2>2. Connect in {brand.name}</h2>
         <p>
           Sidebar → Polar → paste the token. It is stored in your Apps Script User Properties (per
-          Google account), not in sheet cells. Anyone with your Google account can use it — rotate
+          Google account), not in sheet cells. Anyone with your Google account can use it. Rotate
           the token if that account was compromised.
         </p>
         <h2>3. Backfill and schedule</h2>

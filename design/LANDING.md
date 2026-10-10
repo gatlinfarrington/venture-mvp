@@ -53,3 +53,4 @@ Every landing/listing PR must pass all items; reviewers cite the item number.
 - [ ] A16 Motion ≤ 320ms, purposeful, reduced-motion respected; no parallax or scroll-jacking.
 - [ ] A17 No Google/third-party logos or trademark misuse (Marketplace branding rules); source names as text.
 - [ ] A18 Lighthouse: performance ≥ 90, accessibility = 100, no layout shift from font loading (`font-display: swap` + size-adjust).
+- [ ] A19 No U+2014 em dash in `app/` or `content/` visible copy, titles, or demo data (rewrite with period, comma, colon, or parentheses; product names use middle dot).

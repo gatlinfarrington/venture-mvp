@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Changelog",
-  description: `What shipped in ${brand.name} — product, docs, and design notes.`,
+  description: `What shipped in ${brand.name}: product, docs, and design notes.`,
   alternates: { canonical: `${siteConfig.url}/changelog` },
   openGraph: {
     title: `Changelog · ${brand.name}`,

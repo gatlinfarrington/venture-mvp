@@ -6,7 +6,7 @@ import { privacyEmail } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
-  description: `How ${brand.name} handles account, license, and Google user data — including Limited Use disclosure for Google OAuth verification.`,
+  description: `How ${brand.name} handles account, license, and Google user data, including Limited Use disclosure for Google OAuth verification.`,
   alternates: { canonical: `${siteConfig.url}/privacy` },
 };
 
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
           <li>A generated license key tied to your tier</li>
         </ul>
         <p>
-          Card numbers never touch our servers — Stripe handles payment methods. License records are
+          Card numbers never touch our servers. Stripe handles payment methods. License records are
           stored in our license database (Upstash Redis in production, or a local store in
           development) so the add-on can verify tier limits.
         </p>
@@ -76,18 +76,18 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            <code>spreadsheets.currentonly</code> — read and write only the spreadsheet the add-on
+            <code>spreadsheets.currentonly</code>: read and write only the spreadsheet the add-on
             is opened from
           </li>
           <li>
-            <code>script.external_request</code> — HTTPS calls to Lemon Squeezy, Polar, Gumroad,
+            <code>script.external_request</code>: HTTPS calls to Lemon Squeezy, Polar, Gumroad,
             Stripe, and our license API
           </li>
           <li>
-            <code>script.scriptapp</code> — install time-driven triggers for scheduled refresh
+            <code>script.scriptapp</code>: install time-driven triggers for scheduled refresh
           </li>
           <li>
-            <code>script.container.ui</code> — sidebar and menu UI inside Sheets
+            <code>script.container.ui</code>: sidebar and menu UI inside Sheets
           </li>
         </ul>
         <p>
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             We do not allow humans to read Google user data unless you give affirmative consent for
-            specific messages, it is necessary for security/compliance, or we are required by law —
+            specific messages, it is necessary for security/compliance, or we are required by law.
             and then only with access limited to the minimum needed.
           </li>
         </ul>
@@ -136,19 +136,19 @@ export default function PrivacyPage() {
         <p>We use the following processors to run the website, licenses, and billing:</p>
         <ul>
           <li>
-            <a href="https://vercel.com">Vercel</a> — hosts the marketing site and APIs
+            <a href="https://vercel.com">Vercel</a>: hosts the marketing site and APIs
           </li>
           <li>
-            <a href="https://upstash.com">Upstash</a> — Redis storage for license records, support
+            <a href="https://upstash.com">Upstash</a>: Redis storage for license records, support
             submissions, and launch invites
           </li>
           <li>
-            <a href="https://stripe.com">Stripe</a> — payment processing and customer portal
+            <a href="https://stripe.com">Stripe</a>: payment processing and customer portal
           </li>
         </ul>
         <p>
           Source commerce APIs (Lemon Squeezy, Polar, Gumroad, Stripe) are called directly from your
-          Google Apps Script project with keys you store in User Properties — those keys are not
+          Google Apps Script project with keys you store in User Properties. Those keys are not
           sent to our servers.
         </p>
 

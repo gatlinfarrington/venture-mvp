@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { brand } from "@/lib/brand";
 
 export default function NotFound() {
   return (
     <main className="not-found container">
       {/* App Router does not accept metadata exports on not-found; hoist for crawlers. */}
+      <title>{`Page not found · ${brand.name}`}</title>
       <meta name="robots" content="noindex" />
       <div className="not-found-copy">
         <p className="eyebrow">404</p>

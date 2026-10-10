@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { BackfillFrame } from "@/components/BackfillFrame";
 import { HeroDemoLazy } from "@/components/HeroDemoLazy";
 import { InstallCta } from "@/components/InstallCta";
 import { Pricing } from "@/components/Pricing";
@@ -54,23 +55,25 @@ export function HowItWorks() {
     {
       n: "01",
       title: "Connect",
-      body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe. No OAuth dance with those stores — the add-on reads what you grant.",
+      body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe. No OAuth dance with those stores: the add-on reads what you grant.",
       img: "/design/how-connect-2x.png",
       alt: "Connect sources panel with example store connections",
+      frame: "image" as const,
     },
     {
       n: "02",
       title: "Backfill",
       body: "We pull full order history into named tabs, not just new rows from today. Then scheduled sync keeps the sheet current.",
-      img: "/design/how-orders-2x.png",
-      alt: "Orders tab filling with product and amount columns",
+      alt: "Backfill progress for Lemon Squeezy orders with a progress bar and recent rows",
+      frame: "backfill" as const,
     },
     {
       n: "03",
       title: "Dashboard",
-      body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data — formulas you can audit and extend.",
+      body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data (formulas you can audit and extend).",
       img: "/design/how-dashboard-2x.png",
       alt: "MRR dashboard with KPIs and stacked source chart",
+      frame: "image" as const,
     },
   ];
 
@@ -88,14 +91,18 @@ export function HowItWorks() {
               <h3 className="h3">{step.title}</h3>
               <p className="muted">{step.body}</p>
               <div className="step-frame">
-                <Image
-                  src={step.img}
-                  alt={step.alt}
-                  width={1120}
-                  height={840}
-                  sizes="(max-width: 900px) 100vw, 33vw"
-                  quality={75}
-                />
+                {step.frame === "backfill" ? (
+                  <BackfillFrame />
+                ) : (
+                  <Image
+                    src={step.img!}
+                    alt={step.alt}
+                    width={1120}
+                    height={840}
+                    sizes="(max-width: 900px) 100vw, 33vw"
+                    quality={75}
+                  />
+                )}
               </div>
             </Reveal>
           ))}
@@ -111,7 +118,7 @@ export function WhatLands() {
     { name: "Subscriptions", desc: "Active and canceled subs with renewals and MRR contribution." },
     { name: "Customers", desc: "Buyer email, first seen, and last purchase from each connected source." },
     { name: "Refunds", desc: "Refunds and chargebacks linked back to the original order." },
-    { name: "Dashboard", desc: "MRR, net revenue, churn, and revenue by product — auto-built." },
+    { name: "Dashboard", desc: "MRR, net revenue, churn, and revenue by product (auto-built)." },
   ];
 
   return (
@@ -160,7 +167,7 @@ export function WhySheet() {
     },
     {
       title: "No new dashboard to learn",
-      body: "If you already live in Sheets for taxes, investor updates, or cohort math, keep that habit — we fill the cells.",
+      body: "If you already live in Sheets for taxes, investor updates, or cohort math, keep that habit. We fill the cells.",
     },
   ];
 
@@ -194,7 +201,7 @@ export function Comparison() {
   ];
 
   return (
-    <section className="section">
+    <section className="section section-compare">
       <div className="container">
         <Reveal className="section-head">
           <p className="eyebrow">Compare</p>
@@ -246,15 +253,15 @@ export function FAQ() {
   const items = [
     {
       q: "Where does my data live?",
-      a: `Order and subscription rows land in your Google Sheet. License keys, support messages, and launch invites are stored so we can run the product — on Vercel (hosting), Upstash Redis (licenses and form storage), and Stripe (billing). Details are on the privacy page.`,
+      a: `Order and subscription rows land in your Google Sheet. License keys, support messages, and launch invites are stored so we can run the product: on Vercel (hosting), Upstash Redis (licenses and form storage), and Stripe (billing). Details are on the privacy page.`,
     },
     {
       q: "What Google scopes do you need?",
       a: "Only four Apps Script scopes: the current spreadsheet (spreadsheets.currentonly), outbound HTTPS to source and license APIs (script.external_request), time-driven triggers for scheduled refresh (script.scriptapp), and the sidebar/menu UI (script.container.ui). No Google Drive, Gmail, or Contacts access. Confirm on the consent screen at install.",
     },
     {
-      q: "Lemon Squeezy is moving to Stripe — will this still work?",
-      a: "Yes for as long as Lemon Squeezy exposes an orders API — and you can also connect Stripe directly. Polar and Gumroad stay independent sources either way.",
+      q: "Lemon Squeezy is moving to Stripe. Will this still work?",
+      a: "Yes for as long as Lemon Squeezy exposes an orders API, and you can also connect Stripe directly. Polar and Gumroad stay independent sources either way.",
     },
     {
       q: "How do refunds work for paid plans?",

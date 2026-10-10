@@ -35,7 +35,7 @@ export default function TroubleshootingPage() {
         <h2>License not recognized</h2>
         <ul>
           <li>Paste the license key from the success page or your receipt email.</li>
-          <li>Confirm you are online — verify calls {siteHostname()}.</li>
+          <li>Confirm you are online: verify calls {siteHostname()}.</li>
           <li>
             Still failing after purchase? See <Link href="/support">Support</Link> with the checkout
             session id from your receipt.

@@ -51,7 +51,7 @@ export function SupportForm() {
     return (
       <div className="support-confirm" role="status">
         <p className="eyebrow">Received</p>
-        <h3 className="h3">Thanks — we got your message.</h3>
+        <h3 className="h3">Thanks. We got your message.</h3>
         <p className="muted">
           Reference <code className="mono">{status.id}</code>. We read every submission and will
           reply to the email you provided.

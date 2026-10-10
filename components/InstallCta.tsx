@@ -65,7 +65,7 @@ export function InstallCta({ children, className, source = "install" }: Props) {
       setMessage(
         json.created
           ? "You're on the list. We'll email you when the Workspace listing opens."
-          : "You're already on the list — we'll email you at launch.",
+          : "You're already on the list. We'll email you at launch.",
       );
     } catch {
       setStatus("error");
@@ -91,7 +91,7 @@ export function InstallCta({ children, className, source = "install" }: Props) {
               <div className="invite-confirm">
                 <p className="eyebrow">You&apos;re in</p>
                 <h2 id={titleId} className="h3">
-                  Thanks — we&apos;ll ping you at launch.
+                  Thanks. We&apos;ll ping you at launch.
                 </h2>
                 <p className="muted">{message}</p>
                 <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>

@@ -23,13 +23,13 @@ export default function LemonSetupPage() {
         <ol>
           <li>Sign in to Lemon Squeezy → Settings → API.</li>
           <li>Create a key with read access to orders, subscriptions, customers, and refunds.</li>
-          <li>Copy the key once — Lemon Squeezy will not show it again.</li>
+          <li>Copy the key once: Lemon Squeezy will not show it again.</li>
         </ol>
         <h2>2. Paste it in the add-on</h2>
         <p>
           Open your Google Sheet → Extensions → {brand.name} → Open sidebar. Choose Lemon Squeezy
           and paste the key. Keys are stored in Apps Script User Properties for your Google account
-          — see <Link href="/docs/api-keys">API keys</Link>.
+          See <Link href="/docs/api-keys">API keys</Link>.
         </p>
         <h2>3. Run Backfill</h2>
         <p>
