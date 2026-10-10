@@ -1,8 +1,18 @@
-import { describe, expect, it } from "vitest";
-import { brand } from "@/lib/brand";
+import { afterEach, describe, expect, it } from "vitest";
+import { brand, siteHostname, siteUrl } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
 describe("brand config", () => {
+  const prevSite = process.env.NEXT_PUBLIC_SITE_URL;
+  const prevVercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+
+  afterEach(() => {
+    if (prevSite === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+    else process.env.NEXT_PUBLIC_SITE_URL = prevSite;
+    if (prevVercel === undefined) delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    else process.env.VERCEL_PROJECT_PRODUCTION_URL = prevVercel;
+  });
+
   it("keeps a single swappable name wired through siteConfig", () => {
     expect(siteConfig.name).toBe(brand.name);
     expect(brand.name).toBe("RevenueSheet");
@@ -10,7 +20,26 @@ describe("brand config", () => {
     expect(brand.logo.mark).toContain("logo-mark");
   });
 
-  it("exposes a domain for metadata and OG", () => {
-    expect(brand.domain).toMatch(/\./);
+  it("prefers NEXT_PUBLIC_SITE_URL for canonical origin", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://example.test/";
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    expect(siteUrl()).toBe("https://example.test");
+    expect(siteHostname()).toBe("example.test");
+    expect(siteConfig.url).toBe("https://example.test");
+    expect(siteConfig.domain).toBe("example.test");
+  });
+
+  it("falls back to VERCEL_PROJECT_PRODUCTION_URL when site URL unset", () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "venture-mvp.vercel.app";
+    expect(siteUrl()).toBe("https://venture-mvp.vercel.app");
+    expect(siteHostname()).toBe("venture-mvp.vercel.app");
+  });
+
+  it("never hardcodes revenuesheet.app", () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    expect(siteUrl()).not.toContain("revenuesheet.app");
+    expect(siteHostname()).not.toBe("revenuesheet.app");
   });
 });

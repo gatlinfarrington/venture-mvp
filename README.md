@@ -41,7 +41,7 @@ See [`.env.example`](.env.example).
 
 | Variable | Required | Notes |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | Yes in prod | Canonical origin, no trailing slash |
+| `NEXT_PUBLIC_SITE_URL` | Preferred in prod | Canonical origin, no trailing slash; falls back to `https://${VERCEL_PROJECT_PRODUCTION_URL}` |
 | `NEXT_PUBLIC_INSTALL_URL` | No | Workspace Marketplace listing URL |
 | `STRIPE_SECRET_KEY` | For checkout | `sk_test_…` / `sk_live_…` — paste to go live |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Enables paid CTAs | Real `pk_test_` / `pk_live_` (no `REPLACE`) |

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { brand } from "@/lib/brand";
+import { brand, siteHostname } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 import { privacyEmail, supportEmail, supportMailto } from "@/lib/support";
 
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
       <div className="prose">
         <p className="mono muted">Last updated: October 10, 2026</p>
         <p>
-          {brand.name} (“we”, “us”) operates the website at {brand.domain} and the {brand.name}{" "}
+          {brand.name} (“we”, “us”) operates the website at {siteHostname()} and the {brand.name}{" "}
           Google Sheets add-on. This policy explains what we collect, how Google user data is used,
           how to request deletion, and how to contact us. It is written to support Google OAuth /
           Workspace Marketplace verification, including Limited Use requirements.

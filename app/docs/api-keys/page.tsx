@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { brand } from "@/lib/brand";
+import { brand, siteHostname } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function ApiKeysPage() {
         <h2>Where keys are stored</h2>
         <p>
           When you paste a key in the sidebar, {brand.name} writes it to Apps Script User Properties
-          for your Google account (not into sheet cells). Keys are not sent to {brand.domain}{" "}
+          for your Google account (not into sheet cells). Keys are not sent to {siteHostname()}{" "}
           marketing servers and are not stored in our license database. Sync calls go from Apps
           Script to the source APIs directly.
         </p>

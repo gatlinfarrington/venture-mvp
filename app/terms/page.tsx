@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { brand } from "@/lib/brand";
+import { brand, siteHostname } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 import { privacyEmail, supportEmail, supportMailto } from "@/lib/support";
 
@@ -20,7 +20,7 @@ export default function TermsPage() {
       <div className="prose">
         <p className="mono muted">Last updated: October 10, 2026</p>
         <p>
-          By installing {brand.name}, using {brand.domain}, or purchasing a license, you agree to
+          By installing {brand.name}, using {siteHostname()}, or purchasing a license, you agree to
           these terms. If you do not agree, do not use the add-on or website.
         </p>
 
