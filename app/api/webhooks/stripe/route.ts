@@ -15,6 +15,14 @@ import type { Tier } from "@/lib/site";
 
 export const runtime = "nodejs";
 
+/**
+ * Stripe webhook endpoint: POST /api/webhooks/stripe
+ *
+ * Subscribe to these events in the Stripe Dashboard (or CLI):
+ * - checkout.session.completed
+ * - customer.subscription.updated
+ * - customer.subscription.deleted
+ */
 async function issueFromSession(session: Stripe.Checkout.Session) {
   const stripe = getStripe();
   const subscriptionId =
@@ -30,10 +38,10 @@ async function issueFromSession(session: Stripe.Checkout.Session) {
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const priceId = subscription.items.data[0]?.price.id ?? "";
   const tier =
-    tierFromPriceId(priceId) ??
+    (await tierFromPriceId(priceId)) ??
     ((session.metadata?.tier as Exclude<Tier, "free"> | undefined) || "pro");
   const interval =
-    intervalFromPriceId(priceId) ||
+    (await intervalFromPriceId(priceId)) ||
     ((session.metadata?.interval as "month" | "year" | undefined) ?? "month");
 
   const email =
@@ -99,7 +107,7 @@ export async function POST(request: Request) {
         const license = await getLicenseBySubscription(sub.id);
         if (license) {
           const priceId = sub.items.data[0]?.price.id ?? "";
-          const tier = tierFromPriceId(priceId) ?? license.tier;
+          const tier = (await tierFromPriceId(priceId)) ?? license.tier;
           const status =
             sub.status === "active" || sub.status === "trialing"
               ? "active"

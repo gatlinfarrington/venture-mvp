@@ -5,7 +5,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: `Free, Pro, and Business plans for ${brand.name}. Manual refresh free; scheduled sync from $9/mo (est.).`,
+  description: `Free, Pro, and Business plans for ${brand.name}. Manual refresh free; scheduled sync from $9/mo.`,
   alternates: { canonical: `${siteConfig.url}/pricing` },
   openGraph: {
     title: `Pricing · ${brand.name}`,

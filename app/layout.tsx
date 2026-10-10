@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Nav } from "@/components/Nav";
+import { StripeAdminBanner } from "@/components/StripeAdminBanner";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
@@ -67,6 +68,7 @@ export default function RootLayout({
         <style>{`:root{--font-sans:var(--font-sans-loaded),'Inter Tight',system-ui,sans-serif;--font-mono:var(--font-mono-loaded),'JetBrains Mono',ui-monospace,monospace}`}</style>
       </head>
       <body>
+        <StripeAdminBanner />
         <Nav />
         {children}
         <Footer />

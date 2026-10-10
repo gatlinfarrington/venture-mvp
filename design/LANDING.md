@@ -11,7 +11,7 @@ System: RevenueSheet tokens (`tokens.css`, adapted from Monolith). Preview: `lan
 4. **What lands in your sheet** — split: left list of tabs (Orders, Subscriptions, Customers, Refunds, Dashboard) with one-line descriptions; right an Orders tab screenshot. Mono for column names.
 5. **Why a sheet** — 3-column text grid, no cards: "You own the data" / "Use your own formulas" / "No new dashboard to learn". Body copy, hairline top border per column.
 6. **Comparison** — honest table vs "Zapier/Make append-only" and "CSV templates": backfill, dashboard, multi-store, schedule. Checks as `signal` text "Yes"/muted "No" (not emoji).
-7. **Pricing** — 3 columns (Free / $9 / $19, annual 2 months free) as a table-like layout; middle column marked with a 1px ink border, not a gradient or "most popular" ribbon. Prices marked (est.) until launch.
+7. **Pricing** — 3 columns (Free / $9 / $19, annual 2 months free) as a table-like layout; middle column marked with a 1px ink border, not a gradient or "most popular" ribbon. Prices are final (no “est.”).
 8. **FAQ** — accordion, hairline separators: data storage/privacy, which scopes, Lemon Squeezy→Stripe transition, refunds, cancel.
 9. **Final CTA** — left-aligned h2 "Your revenue, finally in one place." + primary button.
 10. **Footer** — dense link columns (Product, Sources, Guides/SEO pages, Legal), small mono "© 2026". One wry line allowed.

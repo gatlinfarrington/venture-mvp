@@ -9,18 +9,23 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . && npm run lint:design",
+    "lint": "eslint . && npm run lint:design && npm run validate:content",
     "lint:design": "stylelint \"app/**/*.css\" \"components/**/*.css\" --allow-empty-input && node scripts/design-check.mjs",
+    "validate:content": "node scripts/validate-content.mjs",
+    "stripe:sync-prices": "node scripts/stripe-sync-prices.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",
+    "gray-matter": "^4.0.3",
     "next": "16.4.0",
+    "next-mdx-remote": "^6.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "stripe": "^23.0.0"
+    "stripe": "^23.0.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",

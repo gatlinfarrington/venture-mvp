@@ -54,8 +54,8 @@ export function Pricing() {
           <p className="eyebrow">Pricing</p>
           <h2 className="h2">Free to try. Pay when you schedule sync.</h2>
           <p className="muted body-lg">
-            Annual billing is ten months of the monthly price — two months free.
-            Prices marked (est.) until launch.
+            Free, $9, and $19. Annual billing is ten months of the monthly price —
+            two months free.
           </p>
         </Reveal>
 
@@ -95,8 +95,8 @@ export function Pricing() {
                       {plan.tier === "free"
                         ? " forever"
                         : interval === "month"
-                          ? "/mo (est.)"
-                          : "/mo billed yearly (est.)"}
+                          ? "/mo"
+                          : "/mo billed yearly"}
                     </span>
                   </p>
                   {plan.tier !== "free" && interval === "year" ? (

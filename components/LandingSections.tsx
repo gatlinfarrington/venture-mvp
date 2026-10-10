@@ -106,7 +106,7 @@ export function WhatLands() {
   const tabs = [
     { name: "Orders", desc: "Order ID, created, source, product, email, amount, status." },
     { name: "Subscriptions", desc: "Active and canceled subs with renewals and MRR contribution." },
-    { name: "Customers", desc: "Deduped buyers across stores with first and last purchase." },
+    { name: "Customers", desc: "Buyer email, first seen, and last purchase from each connected source." },
     { name: "Refunds", desc: "Refunds and chargebacks linked back to the original order." },
     { name: "Dashboard", desc: "MRR, net revenue, churn, and revenue by product — auto-built." },
   ];
