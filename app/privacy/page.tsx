@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { brand, siteHostname } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
-import { privacyEmail, supportEmail, supportMailto } from "@/lib/support";
+import { privacyEmail } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
@@ -10,8 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  const support = supportEmail();
-  const supportMail = supportMailto();
   const privacy = privacyEmail();
   return (
     <main className="legal container">
@@ -27,17 +26,12 @@ export default function PrivacyPage() {
 
         <h2>Who we are</h2>
         <p>
-          Legal entity name used in communications: {brand.legal.entity}.
+          Legal entity name used in communications: {brand.legal.entity}. Support:{" "}
+          <Link href="/support">/support</Link>.
           {privacy ? (
             <>
               {" "}
               Privacy contact: <a href={`mailto:${privacy}`}>{privacy}</a>.
-            </>
-          ) : null}
-          {support && supportMail ? (
-            <>
-              {" "}
-              Support: <a href={supportMail}>{support}</a>.
             </>
           ) : null}
         </p>
@@ -198,18 +192,12 @@ export default function PrivacyPage() {
 
         <h2>Contact</h2>
         <p>
+          Support: <Link href="/support">/support</Link>
           {privacy ? (
             <>
+              <br />
               Privacy: <a href={`mailto:${privacy}`}>{privacy}</a>
-              {support && supportMail ? <br /> : null}
             </>
-          ) : null}
-          {support && supportMail ? (
-            <>
-              Support: <a href={supportMail}>{support}</a>
-            </>
-          ) : !privacy ? (
-            <>Contact details will be published when {brand.name} launches paid plans.</>
           ) : null}
         </p>
       </div>

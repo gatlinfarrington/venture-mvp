@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
-import { supportEmail } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -29,7 +28,7 @@ const faqs = [
   },
   {
     q: "How do refunds and cancellations work for my license?",
-    a: "First-time charges may be refunded within 14 days on request. Cancel anytime in Stripe Customer Portal when configured; access continues through the paid period unless a refund is issued.",
+    a: "First-time charges may be refunded within 14 days via Support. Cancel anytime in Stripe Customer Portal when configured; access continues through the paid period unless a refund is issued.",
   },
   {
     q: "Is the marketing dashboard real customer data?",
@@ -38,29 +37,31 @@ const faqs = [
 ] as const;
 
 export default function DocsFaqPage() {
-  const support = supportEmail();
-  const faqsWithSupport = faqs.map((item) =>
-    item.q.startsWith("How do refunds") && support
-      ? {
-          ...item,
-          a: `First-time charges may be refunded within 14 days via ${support}. Cancel anytime in Stripe Customer Portal when configured; access continues through the paid period unless a refund is issued.`,
-        }
-      : item,
-  );
   return (
     <main className="docs-page">
       <p className="eyebrow">Help</p>
       <h1>FAQ</h1>
       <div className="prose">
-        {faqsWithSupport.map((item) => (
+        {faqs.map((item) => (
           <section key={item.q}>
             <h2>{item.q}</h2>
-            <p>{item.a}</p>
+            <p>
+              {item.q.startsWith("How do refunds") ? (
+                <>
+                  First-time charges may be refunded within 14 days via{" "}
+                  <Link href="/support">Support</Link>. Cancel anytime in Stripe Customer Portal
+                  when configured; access continues through the paid period unless a refund is
+                  issued.
+                </>
+              ) : (
+                item.a
+              )}
+            </p>
           </section>
         ))}
         <p>
           Legal detail: <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link> ·{" "}
-          <Link href="/pricing">Pricing</Link>
+          <Link href="/pricing">Pricing</Link> · <Link href="/support">Support</Link>
         </p>
       </div>
     </main>

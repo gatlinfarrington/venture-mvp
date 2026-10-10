@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
-import { supportEmail, supportMailto } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -49,9 +48,6 @@ const cards = [
 ] as const;
 
 export default function DocsIndexPage() {
-  const support = supportEmail();
-  const mailto = supportMailto();
-
   return (
     <main className="docs-page">
       <p className="eyebrow">Help center</p>
@@ -70,11 +66,9 @@ export default function DocsIndexPage() {
           </li>
         ))}
       </ul>
-      {support && mailto ? (
-        <p className="muted docs-support">
-          Still stuck? Email <a href={mailto}>{support}</a>.
-        </p>
-      ) : null}
+      <p className="muted docs-support">
+        Still stuck? See <Link href="/support">Support</Link>.
+      </p>
     </main>
   );
 }
