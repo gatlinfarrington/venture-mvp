@@ -21,20 +21,24 @@ export default function PolarSetupPage() {
         </p>
         <h2>Create a token</h2>
         <ol>
-          <li>Open Polar → Settings → Access tokens (or your org’s developer settings).</li>
+          <li>
+            Open Polar and go to{" "}
+            <code className="ui-chip">Settings › Access tokens</code> (or your org’s developer
+            settings).
+          </li>
           <li>Create a token scoped to the organization you sell from.</li>
           <li>Grant read access to orders, subscriptions, customers, and refunds.</li>
         </ol>
         <h2>Connect in {brand.name}</h2>
         <p>
-          Sidebar → Polar → paste the token. It is stored in your Apps Script User Properties (per
-          Google account), not in sheet cells. Anyone with your Google account can use it. Rotate
-          the token if that account was compromised.
+          Open the {brand.name} sidebar, choose Polar, paste the token, then save. It is stored in
+          your Apps Script User Properties (per Google account), not in sheet cells. Anyone with your
+          Google account can use it. Rotate the token if that account was compromised.
         </p>
         <h2>Backfill and schedule</h2>
         <p>
-          Run Backfill once. On Pro or Business, enable scheduled refresh so Polar tabs stay current
-          without opening the sheet. Free remains manual refresh for one source.
+          Press Backfill once. On Pro or Business, enable scheduled refresh so Polar tabs stay
+          current without opening the sheet. Free remains manual refresh for one source.
         </p>
         <p>
           Guide: <Link href="/polar-analytics">Polar analytics</Link>.

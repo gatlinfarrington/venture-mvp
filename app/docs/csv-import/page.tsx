@@ -31,9 +31,10 @@ export default function CsvImportPage() {
         </ol>
         <h2>Import in {brand.name}</h2>
         <p>
-          Sidebar → Import CSV… → choose the file → map columns → Import. Rows land with a CSV
-          source label so they stay distinct from API syncs. Re-importing the same order ids updates
-          existing rows instead of duplicating when ids match.
+          Open the {brand.name} sidebar, choose <code className="ui-chip">Import CSV…</code>, pick
+          the file, map columns, then press Import. Rows land with a CSV source label so they stay
+          distinct from API syncs. Re-importing the same order ids updates existing rows instead of
+          duplicating when ids match.
         </p>
         <h2>Combine with API sources</h2>
         <p>

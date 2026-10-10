@@ -849,22 +849,23 @@ a.chip[aria-current="page"] {
   font-variant-numeric: tabular-nums;
 }
 
-.hero-sheet tr.new {
-  animation: hero-rowin 220ms var(--ease-out);
-}
-
+/* New row fades in; existing rows FLIP via JS (translateY -rowH → 0, 220ms). */
 .hero-sheet tr.new td {
-  animation: hero-hl 1.2s var(--ease-standard);
-  overflow: hidden;
+  animation:
+    hero-cell-fade 160ms var(--ease-out),
+    hero-hl 1.2s var(--ease-standard);
 }
 
-@keyframes hero-rowin {
+.hero-sheet tr.hero-flip {
+  transition: transform 220ms var(--ease-out);
+  will-change: transform;
+}
+
+@keyframes hero-cell-fade {
   from {
-    height: 0;
     opacity: 0;
   }
   to {
-    height: var(--hero-row-height, 36px);
     opacity: 1;
   }
 }
@@ -1018,10 +1019,12 @@ a.chip[aria-current="page"] {
     display: none;
   }
 
-  .hero-sheet tr.new,
   .hero-sheet tr.new td,
+  .hero-sheet tr.hero-flip,
   .hero-store.on .st {
     animation: none;
+    transition: none;
+    transform: none;
   }
 }
 
@@ -1390,11 +1393,17 @@ a.chip[aria-current="page"] {
 .price-card {
   border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
-  padding: var(--space-5); /* 20px */
+  padding: var(--space-5); /* 20px below 1024 */
   display: flex;
   flex-direction: column;
   gap: 0;
   background: var(--c-surface);
+}
+
+@media (min-width: 1024px) {
+  .price-card {
+    padding: var(--space-6); /* 24px from 1024px up */
+  }
 }
 
 .price-card-top {
@@ -1852,8 +1861,9 @@ body:has(.success-shell) .admin-stripe-banner {
 }
 
 .success-h1:focus-visible {
-  outline: var(--space-px) solid var(--c-ink);
-  outline-offset: var(--space-px);
+  /* design-exception: A8 success-onboarding 2px focus ring */
+  outline: 2px solid var(--c-ink); /* stylelint-disable-line declaration-property-value-disallowed-list */
+  outline-offset: 2px; /* stylelint-disable-line declaration-property-value-disallowed-list */
 }
 
 .success-lede {
@@ -1866,7 +1876,8 @@ body:has(.success-shell) .admin-stripe-banner {
 .success-key-card {
   margin-top: var(--space-8);
   border: 1px solid var(--c-hairline);
-  border-top: var(--space-px) solid var(--c-ink);
+  /* design-exception: A8 success-onboarding 2px ink top rule */
+  border-top: 2px solid var(--c-ink); /* stylelint-disable-line declaration-property-value-disallowed-list */
   border-radius: var(--radius-md);
   padding: var(--space-5) var(--space-5) var(--space-4);
   background: var(--c-surface);
@@ -1948,6 +1959,21 @@ body:has(.success-shell) .admin-stripe-banner {
   transform: scale(0.97);
 }
 
+.success-copy-label {
+  display: inline-grid;
+  justify-items: center;
+}
+
+.success-copy-label > span {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity 140ms var(--ease-standard);
+}
+
+.success-copy-label > span.is-on {
+  opacity: 1;
+}
+
 .success-key-note {
   margin: var(--space-3) 0 0;
   font-size: var(--t-caption-size);
@@ -1955,7 +1981,7 @@ body:has(.success-shell) .admin-stripe-banner {
 
 .success-checklist {
   list-style: none;
-  margin: var(--space-10) 0 0;
+  margin: var(--space-12) 0 0;
   padding: 0;
   border-top: 1px solid var(--c-hairline);
 }
@@ -1977,7 +2003,14 @@ body:has(.success-shell) .admin-stripe-banner {
 
 .success-check-title {
   margin: 0;
+  /* design-exception: A9 success-onboarding 20px step title */
+  font-size: 20px; /* stylelint-disable-line declaration-property-value-disallowed-list */
   font-weight: 600;
+  line-height: 1.25;
+}
+
+.success-checklist li.is-done .success-check-title {
+  color: var(--c-ink-muted);
 }
 
 .success-check-copy {
@@ -1989,10 +2022,70 @@ body:has(.success-shell) .admin-stripe-banner {
   margin-top: var(--space-2);
 }
 
-.success-check-box input {
-  width: 18px;
-  height: 18px;
+.success-check-box {
+  position: relative;
+  width: 20px;
+  height: 20px;
   margin-top: var(--space-px);
+  display: block;
+  cursor: pointer;
+}
+
+.success-check-face {
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  display: block;
+  box-sizing: border-box;
+  position: relative;
+  transition:
+    background-color 140ms var(--ease-standard),
+    border-color 140ms var(--ease-standard);
+}
+
+.success-check-face::after {
+  content: "";
+  position: absolute;
+  /* design-exception: A8 success checkbox white tick geometry */
+  left: 6px; /* stylelint-disable-line declaration-property-value-disallowed-list */
+  /* design-exception: A8 success checkbox white tick geometry */
+  top: 3px; /* stylelint-disable-line declaration-property-value-disallowed-list */
+  width: 5px;
+  height: 10px;
+  border: solid var(--c-ink-inverse);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) scale(0);
+  opacity: 0;
+  transition:
+    transform 140ms var(--ease-out),
+    opacity 140ms var(--ease-out);
+}
+
+.success-check-box input:checked + .success-check-face {
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+}
+
+.success-check-box input:checked + .success-check-face::after {
+  opacity: 1;
+  transform: rotate(45deg) scale(1);
+}
+
+.success-check-box input:focus-visible + .success-check-face {
+  /* design-exception: A8 success-onboarding 2px focus ring */
+  outline: 2px solid var(--c-ink); /* stylelint-disable-line declaration-property-value-disallowed-list */
+  outline-offset: 2px; /* stylelint-disable-line declaration-property-value-disallowed-list */
+}
+
+.ui-chip {
+  font: 400 13px / 1.4 var(--font-mono);
+  background: var(--c-surface-2);
+  /* design-exception: A8 success/docs UI chip radius 4px */
+  border-radius: 4px; /* stylelint-disable-line declaration-property-value-disallowed-list */
+  padding: 0.1em 0.35em;
+  color: var(--c-ink);
 }
 
 .success-aside .eyebrow {
@@ -2002,13 +2095,28 @@ body:has(.success-shell) .admin-stripe-banner {
 .success-next-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: 0;
+  /* design-exception: A8 success-onboarding 2px ink top rule */
+  border-top: 2px solid var(--c-ink); /* stylelint-disable-line declaration-property-value-disallowed-list */
+}
+
+.success-next-list > div {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--c-hairline);
 }
 
 .success-next-title {
   margin: 0 0 var(--space-2);
-  font-size: var(--t-ui-sm-size);
+  /* design-exception: A9 success-onboarding 15px aside title */
+  font-size: 15px; /* stylelint-disable-line declaration-property-value-disallowed-list */
   font-weight: 600;
+}
+
+.success-next-list p {
+  margin: 0;
+  /* design-exception: A9 success-onboarding 14px/1.5 aside body */
+  font-size: 14px; /* stylelint-disable-line declaration-property-value-disallowed-list */
+  line-height: 1.5;
 }
 
 .success-support {
@@ -2018,9 +2126,14 @@ body:has(.success-shell) .admin-stripe-banner {
 }
 
 .success-support a {
-  color: var(--c-ink);
+  color: var(--c-border);
   text-decoration: underline;
   text-underline-offset: 2px;
+  transition: color 140ms var(--ease-standard);
+}
+
+.success-support a:hover {
+  color: var(--c-ink);
 }
 
 @media (max-width: 900px) {
@@ -2050,15 +2163,30 @@ body:has(.success-shell) .admin-stripe-banner {
   .success-btn {
     min-height: 44px;
   }
+
+  .success-key-value {
+    /* design-exception: A9 success-onboarding 13px key value ≤900px */
+    font-size: 13px; /* stylelint-disable-line declaration-property-value-disallowed-list */
+  }
+
+  .success-key-actions {
+    flex-wrap: nowrap;
+  }
+
+  .success-key-actions .success-btn {
+    flex: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .success-state,
   .success-btn:hover,
   .success-btn:active,
-  .success-shimmer {
+  .success-shimmer,
+  .success-copy-label > span {
     animation: none;
     transform: none;
+    transition: none;
   }
 
   .success-shimmer {

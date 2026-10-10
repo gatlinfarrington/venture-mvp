@@ -256,6 +256,13 @@ export function HeroDemo() {
         window.setTimeout(
           () => {
             const id = `EX-${nextId.current++}`;
+            const stage = stageRef.current;
+            const tbody = stage?.querySelector<HTMLElement>(".hero-sheet tbody");
+            const existing = tbody
+              ? Array.from(tbody.querySelectorAll<HTMLElement>("tr"))
+              : [];
+            const firstTops = existing.map((tr) => tr.getBoundingClientRect().top);
+
             setRows((prev) => {
               const next: Row[] = [
                 rowFromSpec(spec, id, true),
@@ -263,6 +270,36 @@ export function HeroDemo() {
               ].slice(0, 9);
               return next;
             });
+
+            // FLIP: new row fades in (CSS); existing rows translate from -rowH → 0.
+            if (!reduced && tbody && firstTops.length) {
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  const trs = Array.from(tbody.querySelectorAll<HTMLElement>("tr"));
+                  for (let i = 1; i < trs.length; i++) {
+                    const prevTop = firstTops[i - 1];
+                    if (prevTop == null) continue;
+                    const tr = trs[i]!;
+                    const lastTop = tr.getBoundingClientRect().top;
+                    const delta = prevTop - lastTop;
+                    if (Math.abs(delta) < 0.5) continue;
+                    tr.style.transition = "none";
+                    tr.style.transform = `translateY(${delta}px)`;
+                    tr.getBoundingClientRect();
+                    tr.classList.add("hero-flip");
+                    tr.style.transition = "";
+                    tr.style.transform = "translateY(0)";
+                    timers.current.push(
+                      window.setTimeout(() => {
+                        tr.classList.remove("hero-flip");
+                        tr.style.transform = "";
+                      }, 240),
+                    );
+                  }
+                });
+              });
+            }
+
             // Add the order’s real amount (not ×4) so delta stays near +6%.
             tickMrr(mrrRef.current + amount, 700);
             setBarHeights((heights) => {

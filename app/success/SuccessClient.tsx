@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { brand } from "@/lib/brand";
 import { REFUND_LINE_ASIDE } from "@/lib/copy";
@@ -18,6 +26,13 @@ type SessionPayload = {
   license?: { key: string; tier: string; interval: string } | null;
   message?: string;
   error?: string;
+};
+
+type ChecklistStep = {
+  storageStep: 1 | 2 | 3;
+  title: string;
+  body?: ReactNode;
+  action?: ReactNode;
 };
 
 const POLL_MS = 2500;
@@ -58,6 +73,10 @@ function maskKey(key: string) {
 
 function storageKey(sessionId: string, step: number) {
   return `rs-success-check:${sessionId}:${step}`;
+}
+
+function UiChip({ children }: { children: ReactNode }) {
+  return <code className="ui-chip">{children}</code>;
 }
 
 function SuccessHeader() {
@@ -255,6 +274,73 @@ function SuccessInner() {
   const email = data?.email || "your inbox";
   const price = license ? monthlyPrice(license.tier) : "";
 
+  const checklist: ChecklistStep[] = [];
+  if (templateUrl) {
+    checklist.push({
+      storageStep: 1,
+      title: "Copy the template Sheet",
+      body: (
+        <>
+          Opens Google Sheets and saves a copy to your Drive. Tabs and the dashboard are already
+          laid out.
+        </>
+      ),
+      action: (
+        <a
+          className="btn btn-primary success-btn"
+          href={templateUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => markCheck(1)}
+        >
+          Make a copy
+        </a>
+      ),
+    });
+  }
+  checklist.push({
+    storageStep: 2,
+    title: "Open the add-on",
+    body: (
+      <>
+        In your copy, choose <UiChip>Extensions</UiChip> › <UiChip>{brand.name}</UiChip> ›{" "}
+        <UiChip>Open sidebar</UiChip>.
+      </>
+    ),
+    action: marketplaceUrl ? (
+      <a
+        className="btn btn-secondary success-btn"
+        href={marketplaceUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => markCheck(2)}
+      >
+        Install from Marketplace
+      </a>
+    ) : null,
+  });
+  checklist.push({
+    storageStep: 3,
+    title: "Paste your key and connect a source",
+    body: (
+      <>
+        In the sidebar, paste the key into <UiChip>License key</UiChip>. Then add a Stripe
+        restricted key, a Lemon Squeezy, Polar or Gumroad key, or choose{" "}
+        <UiChip>Import CSV…</UiChip> from the menu. Press <UiChip>Save</UiChip> and the first
+        backfill starts.
+      </>
+    ),
+    action: (
+      <Link
+        className="btn btn-secondary success-btn"
+        href="/docs/api-keys"
+        onClick={() => markCheck(3)}
+      >
+        Where to find each API key
+      </Link>
+    ),
+  });
+
   return (
     <div className="success-shell" data-state={ui}>
       <SuccessHeader />
@@ -310,8 +396,10 @@ function SuccessInner() {
                 Here’s your key.
               </h1>
               <p className="success-lede muted">
-                Your receipt went to {email}. Three steps and your revenue is in a
-                sheet you own.
+                Your receipt went to {email}.{" "}
+                {checklist.length === 3
+                  ? "Three steps and your revenue is in a sheet you own."
+                  : "Two steps and your revenue is in a sheet you own."}
               </p>
 
               <div className="success-key-card">
@@ -342,13 +430,16 @@ function SuccessInner() {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-primary success-btn"
+                    className="btn btn-primary success-btn success-copy-btn"
                     onClick={() => {
                       void copyKey(license.key);
                       markCheck(3);
                     }}
                   >
-                    {copied ? "Copied" : "Copy key"}
+                    <span className="success-copy-label">
+                      <span className={copied ? undefined : "is-on"}>Copy key</span>
+                      <span className={copied ? "is-on" : undefined}>Copied</span>
+                    </span>
                   </button>
                 </div>
                 <p className="success-key-note muted" role="status">
@@ -364,94 +455,34 @@ function SuccessInner() {
               </div>
 
               <ol className="success-checklist">
-                <li className={checks[0] ? "is-done" : undefined}>
-                  <span className="success-check-num mono" aria-hidden="true">
-                    {checks[0] ? "ok" : "01"}
-                  </span>
-                  <div className="success-check-body">
-                    <p className="success-check-title">Copy the template Sheet</p>
-                    {templateUrl ? (
-                      <a
-                        className="btn btn-secondary success-btn"
-                        href={templateUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => markCheck(1)}
-                      >
-                        Make a copy
-                      </a>
-                    ) : null}
-                  </div>
-                  <span className="success-check-box" aria-hidden="true">
-                    <input
-                      type="checkbox"
-                      checked={checks[0]}
-                      onChange={() => markCheck(1)}
-                      aria-label="Mark step 1 done"
-                    />
-                  </span>
-                </li>
-                <li className={checks[1] ? "is-done" : undefined}>
-                  <span className="success-check-num mono" aria-hidden="true">
-                    {checks[1] ? "ok" : "02"}
-                  </span>
-                  <div className="success-check-body">
-                    <p className="success-check-title">Open the add-on</p>
-                    <p className="muted success-check-copy">
-                      In your copy, choose Extensions → {brand.name} → Open sidebar.
-                    </p>
-                    {marketplaceUrl ? (
-                      <a
-                        className="btn btn-secondary success-btn"
-                        href={marketplaceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => markCheck(2)}
-                      >
-                        Install from Marketplace
-                      </a>
-                    ) : null}
-                  </div>
-                  <span className="success-check-box" aria-hidden="true">
-                    <input
-                      type="checkbox"
-                      checked={checks[1]}
-                      onChange={() => markCheck(2)}
-                      aria-label="Mark step 2 done"
-                    />
-                  </span>
-                </li>
-                <li className={checks[2] ? "is-done" : undefined}>
-                  <span className="success-check-num mono" aria-hidden="true">
-                    {checks[2] ? "ok" : "03"}
-                  </span>
-                  <div className="success-check-body">
-                    <p className="success-check-title">
-                      Paste your key and connect a source
-                    </p>
-                    <p className="muted success-check-copy">
-                      In the sidebar, paste the key into License key. Then add a
-                      Stripe restricted key, a Lemon Squeezy, Polar or Gumroad key,
-                      or choose Import CSV… from the menu. Press Save and the first
-                      backfill starts.
-                    </p>
-                    <Link
-                      className="btn btn-secondary success-btn"
-                      href="/docs/api-keys"
-                      onClick={() => markCheck(3)}
-                    >
-                      Where to find each API key
-                    </Link>
-                  </div>
-                  <span className="success-check-box" aria-hidden="true">
-                    <input
-                      type="checkbox"
-                      checked={checks[2]}
-                      onChange={() => markCheck(3)}
-                      aria-label="Mark step 3 done"
-                    />
-                  </span>
-                </li>
+                {checklist.map((step, index) => {
+                  const num = String(index + 1).padStart(2, "0");
+                  const done = checks[step.storageStep - 1]!;
+                  return (
+                    <li key={step.storageStep} className={done ? "is-done" : undefined}>
+                      <span className="success-check-num mono" aria-hidden="true">
+                        {num}
+                      </span>
+                      <div className="success-check-body">
+                        <h3 className="success-check-title">{step.title}</h3>
+                        {step.body ? (
+                          <p className="muted success-check-copy">{step.body}</p>
+                        ) : null}
+                        {step.action}
+                      </div>
+                      <label className="success-check-box">
+                        <input
+                          type="checkbox"
+                          className="visually-hidden"
+                          checked={done}
+                          onChange={() => markCheck(step.storageStep)}
+                          aria-label={`Mark step ${num} done`}
+                        />
+                        <span className="success-check-face" aria-hidden="true" />
+                      </label>
+                    </li>
+                  );
+                })}
               </ol>
             </div>
 
