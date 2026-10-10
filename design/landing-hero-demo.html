@@ -1,0 +1,83 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RevenueSheet: hero demo prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+*{box-sizing:border-box;margin:0}
+body{font-family:var(--font-sans);color:var(--c-ink);background:var(--c-bg);-webkit-font-smoothing:antialiased;min-height:100vh}
+.mono{font-family:var(--font-mono)}
+nav{max-width:1200px;margin:0 auto;height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:600;letter-spacing:-.02em;font-size:18px}
+.links{display:flex;gap:28px;align-items:center;font-size:14px;color:var(--c-ink-muted)}
+.btn{display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:999px;font:500 15px var(--font-sans);border:1px solid transparent;cursor:pointer;
+  transition:transform var(--dur-base) var(--ease-spring),background-color var(--dur-fast) var(--ease-standard),box-shadow var(--dur-fast) var(--ease-standard)}
+.btn:hover{transform:translateY(var(--hover-lift))}.btn:active{transform:scale(var(--press-scale));transition-duration:var(--dur-instant)}
+.btn:focus-visible{outline:2px solid var(--c-ink);outline-offset:2px}
+.p{background:var(--c-ink);color:#fff}.p:hover{background:#262626}.s{background:#fff;border-color:var(--c-border);color:var(--c-ink)}.s:hover{background:var(--c-surface-2)}
+.sm{height:40px;padding:0 16px;font-size:14px}
+.hero{max-width:1200px;margin:0 auto;padding:72px 24px 96px;display:grid;grid-template-columns:5fr 7fr;gap:56px;align-items:center}
+.eb{font:500 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--c-ink-muted)}
+h1{font-size:60px;line-height:.98;letter-spacing:-.045em;font-weight:600;margin:18px 0 22px}
+.lede{font-size:18px;line-height:1.5;color:var(--c-ink-muted);max-width:30em}
+.ctas{display:flex;gap:10px;margin-top:30px}
+.reveal{opacity:0;transform:translateY(var(--reveal-distance));animation:rv var(--dur-reveal) var(--ease-out) forwards}
+.reveal:nth-child(2){animation-delay:calc(var(--stagger)*1)}.reveal:nth-child(3){animation-delay:calc(var(--stagger)*2)}.reveal:nth-child(4){animation-delay:calc(var(--stagger)*3)}.reveal:nth-child(5){animation-delay:calc(var(--stagger)*4)}
+@keyframes rv{to{opacity:1;transform:none}}
+/* demo */
+.stage{position:relative;height:500px;background:var(--c-surface-2);border-radius:var(--radius-md);overflow:hidden}
+.stores{position:absolute;left:28px;top:56px;display:flex;flex-direction:column;gap:14px;z-index:2}
+.store{width:168px;background:#fff;border:1px solid var(--c-hairline);border-radius:10px;padding:11px 13px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.store small{font:400 11px var(--font-mono);color:var(--c-ink-muted)}
+.store .st{width:7px;height:7px;border-radius:50%;background:var(--c-border);transition:background-color var(--dur-base) var(--ease-standard)}
+.store.on .st{background:var(--c-signal);box-shadow:0 0 0 0 rgba(10,122,85,.4);animation:pulse 1.6s var(--ease-out) infinite}
+@keyframes pulse{to{box-shadow:0 0 0 8px rgba(10,122,85,0)}}
+.sheet{position:absolute;right:24px;top:24px;bottom:24px;width:400px;background:#fff;border:1px solid var(--c-hairline);border-radius:12px;box-shadow:var(--shadow-card);overflow:hidden;display:flex;flex-direction:column}
+.sh-top{padding:16px 18px 12px;border-bottom:1px solid var(--c-hairline)}
+.mrr{display:flex;align-items:baseline;gap:10px;margin-top:6px}.mrr b{font-size:36px;letter-spacing:-.035em;font-weight:600;font-variant-numeric:tabular-nums}
+.delta{font:500 12px var(--font-mono);color:var(--c-signal)}
+.bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin-top:12px}.bars i{flex:1;background:var(--c-ink);border-radius:2px 2px 0 0;transform-origin:bottom;transition:height var(--dur-slow) var(--ease-out)}
+.bars i:last-child{background:var(--c-signal)}
+table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;font:500 10px var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--c-ink-muted);background:var(--c-surface-2);padding:7px 12px;border-bottom:1px solid var(--c-border)}
+td{padding:7px 12px;border-bottom:1px solid var(--c-hairline);white-space:nowrap}td.n{text-align:right;font-family:var(--font-mono)}
+tr.new{animation:rowin var(--dur-slow) var(--ease-out)}tr.new td{animation:hl 1.2s var(--ease-standard)}
+@keyframes rowin{from{opacity:0;transform:translateY(-8px)}}@keyframes hl{from{background:#E7F3EE}to{background:transparent}}
+.packet{position:absolute;height:22px;padding:0 8px;border-radius:999px;background:var(--c-ink);color:#fff;font:500 10px var(--font-mono);display:flex;align-items:center;z-index:3;
+  offset-rotate:0deg;animation:fly 900ms var(--ease-in-out) forwards}
+@keyframes fly{0%{opacity:0;offset-distance:0%}12%{opacity:1}88%{opacity:1}100%{opacity:0;offset-distance:100%}}
+.note{position:absolute;left:28px;bottom:20px;font:400 11px var(--font-mono);color:var(--c-ink-muted)}
+.replay{position:absolute;left:28px;bottom:44px}
+@media (max-width:980px){.hero{grid-template-columns:1fr}h1{font-size:44px}.sheet{width:auto;left:212px}}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;animation:none}.packet{display:none}tr.new,tr.new td,.store.on .st{animation:none}}
+</style></head><body>
+<nav><span class="brand"><svg width="24" height="24" viewBox="0 0 40 40" aria-hidden="true"><g fill="#0D0D0D"><rect x="6" y="26" width="8" height="8" rx="1"/><rect x="16" y="16" width="8" height="8" rx="1"/></g><rect x="26" y="6" width="8" height="8" rx="1" fill="#0A7A55"/><g fill="#0D0D0D" opacity=".14"><rect x="6" y="6" width="8" height="8" rx="1"/><rect x="16" y="6" width="8" height="8" rx="1"/><rect x="6" y="16" width="8" height="8" rx="1"/><rect x="26" y="16" width="8" height="8" rx="1"/><rect x="16" y="26" width="8" height="8" rx="1"/><rect x="26" y="26" width="8" height="8" rx="1"/></g></svg>RevenueSheet</span>
+<div class="links"><span>Pricing</span><span>Docs</span><span>Changelog</span><a class="btn p sm">Install free</a></div></nav>
+<section class="hero"><div>
+<div class="eb reveal">Google Sheets add-on</div>
+<h1 class="reveal">All your stores,<br>in a sheet<br>you own.</h1>
+<p class="lede reveal">Lemon Squeezy, Polar and Gumroad revenue, synced on a schedule into Google Sheets, with an MRR dashboard built for you.</p>
+<div class="ctas reveal"><a class="btn p">Install for Google Sheets</a><a class="btn s">See the dashboard</a></div>
+<div class="eb reveal" style="margin-top:28px">Demo shows example data</div></div>
+<div class="stage reveal" aria-label="Animation: three stores sync orders into one spreadsheet while MRR rises (example data)">
+<div class="stores"><div class="store" id="s0"><span>Lemon Squeezy<br><small>example-store</small></span><i class="st"></i></div><div class="store" id="s1"><span>Polar<br><small>example-org</small></span><i class="st"></i></div><div class="store" id="s2"><span>Gumroad<br><small>example-seller</small></span><i class="st"></i></div></div>
+<div class="sheet"><div class="sh-top"><div class="eb">MRR · all sources</div><div class="mrr"><b id="mrr">$4,180</b><span class="delta" id="dl">+0.0%</span></div><div class="bars" id="bars"></div></div>
+<table><thead><tr><th>Order</th><th>Source</th><th>Product</th><th style="text-align:right">Amount</th></tr></thead><tbody id="tb"></tbody></table></div>
+<button class="btn s sm replay" id="rp">Replay</button><div class="note">Example data · no real customers</div></div></section>
+<script>
+const R=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const src=['Lemon Squeezy','Polar','Gumroad'],prod=['Demo SaaS · Pro','Example Course','Sample Icon Pack','Demo SaaS · Team','Template Kit'];
+const base=[52,55,58,57,61,64,66,70,73,76,80,84];const bars=document.getElementById('bars');base.forEach(h=>{const i=document.createElement('i');i.style.height=(h-40)*2+'%';bars.appendChild(i)});
+const tb=document.getElementById('tb'),mrrEl=document.getElementById('mrr'),dl=document.getElementById('dl'),stage=document.querySelector('.stage');
+let mrr=4180,start=4180,timer=[],n=10450;
+const fmt=v=>'$'+Math.round(v).toLocaleString('en-US');
+function tick(to,ms){const from=mrr,t0=performance.now();if(R){mrr=to;mrrEl.textContent=fmt(to);return}
+  (function f(t){const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,4);mrr=from+(to-from)*e;mrrEl.textContent=fmt(mrr);dl.textContent='+'+((mrr/start-1)*100).toFixed(1)+'%';if(k<1)requestAnimationFrame(f)})(t0)}
+function addRow(i){const s=i%3,p=prod[(i*7)%5],a=[9,19,29,49,12][(i*3)%5];
+  document.getElementById('s'+s).classList.add('on');
+  if(!R){const el=document.createElement('div');el.className='packet';el.textContent='+$'+a;const y=[78,138,198][s];
+    el.style.offsetPath=`path("M 150 ${y} C 230 ${y}, 250 160, 330 175")`;stage.appendChild(el);setTimeout(()=>el.remove(),950)}
+  timer.push(setTimeout(()=>{const tr=document.createElement('tr');tr.className='new';tr.innerHTML=`<td class="mono">EX-${n++}</td><td>${src[s]}</td><td>${p}</td><td class="n">$${a}.00</td>`;tb.prepend(tr);while(tb.children.length>9)tb.lastChild.remove();
+    tick(mrr+a*4,700);const last=bars.lastChild;last.style.height=Math.min(98,parseFloat(last.style.height)+1.6)+'%'},R?0:800))}
+function run(){timer.forEach(clearTimeout);timer=[];tb.innerHTML='';mrr=start;mrrEl.textContent=fmt(start);dl.textContent='+0.0%';document.querySelectorAll('.store').forEach(s=>s.classList.remove('on'));bars.lastChild.style.height=(base[11]-40)*2+'%';
+  for(let i=0;i<14;i++)timer.push(setTimeout(()=>addRow(i),R?0:600+i*420))}
+document.getElementById('rp').onclick=run;run();
+</script></body></html>
