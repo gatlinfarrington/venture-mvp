@@ -43,11 +43,10 @@ See [`.env.example`](.env.example).
 |---|---|---|
 | `NEXT_PUBLIC_SITE_URL` | Yes in prod | Canonical origin, no trailing slash |
 | `NEXT_PUBLIC_INSTALL_URL` | No | Workspace Marketplace listing URL |
-| `STRIPE_SECRET_KEY` | For checkout | `sk_test_…` until go-live |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Optional UI | Test publishable key |
-| `STRIPE_WEBHOOK_SECRET` | For webhooks | From Stripe CLI or Dashboard |
-| `STRIPE_PRICE_PRO_MONTHLY` / `_ANNUAL` | For checkout | Stripe Price IDs |
-| `STRIPE_PRICE_BUSINESS_MONTHLY` / `_ANNUAL` | For checkout | Stripe Price IDs |
+| `STRIPE_SECRET_KEY` | For checkout | `sk_test_…` / `sk_live_…` — paste to go live |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Enables paid CTAs | Real `pk_test_` / `pk_live_` (no `REPLACE`) |
+| `STRIPE_WEBHOOK_SECRET` | For webhooks | Endpoint `/api/webhooks/stripe` |
+| `STRIPE_PRICE_*` | Optional | Overrides; otherwise lookup_key auto-create |
 | `UPSTASH_REDIS_REST_URL` / `_TOKEN` | Prod licenses | Without these, uses `.data/` (not multi-instance safe) |
 | `LICENSE_API_SECRET` | Recommended | Shared secret header `x-license-secret` for the add-on |
 

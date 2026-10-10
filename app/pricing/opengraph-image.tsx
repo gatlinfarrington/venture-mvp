@@ -12,7 +12,7 @@ export default function Image() {
       <OgFrame
         eyebrow="Pricing"
         title="Free to try. Pay when you schedule sync."
-        subtitle="Free · Pro $9/mo · Business $19/mo (est.). Annual = two months free."
+        subtitle="Free · Pro $9/mo · Business $19/mo. Annual = two months free."
       />
     ),
     { ...size },
