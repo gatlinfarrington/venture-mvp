@@ -83,6 +83,12 @@ export function marketplaceUrl(): string | null {
   return raw.length > 0 ? raw : null;
 }
 
+/** Google Sheets template “Make a copy” link for post-checkout onboarding. */
+export function templateCopyUrl(): string | null {
+  const raw = process.env.NEXT_PUBLIC_TEMPLATE_COPY_URL?.trim() || "";
+  return raw.length > 0 ? raw : null;
+}
+
 /** @deprecated Use marketplaceUrl() — null when no listing is configured. */
 export function installUrl(): string | null {
   return marketplaceUrl();

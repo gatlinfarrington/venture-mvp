@@ -118,7 +118,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   if (!connected.length) {
     return {
       ok: false,
-      message: `No API keys saved. Open ${BRAND.name} → Settings to connect a source.`,
+      message: `No API keys saved. Open ${BRAND.name} → License & display to connect a source.`,
       sources: [],
     };
   }

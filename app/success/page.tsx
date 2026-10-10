@@ -3,7 +3,7 @@ import { brand } from "@/lib/brand";
 import { SuccessClient } from "./SuccessClient";
 
 export const metadata: Metadata = {
-  title: "Checkout success",
+  title: `Your license key · ${brand.name}`,
   description: `Your ${brand.name} license key after Stripe Checkout.`,
   robots: { index: false, follow: false },
   alternates: { canonical: "/success" },

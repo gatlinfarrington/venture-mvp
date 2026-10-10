@@ -12,7 +12,7 @@ function removeTriggersByHandler(handler: string): void {
 export function installSchedule(cadence?: ScheduleCadence): string {
   const license = checkLicenseSync();
   if (!license.allowSchedule) {
-    return "Scheduled refresh requires a paid plan. Connect a license key in Settings.";
+    return "Scheduled refresh requires a paid plan. Connect a license key in License & display.";
   }
   const chosen = cadence || getScheduleCadence();
   setScheduleCadence(chosen);

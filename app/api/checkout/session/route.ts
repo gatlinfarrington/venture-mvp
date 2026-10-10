@@ -40,7 +40,8 @@ export async function GET(request: Request) {
         : null,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Lookup failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Never surface raw Stripe messages to the client.
+    console.error("checkout session lookup failed", error);
+    return NextResponse.json({ error: "lookup failed" }, { status: 500 });
   }
 }
