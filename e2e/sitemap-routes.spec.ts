@@ -102,7 +102,7 @@ test("404 page returns 404 with noindex and stable screenshot", async ({ page },
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "This page isn't in the sheet",
   );
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+  await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute(
     "content",
     "noindex",
   );
