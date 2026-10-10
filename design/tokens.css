@@ -28,6 +28,11 @@
   --t-caption-size:13px; --t-caption-weight:400; --t-caption-lh:1.4; --t-caption-track:0;
   --t-mono-size:12px; --t-mono-weight:500; --t-mono-lh:1.3; --t-mono-track:0;
   --t-eyebrow-size:11px; --t-eyebrow-weight:500; --t-eyebrow-lh:1.3; --t-eyebrow-track:0.08em;
+  --t-ui-sm-size:14px; /* Pills, compact buttons */
+  --t-brand-size:18px; /* Wordmark */
+  --t-kpi-size:36px; /* Hero MRR numeral */
+  --t-price-size:40px; /* Pricing amount */
+  --t-chart-label-size:10px; /* Table/chart micro labels */
   --space-0:0px;
   --space-1:4px;
   --space-2:8px;

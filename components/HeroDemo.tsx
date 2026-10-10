@@ -22,6 +22,13 @@ type Row = {
   fresh: boolean;
 };
 
+const SEED_ROWS: Row[] = [
+  { id: "EX-10446", source: "Lemon Squeezy", product: "Demo SaaS · Pro", amount: 29, fresh: false },
+  { id: "EX-10447", source: "Polar", product: "Example Course", amount: 49, fresh: false },
+  { id: "EX-10448", source: "Gumroad", product: "Sample Icon Pack", amount: 12, fresh: false },
+  { id: "EX-10449", source: "Lemon Squeezy", product: "Demo SaaS · Team", amount: 19, fresh: false },
+];
+
 function fmt(v: number) {
   return `$${Math.round(v).toLocaleString("en-US")}`;
 }
@@ -33,6 +40,14 @@ function prefersReducedMotion() {
   );
 }
 
+function packetsAllowed() {
+  return (
+    typeof window !== "undefined" &&
+    !prefersReducedMotion() &&
+    window.matchMedia("(min-width: 769px)").matches
+  );
+}
+
 export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
@@ -41,7 +56,7 @@ export function HeroDemo() {
   const orderN = useRef(10450);
   const [mrr, setMrr] = useState(START_MRR);
   const [delta, setDelta] = useState("+0.0%");
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<Row[]>(SEED_ROWS);
   const [activeStores, setActiveStores] = useState([false, false, false]);
   const [barHeights, setBarHeights] = useState(
     () => BASE_BARS.map((h) => (h - 40) * 2),
@@ -60,22 +75,32 @@ export function HeroDemo() {
   }, []);
 
   const tickMrr = useCallback((to: number, ms: number) => {
+    if (raf.current != null) {
+      cancelAnimationFrame(raf.current);
+      raf.current = null;
+    }
+
+    const target = Math.max(START_MRR, to);
+
     if (prefersReducedMotion()) {
-      mrrRef.current = to;
-      setMrr(to);
-      setDelta(`+${(((to / START_MRR) - 1) * 100).toFixed(1)}%`);
+      mrrRef.current = target;
+      setMrr(target);
+      setDelta(`+${(((target / START_MRR) - 1) * 100).toFixed(1)}%`);
       return;
     }
+
     const from = mrrRef.current;
-    const t0 = performance.now();
+    let t0: number | null = null;
     const step = (t: number) => {
-      const k = Math.min(1, (t - t0) / ms);
+      if (t0 === null) t0 = t;
+      const k = Math.min(1, Math.max(0, (t - t0) / ms));
       const e = 1 - Math.pow(1 - k, 4);
-      const next = from + (to - from) * e;
+      const next = Math.max(START_MRR, from + (target - from) * e);
       mrrRef.current = next;
       setMrr(next);
       setDelta(`+${(((next / START_MRR) - 1) * 100).toFixed(1)}%`);
       if (k < 1) raf.current = requestAnimationFrame(step);
+      else raf.current = null;
     };
     raf.current = requestAnimationFrame(step);
   }, []);
@@ -93,7 +118,7 @@ export function HeroDemo() {
         return next;
       });
 
-      if (!reduced) {
+      if (packetsAllowed()) {
         const id = `p-${i}-${Date.now()}`;
         setPackets((p) => [...p, { id, amount, store: s }]);
         timers.current.push(
@@ -148,7 +173,7 @@ export function HeroDemo() {
     mrrRef.current = START_MRR;
     setMrr(START_MRR);
     setDelta("+0.0%");
-    setRows([]);
+    setRows(SEED_ROWS);
     setActiveStores([false, false, false]);
     setBarHeights(BASE_BARS.map((h) => (h - 40) * 2));
     setPackets([]);
@@ -170,8 +195,6 @@ export function HeroDemo() {
     let started = false;
     let startTimer: number | null = null;
 
-    // Delay the sync loop so the animated MRR counter is not the LCP element.
-    // Reduced-motion jumps straight to the final sheet state.
     const scheduleStart = () => {
       if (started || !visible || !pageVisible) return;
       if (prefersReducedMotion()) {
@@ -183,7 +206,7 @@ export function HeroDemo() {
       startTimer = window.setTimeout(() => {
         started = true;
         run();
-      }, 1800);
+      }, 600);
     };
 
     const stop = () => {
@@ -220,87 +243,89 @@ export function HeroDemo() {
   }, [clearTimers, run]);
 
   return (
-    <div
-      ref={stageRef}
-      className="hero-stage"
-      aria-label="Animation: three stores sync orders into one spreadsheet while MRR rises (example data)"
-    >
-      <div className="hero-stores">
-        {[
-          { name: "Lemon Squeezy", store: "example-store" },
-          { name: "Polar", store: "example-org" },
-          { name: "Gumroad", store: "example-seller" },
-        ].map((s, i) => (
+    <div className="hero-demo">
+      <div
+        ref={stageRef}
+        className="hero-stage"
+        role="img"
+        aria-label="Animation: three stores sync orders into one spreadsheet while MRR rises (example data)"
+      >
+        <div className="hero-stores" aria-hidden="true">
+          {[
+            { name: "Lemon Squeezy", store: "example-store" },
+            { name: "Polar", store: "example-org" },
+            { name: "Gumroad", store: "example-seller" },
+          ].map((s, i) => (
+            <div
+              key={s.name}
+              className={`hero-store${activeStores[i] ? " on" : ""}`}
+            >
+              <span>
+                {s.name}
+                <br />
+                <small>{s.store}</small>
+              </span>
+              <i className="st" aria-hidden="true" />
+            </div>
+          ))}
+        </div>
+
+        <div className="hero-sheet" aria-hidden="true">
+          <div className="hero-sheet-top">
+            <div className="eyebrow">MRR · all sources</div>
+            <div className="hero-mrr">
+              <b>{fmt(mrr)}</b>
+              <span className="hero-delta">{delta}</span>
+            </div>
+            <div className="hero-bars">
+              {barHeights.map((h, i) => (
+                <i
+                  key={i}
+                  style={{ height: `${h}%` }}
+                  className={i === barHeights.length - 1 ? "signal" : undefined}
+                />
+              ))}
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Source</th>
+                <th>Product</th>
+                <th style={{ textAlign: "right" }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className={r.fresh ? "new" : undefined}>
+                  <td className="mono">{r.id}</td>
+                  <td>{r.source}</td>
+                  <td>{r.product}</td>
+                  <td className="n">${r.amount}.00</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {packets.map((p) => (
           <div
-            key={s.name}
-            className={`hero-store${activeStores[i] ? " on" : ""}`}
+            key={p.id}
+            className="hero-packet"
+            style={{
+              offsetPath: `path("M 150 ${[78, 138, 198][p.store]} C 230 ${[78, 138, 198][p.store]}, 250 160, 330 175")`,
+            }}
           >
-            <span>
-              {s.name}
-              <br />
-              <small>{s.store}</small>
-            </span>
-            <i className="st" aria-hidden="true" />
+            +${p.amount}
           </div>
         ))}
+
+        <div className="hero-note mono">Example data · no real customers</div>
       </div>
-
-      <div className="hero-sheet">
-        <div className="hero-sheet-top">
-          <div className="eyebrow">MRR · all sources</div>
-          <div className="hero-mrr">
-            <b>{fmt(mrr)}</b>
-            <span className="hero-delta">{delta}</span>
-          </div>
-          <div className="hero-bars" aria-hidden="true">
-            {barHeights.map((h, i) => (
-              <i
-                key={i}
-                style={{ height: `${h}%` }}
-                className={i === barHeights.length - 1 ? "signal" : undefined}
-              />
-            ))}
-          </div>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Order</th>
-              <th>Source</th>
-              <th>Product</th>
-              <th style={{ textAlign: "right" }}>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className={r.fresh ? "new" : undefined}>
-                <td className="mono">{r.id}</td>
-                <td>{r.source}</td>
-                <td>{r.product}</td>
-                <td className="n">${r.amount}.00</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {packets.map((p) => (
-        <div
-          key={p.id}
-          className="hero-packet"
-          style={{
-            // offset-path curves from store card into sheet (MOTION.md)
-            offsetPath: `path("M 150 ${[78, 138, 198][p.store]} C 230 ${[78, 138, 198][p.store]}, 250 160, 330 175")`,
-          }}
-        >
-          +${p.amount}
-        </div>
-      ))}
-
       <button type="button" className="btn btn-secondary btn-sm hero-replay" onClick={run}>
         Replay
       </button>
-      <div className="hero-note mono">Example data · no real customers</div>
     </div>
   );
 }

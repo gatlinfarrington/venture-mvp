@@ -22,6 +22,9 @@ WCAG AA (4.5:1 text, 3:1 UI/large). Based on Monolith tokens plus RevenueSheet a
 
 Notes: chart series are additionally separated by marker/dash style and direct labels (never color alone). `hairline` is decorative only.
 RevenueSheet additions vs Monolith: signal-tint, danger, danger-tint, series-3, dark-bg, dark-ink, signal-on-dark.
+
+## Dark mode (v1)
+Dark theme and the theme toggle were removed for v1. Monolith ships light-only (white paper, black ink, one green signal). `dark-bg` / `dark-ink` / `signal-on-dark` remain available for the optional Final CTA band only, not a site-wide theme.
 ## Additions (dashboard spec, motion, alt green)
 | Pair | FG | BG | Ratio | Need | Use | Result |
 |---|---|---|---|---|---|---|

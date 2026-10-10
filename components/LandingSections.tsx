@@ -14,7 +14,7 @@ export function Hero() {
             {brand.taglineShort}
           </p>
           <h1 className="display hero-reveal" style={{ animationDelay: "60ms" }}>
-            All your stores, in a sheet you own.
+            All your stores,<br className="br-lg" /> in a sheet you own.
           </h1>
           <p className="body-lg muted hero-lede hero-reveal" style={{ animationDelay: "120ms" }}>
             {brand.description}
@@ -214,7 +214,9 @@ export function Comparison() {
               {rows.map((r) => (
                 <tr key={r.feature}>
                   <td>{r.feature}</td>
-                  <td className="yes">{r.rs === true ? "Yes" : String(r.rs)}</td>
+                  <td className={r.rs === true ? "yes" : "no"}>
+                    {r.rs === true ? "Yes" : String(r.rs)}
+                  </td>
                   <td className={r.zapier === true ? "yes" : "no"}>
                     {r.zapier === true ? "Yes" : r.zapier === false ? "No" : r.zapier}
                   </td>
@@ -235,11 +237,11 @@ export function FAQ() {
   const items = [
     {
       q: "Where does my data live?",
-      a: `Orders, subscriptions, customers, and refunds write into your Google Sheet. ${brand.name} stores license status and sync settings — not a copy of your revenue ledger — on our side.`,
+      a: `Synced rows are written into your Google Sheet. ${brand.name} also stores license and sync settings needed to run the add-on. Exact retention and subprocessors will be listed in the privacy policy before paid launch.`,
     },
     {
       q: "What Google scopes do you need?",
-      a: "The add-on requests access to the spreadsheet it is installed on (and related Drive file access required by Apps Script). We do not ask for Gmail or Contacts.",
+      a: "The Marketplace listing will show the final OAuth scopes. The planned set is limited to the spreadsheet the add-on is installed on (plus related Drive file access required by Apps Script) — not Gmail or Contacts. Confirm on the consent screen at install.",
     },
     {
       q: "Lemon Squeezy is moving to Stripe — will this still work?",
@@ -247,11 +249,11 @@ export function FAQ() {
     },
     {
       q: "How do refunds work for paid plans?",
-      a: "Billing runs through Stripe. Request a refund within 14 days of first charge and we cancel the license key. After that, cancel anytime; access continues through the paid period.",
+      a: "Billing runs through Stripe. Refund and cancel terms will be published with paid launch; until then, email support and we will handle requests case by case. Cancel anytime from the Stripe customer portal in your receipt.",
     },
     {
       q: "How do I cancel?",
-      a: "Cancel the Stripe subscription from the customer portal link in your receipt email. The license flips to inactive on the next webhook; Free-tier limits still apply if you keep the add-on installed.",
+      a: "Use the Stripe customer portal link in your receipt email. After cancel, the license becomes inactive on the next webhook; Free-tier limits still apply if you keep the add-on installed.",
     },
   ];
 
