@@ -68,10 +68,9 @@ export default function TermsPage() {
 
         <h2>Billing and licenses</h2>
         <p>
-          Paid plans are billed through Stripe. Annual plans charge for ten months of the monthly
-          price (two months free). Cancel anytime; access continues through the paid period unless a
-          refund is issued. License keys are personal to you (or your organization on Business) and
-          may not be resold.
+          Paid plans are billed through Stripe. Cancel anytime; access continues through the paid
+          period unless a refund is issued. License keys are personal to you (or your organization on
+          Business) and may not be resold.
         </p>
 
         <h2>Refunds</h2>
