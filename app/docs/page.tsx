@@ -39,7 +39,7 @@ const cards = [
   {
     href: "/docs/faq",
     title: "FAQ",
-    body: "Data storage, Google scopes, billing, and Lemon Squeezy → Stripe notes.",
+    body: "Data storage, Google scopes, billing, and Lemon Squeezy to Stripe notes.",
   },
   {
     href: "/docs/troubleshooting",

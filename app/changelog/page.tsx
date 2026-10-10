@@ -22,7 +22,9 @@ export default function ChangelogPage() {
     <main className="legal container page-shell">
       <p className="eyebrow">Product</p>
       <h1>Changelog</h1>
-      <p className="body-lg muted page-lede">What&apos;s new in {brand.name}.</p>
+      <p className="body-lg muted page-lede">
+        What&apos;s new in {brand.name}: the add-on, the site, and billing.
+      </p>
       <ol className="changelog-list">
         {entries.map((entry) => (
           <li key={entry.slug} className="changelog-item">

@@ -289,7 +289,11 @@ export function FinalCTA() {
     <section className="section">
       <div className="container">
         <Reveal className="final-cta">
-          <h2 className="h2">Your revenue, finally in one place.</h2>
+          <h2 className="h2">
+            Your revenue,
+            <br />
+            finally in one place.
+          </h2>
           <a className="btn btn-primary" href={siteConfig.installUrl}>
             Install for Google Sheets
           </a>

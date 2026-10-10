@@ -36,10 +36,12 @@
   --t-price-size:40px; /* Pricing amount */
   --t-chart-label-size:10px; /* Table/chart micro labels */
   --space-0:0px;
-  --space-px:2px; /* hairline pad (tag pills) */
+  --space-px:2px; /* hairline pad */
   --space-1:4px;
+  --space-1-5:6px; /* tag pill row gap */
   --space-2:8px;
   --space-3:12px;
+  --btn-hero-min:52px; /* phone hero CTA height */
   --space-4:16px;
   --space-5:20px;
   --space-6:24px;

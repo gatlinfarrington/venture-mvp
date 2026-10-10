@@ -126,11 +126,8 @@ export function Pricing() {
                   </div>
                 ) : (
                   <div className="price-cta-stack">
-                    <a
-                      className={featured ? "btn btn-primary" : "btn btn-secondary"}
-                      href={siteConfig.installUrl}
-                    >
-                      Start free, upgrade at launch
+                    <a className="btn btn-secondary" href={siteConfig.installUrl}>
+                      Coming soon
                     </a>
                     <p className="price-cta-caption mono muted">Checkout opens at launch</p>
                   </div>

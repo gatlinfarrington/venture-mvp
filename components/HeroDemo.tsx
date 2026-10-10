@@ -9,13 +9,17 @@ const PRODUCTS = [
   "Sample Icon Pack",
   "Demo SaaS · Team",
   "Template Kit",
-];
-const AMOUNTS = [9, 19, 29, 49, 12];
-const BASE_BARS = [52, 55, 58, 57, 61, 64, 66, 70, 73, 76, 80, 84];
-/** 0% reference for the example delta. */
+] as const;
+
+/**
+ * MOTION.md storyboard: frame 0 shows MRR $4,180 with 9 seeded rows.
+ * 14 deterministic landings add each order’s real amount; sum ≈ $251 → ~+6% delta.
+ * Same sequence on every viewport (packets are visual-only).
+ */
 const BASE_MRR = 4180;
-const SEED_DELTA = 0.032;
-const START_MRR = Math.round(BASE_MRR * (1 + SEED_DELTA));
+const START_MRR = BASE_MRR;
+/** Cap displayed delta near +6% (storyboard rest state). */
+const MAX_DELTA = 0.06;
 
 type Row = {
   id: string;
@@ -25,19 +29,70 @@ type Row = {
   fresh: boolean;
 };
 
-const SEED_ROWS: Row[] = [
-  { id: "EX-10446", source: "Lemon Squeezy", product: "Demo SaaS · Pro", amount: 29, fresh: false },
-  { id: "EX-10447", source: "Polar", product: "Example Course", amount: 49, fresh: false },
-  { id: "EX-10448", source: "Gumroad", product: "Sample Icon Pack", amount: 12, fresh: false },
-  { id: "EX-10449", source: "Lemon Squeezy", product: "Demo SaaS · Team", amount: 19, fresh: false },
+type OrderSpec = {
+  source: 0 | 1 | 2;
+  product: (typeof PRODUCTS)[number];
+  amount: number;
+};
+
+/** Newest-first seed (EX-10449 … EX-10441) — contiguous with inserts from EX-10450. */
+const SEED_SPECS: OrderSpec[] = [
+  { source: 0, product: "Demo SaaS · Pro", amount: 29 },
+  { source: 1, product: "Example Course", amount: 49 },
+  { source: 2, product: "Sample Icon Pack", amount: 12 },
+  { source: 0, product: "Demo SaaS · Team", amount: 19 },
+  { source: 1, product: "Template Kit", amount: 9 },
+  { source: 2, product: "Demo SaaS · Pro", amount: 29 },
+  { source: 0, product: "Sample Icon Pack", amount: 12 },
+  { source: 1, product: "Example Course", amount: 19 },
+  { source: 2, product: "Demo SaaS · Team", amount: 9 },
 ];
+
+/** 14 landings; amounts sum to 251 → final MRR $4,431 (+6.0%). */
+const LANDING_SPECS: OrderSpec[] = [
+  { source: 0, product: "Demo SaaS · Pro", amount: 29 },
+  { source: 1, product: "Example Course", amount: 19 },
+  { source: 2, product: "Sample Icon Pack", amount: 12 },
+  { source: 0, product: "Demo SaaS · Team", amount: 9 },
+  { source: 1, product: "Template Kit", amount: 29 },
+  { source: 2, product: "Demo SaaS · Pro", amount: 19 },
+  { source: 0, product: "Sample Icon Pack", amount: 12 },
+  { source: 1, product: "Example Course", amount: 9 },
+  { source: 2, product: "Demo SaaS · Team", amount: 29 },
+  { source: 0, product: "Template Kit", amount: 19 },
+  { source: 1, product: "Sample Icon Pack", amount: 12 },
+  { source: 2, product: "Demo SaaS · Pro", amount: 9 },
+  { source: 0, product: "Example Course", amount: 29 },
+  { source: 1, product: "Demo SaaS · Team", amount: 15 },
+];
+
+const LANDING_TOTAL = LANDING_SPECS.reduce((s, o) => s + o.amount, 0);
+const FINAL_MRR = START_MRR + LANDING_TOTAL;
+
+const BASE_BARS = [52, 55, 58, 57, 61, 64, 66, 70, 73, 76, 80, 84];
+
+function rowFromSpec(spec: OrderSpec, id: string, fresh: boolean): Row {
+  return {
+    id,
+    source: SOURCES[spec.source]!,
+    product: spec.product,
+    amount: spec.amount,
+    fresh,
+  };
+}
+
+const SEED_ROWS: Row[] = SEED_SPECS.map((spec, i) =>
+  rowFromSpec(spec, `EX-${10449 - i}`, false),
+);
 
 function fmt(v: number) {
   return `$${Math.round(v).toLocaleString("en-US")}`;
 }
 
 function deltaLabel(mrr: number) {
-  return `+${(((mrr / BASE_MRR) - 1) * 100).toFixed(1)}%`;
+  const raw = mrr / BASE_MRR - 1;
+  const capped = Math.min(MAX_DELTA, Math.max(0, raw));
+  return `+${(capped * 100).toFixed(1)}%`;
 }
 
 function prefersReducedMotion() {
@@ -66,12 +121,19 @@ function DemoFoot({ onReplay }: { onReplay: () => void }) {
   );
 }
 
+function finalRows(): Row[] {
+  const landed = LANDING_SPECS.map((spec, i) =>
+    rowFromSpec(spec, `EX-${10450 + i}`, false),
+  ).reverse();
+  return [...landed, ...SEED_ROWS].slice(0, 9);
+}
+
 export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
   const raf = useRef<number | null>(null);
   const mrrRef = useRef(START_MRR);
-  const orderN = useRef(10450);
+  const nextId = useRef(10450);
   const [mrr, setMrr] = useState(START_MRR);
   const [delta, setDelta] = useState(deltaLabel(START_MRR));
   const [rows, setRows] = useState<Row[]>(SEED_ROWS);
@@ -98,7 +160,7 @@ export function HeroDemo() {
       raf.current = null;
     }
 
-    const target = Math.max(START_MRR, to);
+    const target = Math.min(FINAL_MRR, Math.max(START_MRR, to));
 
     if (prefersReducedMotion()) {
       mrrRef.current = target;
@@ -113,7 +175,7 @@ export function HeroDemo() {
       if (t0 === null) t0 = t;
       const k = Math.min(1, Math.max(0, (t - t0) / ms));
       const e = 1 - Math.pow(1 - k, 4);
-      const next = Math.max(START_MRR, from + (target - from) * e);
+      const next = from + (target - from) * e;
       mrrRef.current = next;
       setMrr(next);
       setDelta(deltaLabel(next));
@@ -123,11 +185,11 @@ export function HeroDemo() {
     raf.current = requestAnimationFrame(step);
   }, []);
 
-  const addRow = useCallback(
-    (i: number) => {
-      const s = i % 3;
-      const product = PRODUCTS[(i * 7) % 5]!;
-      const amount = AMOUNTS[(i * 3) % 5]!;
+  const landOrder = useCallback(
+    (index: number) => {
+      const spec = LANDING_SPECS[index]!;
+      const s = spec.source;
+      const amount = spec.amount;
       const reduced = prefersReducedMotion();
 
       setActiveStores((prev) => {
@@ -137,11 +199,11 @@ export function HeroDemo() {
       });
 
       if (packetsAllowed()) {
-        const id = `p-${i}-${Date.now()}`;
-        setPackets((p) => [...p, { id, amount, store: s }]);
+        const pid = `p-${index}-${Date.now()}`;
+        setPackets((p) => [...p, { id: pid, amount, store: s }]);
         timers.current.push(
           window.setTimeout(() => {
-            setPackets((p) => p.filter((x) => x.id !== id));
+            setPackets((p) => p.filter((x) => x.id !== pid));
           }, 950),
         );
       }
@@ -149,25 +211,20 @@ export function HeroDemo() {
       timers.current.push(
         window.setTimeout(
           () => {
-            const id = `EX-${orderN.current++}`;
+            const id = `EX-${nextId.current++}`;
             setRows((prev) => {
               const next: Row[] = [
-                {
-                  id,
-                  source: SOURCES[s]!,
-                  product,
-                  amount,
-                  fresh: true,
-                },
+                rowFromSpec(spec, id, true),
                 ...prev,
               ].slice(0, 9);
               return next;
             });
-            tickMrr(mrrRef.current + amount * 4, 700);
+            // Add the order’s real amount (not ×4) so delta stays near +6%.
+            tickMrr(mrrRef.current + amount, 700);
             setBarHeights((heights) => {
               const next = [...heights];
               const last = next.length - 1;
-              next[last] = Math.min(98, (next[last] ?? 0) + 1.6);
+              next[last] = Math.min(98, (next[last] ?? 0) + 1.2);
               return next;
             });
             timers.current.push(
@@ -187,7 +244,7 @@ export function HeroDemo() {
 
   const run = useCallback(() => {
     clearTimers();
-    orderN.current = 10450;
+    nextId.current = 10450;
     mrrRef.current = START_MRR;
     setMrr(START_MRR);
     setDelta(deltaLabel(START_MRR));
@@ -197,12 +254,23 @@ export function HeroDemo() {
     setPackets([]);
 
     const reduced = prefersReducedMotion();
-    for (let i = 0; i < 14; i++) {
+    if (reduced) {
+      // MOTION.md: final state immediately — identical numbers on every viewport.
+      mrrRef.current = FINAL_MRR;
+      setMrr(FINAL_MRR);
+      setDelta(deltaLabel(FINAL_MRR));
+      setRows(finalRows());
+      setActiveStores([true, true, true]);
+      setBarHeights(BASE_BARS.map((h) => Math.min(98, (h - 40) * 2 + 14)));
+      return;
+    }
+
+    for (let i = 0; i < LANDING_SPECS.length; i++) {
       timers.current.push(
-        window.setTimeout(() => addRow(i), reduced ? 0 : 600 + i * 420),
+        window.setTimeout(() => landOrder(i), 600 + i * 420),
       );
     }
-  }, [addRow, clearTimers]);
+  }, [clearTimers, landOrder]);
 
   useEffect(() => {
     const stage = stageRef.current;
