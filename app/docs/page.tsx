@@ -45,6 +45,11 @@ const cards = [
     title: "Troubleshooting",
     body: "Empty tabs, auth errors, rate limits, and license verification.",
   },
+  {
+    href: "/docs/go-live",
+    title: "Stripe go-live",
+    body: "Owner checklist: paste keys, webhook events, lookup_keys, admin status.",
+  },
 ] as const;
 
 export default function DocsIndexPage() {

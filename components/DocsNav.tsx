@@ -11,6 +11,7 @@ const links = [
   { href: "/docs/api-keys", label: "API keys" },
   { href: "/docs/faq", label: "FAQ" },
   { href: "/docs/troubleshooting", label: "Troubleshooting" },
+  { href: "/docs/go-live", label: "Stripe go-live" },
 ] as const;
 
 export function DocsNav() {

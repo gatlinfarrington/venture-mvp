@@ -27,9 +27,13 @@ Open [http://localhost:3000](http://localhost:3000).
 |---|---|
 | `npm run dev` | Local development |
 | `npm run build` | Production build |
-| `npm run lint` | ESLint |
+| `npm run lint` | ESLint + design check + content frontmatter validation |
+| `npm run validate:content` | Validate `content/blog` + `content/changelog` MDX frontmatter |
+| `npm run stripe:sync-prices` | Create/reuse Stripe products & prices by lookup_key |
 | `npm run test` | Vitest |
 | `npm run typecheck` | TypeScript |
+
+Content authoring: [`content/README.md`](content/README.md). Stripe go-live: [`docs/GO-LIVE.md`](docs/GO-LIVE.md).
 
 ## Environment variables
 

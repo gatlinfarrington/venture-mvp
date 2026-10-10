@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { MdxContent } from "@/components/MdxContent";
 import { brand } from "@/lib/brand";
-import { changelog } from "@/lib/changelog";
+import { getChangelogEntries } from "@/lib/content/changelog";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -15,22 +16,27 @@ export const metadata: Metadata = {
 };
 
 export default function ChangelogPage() {
+  const entries = getChangelogEntries();
+
   return (
     <main className="legal container">
       <p className="eyebrow">Product</p>
       <h1>Changelog</h1>
       <p className="body-lg muted" style={{ maxWidth: "62ch", marginBottom: "var(--space-10)" }}>
-        Release notes for the marketing site, license API, and Sheets add-on. Dates are UTC.
+        Release notes for the marketing site, license API, and Sheets add-on. Authored in{" "}
+        <code className="mono">content/changelog</code>. Dates are UTC.
       </p>
       <ol className="changelog-list">
-        {changelog.map((entry) => (
-          <li key={`${entry.date}-${entry.title}`} className="changelog-item">
+        {entries.map((entry) => (
+          <li key={entry.slug} className="changelog-item">
             <time className="mono muted" dateTime={entry.date}>
               {entry.date}
             </time>
             <div>
               <h2>{entry.title}</h2>
-              <p>{entry.body}</p>
+              <div className="prose changelog-body">
+                <MdxContent source={entry.body} />
+              </div>
               {entry.tags?.length ? (
                 <ul className="changelog-tags">
                   {entry.tags.map((tag) => (

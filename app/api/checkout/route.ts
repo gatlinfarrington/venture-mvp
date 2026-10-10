@@ -30,14 +30,14 @@ export async function POST(request: Request) {
 
   try {
     const stripe = getStripe();
-    const price = priceIdFor(tier, interval);
+    const price = await priceIdFor(tier, interval);
     const origin = siteConfig.url;
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price, quantity: 1 }],
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/#pricing`,
+      cancel_url: `${origin}/pricing`,
       customer_email: body.email || undefined,
       metadata: {
         tier,
