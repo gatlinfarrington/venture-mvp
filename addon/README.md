@@ -73,6 +73,10 @@ Declared in `src/appsscript.json`:
 | Existing non-sensitive scopes | Unchanged in default manifest |
 | `https://www.googleapis.com/auth/script.send_mail` | **Optional / sensitive** — required only if weekly digest is enabled; not shipped in default `oauthScopes` |
 
+## Release & test install
+
+Exact **clasp push** and **unverified / test-deployment install** steps: [`RELEASE.md`](./RELEASE.md).
+
 ## Marketplace publish checklist (owner)
 
 These steps need a human with the Google Cloud / Workspace Marketplace publisher account:
