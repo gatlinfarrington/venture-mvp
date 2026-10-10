@@ -4,7 +4,7 @@ Clasp-ready Apps Script (TypeScript) that syncs Lemon Squeezy, Polar, and Gumroa
 
 Brand name is swappable from a single constant: [`src/lib/brand.ts`](src/lib/brand.ts) (`BRAND.name`). The placeholder logo is the **Ledger Cell** mark (`design/ledger-cell-mark*.png`, logo-v2 concept 3).
 
-Design target: [`design/sheet-dashboard-target.png`](design/sheet-dashboard-target.png) · [`design/SHEET-STYLE.md`](design/SHEET-STYLE.md).
+Design target (launch v2): [`design/revenuesheet-dashboard-template-preview.png`](design/revenuesheet-dashboard-template-preview.png) · [`design/revenuesheet-dashboard-template.xlsx`](design/revenuesheet-dashboard-template.xlsx) · [`design/SHEET-STYLE.md`](design/SHEET-STYLE.md). Marketplace listing assets: [`design/marketplace/`](design/marketplace/).
 
 ## Prerequisites
 

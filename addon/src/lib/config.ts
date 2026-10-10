@@ -30,9 +30,8 @@ export const SHEET_NAMES = {
   customers: "Customers",
   refunds: "Refunds",
   settings: "Settings",
-  mrrMonthly: "_mrr_monthly",
-  chartNewChurn: "_chart_new_churn",
-  chartProducts: "_chart_products",
+  /** Visible chart-data tab (launch v2); named range rs_mrr_monthly. */
+  mrrMonthly: "MRR monthly",
 } as const;
 
 export function getLicenseApiBase(): string {
