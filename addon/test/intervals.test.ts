@@ -14,6 +14,16 @@ describe("normalizeBillingInterval", () => {
     assert.equal(normalizeBillingInterval("6 months"), "biannual");
   });
 
+  it("maps every_two_years / biennial before yearly (not /12)", () => {
+    assert.equal(normalizeBillingInterval("every_two_years"), "biennial");
+    assert.equal(normalizeBillingInterval("every-two-years"), "biennial");
+    assert.equal(normalizeBillingInterval("every two years"), "biennial");
+    assert.equal(normalizeBillingInterval("biennial"), "biennial");
+    assert.equal(normalizeBillingInterval("2 years"), "biennial");
+    // Must not collapse into yearly:
+    assert.notEqual(normalizeBillingInterval("every_two_years"), "year");
+  });
+
   it("maps year / month / week / day", () => {
     assert.equal(normalizeBillingInterval("yearly"), "year");
     assert.equal(normalizeBillingInterval("annual"), "year");
@@ -29,10 +39,18 @@ describe("toMonthlyAmount", () => {
     assert.equal(toMonthlyAmount(120, "biannual"), 20);
     assert.equal(toMonthlyAmount(120, "year"), 10);
   });
+
+  it("divides every_two_years / biennial by 24 (not 12)", () => {
+    assert.equal(toMonthlyAmount(240, "biennial"), 10);
+    assert.equal(toMonthlyAmount(240, "every_two_years"), 10);
+    assert.equal(toMonthlyAmount(240, "every two years"), 10);
+    // Regression: if misclassified as year, this would be 20.
+    assert.notEqual(toMonthlyAmount(240, "every_two_years"), 20);
+  });
 });
 
 describe("importer interval → MRR", () => {
-  it("Gumroad quarterly / biannual / yearly normalize to monthly MRR", () => {
+  it("Gumroad quarterly / biannual / yearly / every_two_years normalize to monthly MRR", () => {
     const q = mapGumroadSubscriber({
       id: "1",
       recurrence: "quarterly",
@@ -60,9 +78,19 @@ describe("importer interval → MRR", () => {
     });
     assert.equal(y.interval, "year");
     assert.equal(y.mrr, 10);
+
+    const two = mapGumroadSubscriber({
+      id: "4",
+      recurrence: "every_two_years",
+      price: 24000,
+      created_at: "2026-01-01T00:00:00Z",
+      product_name: "Lifetime-ish",
+    });
+    assert.equal(two.interval, "biennial");
+    assert.equal(two.mrr, 10);
   });
 
-  it("Lemon Squeezy quarterly maps correctly", () => {
+  it("Lemon Squeezy quarterly and every_two_years map correctly", () => {
     const sub = mapLemonSubscription({
       id: "7",
       type: "subscriptions",
@@ -78,9 +106,25 @@ describe("importer interval → MRR", () => {
     });
     assert.equal(sub.interval, "quarter");
     assert.equal(sub.mrr, 30);
+
+    const two = mapLemonSubscription({
+      id: "8",
+      type: "subscriptions",
+      attributes: {
+        created_at: "2026-01-01T00:00:00Z",
+        product_name: "Biennial",
+        user_email: "a@example.com",
+        recurring_price: 24000,
+        billing_interval: "every_two_years",
+        currency: "USD",
+        status: "active",
+      },
+    });
+    assert.equal(two.interval, "biennial");
+    assert.equal(two.mrr, 10);
   });
 
-  it("Polar yearly still monthly-normalized", () => {
+  it("Polar yearly and biennial monthly-normalized", () => {
     const sub = mapPolarSubscription({
       id: "p",
       created_at: "2026-01-01T00:00:00Z",
@@ -91,5 +135,20 @@ describe("importer interval → MRR", () => {
     });
     assert.equal(sub.interval, "year");
     assert.equal(sub.mrr, 10);
+
+    const two = mapPolarSubscription({
+      id: "p2",
+      created_at: "2026-01-01T00:00:00Z",
+      status: "active",
+      price: {
+        price_amount: 24000,
+        price_currency: "usd",
+        recurring_interval: "every_two_years",
+      },
+      product: { name: "Biennial" },
+      customer: { email: "b@x.com" },
+    });
+    assert.equal(two.interval, "biennial");
+    assert.equal(two.mrr, 10);
   });
 });

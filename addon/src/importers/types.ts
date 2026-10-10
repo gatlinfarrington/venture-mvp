@@ -23,7 +23,15 @@ export interface NormalizedSubscription {
   currency: string;
   status: string;
   cancelledAt: string | null;
-  interval: "month" | "year" | "week" | "day" | "quarter" | "biannual" | "unknown";
+  interval:
+    | "month"
+    | "year"
+    | "week"
+    | "day"
+    | "quarter"
+    | "biannual"
+    | "biennial"
+    | "unknown";
   rawId: string;
 }
 
