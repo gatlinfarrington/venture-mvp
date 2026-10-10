@@ -3,8 +3,17 @@ const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ||
   "https://venture-mvp.vercel.app";
 
+const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
 /** Key marketing pages — must score ≥95 on all Lighthouse categories. */
 const routes = ["/", "/pricing", "/docs", "/privacy"];
+
+const extraHeaders = bypass
+  ? {
+      "x-vercel-protection-bypass": bypass,
+      "x-vercel-set-bypass-cookie": "true",
+    }
+  : undefined;
 
 module.exports = {
   ci: {
@@ -14,6 +23,7 @@ module.exports = {
       settings: {
         preset: "desktop",
         chromeFlags: "--no-sandbox --disable-dev-shm-usage",
+        ...(extraHeaders ? { extraHeaders } : {}),
       },
     },
     assert: {

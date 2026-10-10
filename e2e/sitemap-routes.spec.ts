@@ -40,6 +40,16 @@ test("covers every sitemap route at this viewport", async ({ page, request }, te
       expect(response, `navigation to ${route}`).not.toBeNull();
       expect(response!.status(), `${route} HTTP status`).toBe(200);
 
+      // Fail fast with a clear owner message if we landed on Vercel SSO / protection
+      const landed = page.url();
+      if (/vercel\.com\/(login|sso-api)/i.test(landed)) {
+        throw new Error(
+          `BLOCKED (owner): ${route} redirected to Vercel Authentication (${landed}). ` +
+            `Add GitHub Actions secret VERCEL_AUTOMATION_BYPASS_SECRET (Protection Bypass for Automation) ` +
+            `or disable Deployment Protection on preview deployments.`,
+        );
+      }
+
       const head = await request.get(new URL(route, baseURL).toString());
       expect(head.status(), `${route} request status`).toBe(200);
 

@@ -25,6 +25,7 @@ jobs:
       github.event.deployment_status.state == 'success'
     outputs:
       base_url: ${{ steps.url.outputs.base_url }}
+      bypass: ${{ steps.url.outputs.bypass }}
     steps:
       - name: Pick base URL
         id: url
@@ -34,38 +35,75 @@ jobs:
           DEPLOY_URL: ${{ github.event.deployment_status.environment_url }}
           INPUT_URL: ${{ github.event.inputs.base_url }}
           E2E_BASE_URL_VAR: ${{ vars.E2E_BASE_URL }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           set -euo pipefail
           PRODUCTION="https://venture-mvp.vercel.app"
 
+          pick() {
+            local url="$1"
+            local reason="$2"
+            echo "base_url=$url" >> "$GITHUB_OUTPUT"
+            if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+              echo "bypass=1" >> "$GITHUB_OUTPUT"
+            else
+              echo "bypass=0" >> "$GITHUB_OUTPUT"
+            fi
+            echo "$reason → $url (bypass=${VERCEL_AUTOMATION_BYPASS_SECRET:+yes})"
+          }
+
+          # Returns 0 if URL looks publicly reachable (or reachable with bypass).
+          is_reachable() {
+            local url="$1"
+            local headers=(-sI -o /tmp/e2e-headers.txt -w "%{http_code}")
+            if [ -n "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+              headers+=(-H "x-vercel-protection-bypass: ${VERCEL_AUTOMATION_BYPASS_SECRET}")
+            fi
+            local code
+            code="$(curl "${headers[@]}" "$url" || true)"
+            # SSO / Deployment Protection redirects to vercel.com/login or sso-api
+            if grep -qiE 'location:.*vercel\.com/(login|sso-api)|x-vercel-protection' /tmp/e2e-headers.txt 2>/dev/null; then
+              if [ -z "${VERCEL_AUTOMATION_BYPASS_SECRET:-}" ]; then
+                echo "Protected deployment (no VERCEL_AUTOMATION_BYPASS_SECRET): $url"
+                return 1
+              fi
+            fi
+            if [ "$code" = "401" ] || [ "$code" = "403" ]; then
+              echo "HTTP $code from $url"
+              return 1
+            fi
+            return 0
+          }
+
           if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "${INPUT_URL:-}" ]; then
-            echo "base_url=$INPUT_URL" >> "$GITHUB_OUTPUT"
-            echo "Using workflow_dispatch URL: $INPUT_URL"
+            if is_reachable "$INPUT_URL"; then
+              pick "$INPUT_URL" "workflow_dispatch"
+            else
+              pick "$PRODUCTION" "workflow_dispatch URL protected — falling back to production"
+            fi
             exit 0
           fi
 
           if [ "$EVENT_NAME" = "deployment_status" ] && [ -n "${DEPLOY_URL:-}" ]; then
-            echo "base_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
-            echo "Using Vercel deployment URL: $DEPLOY_URL"
+            if is_reachable "$DEPLOY_URL"; then
+              pick "$DEPLOY_URL" "Vercel deployment_status"
+            else
+              pick "$PRODUCTION" "Preview protected by Vercel Authentication — falling back to production (add GitHub secret VERCEL_AUTOMATION_BYPASS_SECRET to test previews)"
+            fi
             exit 0
           fi
 
           if [ -n "${E2E_BASE_URL_VAR:-}" ]; then
-            echo "base_url=$E2E_BASE_URL_VAR" >> "$GITHUB_OUTPUT"
-            echo "Using vars.E2E_BASE_URL"
+            if is_reachable "$E2E_BASE_URL_VAR"; then
+              pick "$E2E_BASE_URL_VAR" "vars.E2E_BASE_URL"
+            else
+              pick "$PRODUCTION" "vars.E2E_BASE_URL protected — falling back to production"
+            fi
             exit 0
           fi
 
-          # pull_request: default to production so license/Stripe probes hit a stable
-          # env. Preview URLs are covered via deployment_status (and vars.E2E_BASE_URL).
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            echo "base_url=$PRODUCTION" >> "$GITHUB_OUTPUT"
-            echo "PR event — using production (set vars.E2E_BASE_URL or rely on deployment_status for preview)"
-            exit 0
-          fi
-
-          echo "base_url=$PRODUCTION" >> "$GITHUB_OUTPUT"
-          echo "Using production: $PRODUCTION"
+          # pull_request / push: production (stable, public)
+          pick "$PRODUCTION" "${EVENT_NAME} event"
 
   playwright:
     name: Playwright E2E
@@ -90,8 +128,8 @@ jobs:
         env:
           BASE_URL: ${{ needs.resolve-url.outputs.base_url }}
           CI: "true"
-          # Optional: same value as Vercel LICENSE_API_SECRET so verify E2E can auth
           LICENSE_API_SECRET: ${{ secrets.LICENSE_API_SECRET }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: npx playwright test
 
       - name: Upload Playwright screenshots & report
@@ -124,6 +162,7 @@ jobs:
       - name: Run Lighthouse CI
         env:
           BASE_URL: ${{ needs.resolve-url.outputs.base_url }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: npx lhci autorun --config=lighthouserc.cjs
 
       - name: Upload Lighthouse report

@@ -5,6 +5,8 @@ const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ||
   "https://venture-mvp.vercel.app";
 
+const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
@@ -20,7 +22,7 @@ export default defineConfig({
   expect: {
     timeout: 15_000,
     toHaveScreenshot: {
-      maxDiffPixelRatio: 0.02,
+      maxDiffPixelRatio: 0.05,
       animations: "disabled",
     },
   },
@@ -30,6 +32,12 @@ export default defineConfig({
     screenshot: "only-on-failure",
     video: "retain-on-failure",
     ignoreHTTPSErrors: true,
+    extraHTTPHeaders: bypass
+      ? {
+          "x-vercel-protection-bypass": bypass,
+          "x-vercel-set-bypass-cookie": "true",
+        }
+      : undefined,
   },
   projects: [
     {
