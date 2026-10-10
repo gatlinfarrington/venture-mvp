@@ -24,8 +24,10 @@ export const brand = {
   },
   legal: {
     entity: "RevenueSheet",
-    supportEmail: "support@revenuesheet.app",
-    privacyEmail: "privacy@revenuesheet.app",
+    /** @deprecated Use `supportEmail()` from `@/lib/support` — empty until SUPPORT_EMAIL is set. */
+    supportEmail: "",
+    /** @deprecated Use `privacyEmail()` from `@/lib/support` when set. */
+    privacyEmail: "",
   },
   sources: ["Lemon Squeezy", "Polar", "Gumroad"] as const,
   social: {

@@ -38,9 +38,6 @@ export function Hero() {
               See the dashboard
             </a>
           </div>
-          <p className="eyebrow hero-reveal" style={{ animationDelay: "300ms", marginTop: "var(--space-2)" }}>
-            Demo shows example data
-          </p>
         </div>
         <div className="hero-frame hero-reveal" style={{ animationDelay: "300ms" }}>
           <HeroDemoLazy />
@@ -92,8 +89,8 @@ export function HowItWorks() {
                 <Image
                   src={step.img}
                   alt={step.alt}
-                  width={1200}
-                  height={900}
+                  width={1120}
+                  height={840}
                   sizes="(max-width: 900px) 100vw, 33vw"
                   quality={75}
                 />
@@ -123,7 +120,7 @@ export function WhatLands() {
           <h2 className="h2">Named tabs you can sort, filter, and formula against.</h2>
         </Reveal>
         <div className="lands">
-          <Reveal>
+          <Reveal className="lands-tabs">
             <ul className="tab-list">
               {tabs.map((t) => (
                 <li key={t.name}>
@@ -136,9 +133,9 @@ export function WhatLands() {
           <Reveal className="lands-frame" delay={60}>
             <Image
               src="/design/lands-orders-2x.png"
-              alt="Orders tab with example product rows and amounts"
-              width={1200}
-              height={450}
+              alt="Orders tab with Order ID, created, source, product, email, amount, and status"
+              width={2400}
+              height={1000}
               sizes="(max-width: 900px) 100vw, 55vw"
               quality={70}
             />
@@ -221,10 +218,16 @@ export function Comparison() {
                   <td data-label={brand.name} className={r.rs === true ? "yes" : "no"}>
                     {r.rs === true ? "Yes" : String(r.rs)}
                   </td>
-                  <td data-label="Zapier / Make" className={r.zapier === true ? "yes" : "no"}>
+                  <td
+                    data-label="Zapier / Make"
+                    className={r.zapier === true ? "yes-ink" : "no"}
+                  >
                     {r.zapier === true ? "Yes" : r.zapier === false ? "No" : r.zapier}
                   </td>
-                  <td data-label="CSV templates" className={r.csv === true ? "yes" : "no"}>
+                  <td
+                    data-label="CSV templates"
+                    className={r.csv === true ? "yes-ink" : "no"}
+                  >
                     {r.csv === true ? "Yes" : r.csv === false ? "No" : r.csv}
                   </td>
                 </tr>

@@ -55,6 +55,17 @@ function packetsAllowed() {
   );
 }
 
+function DemoFoot({ onReplay }: { onReplay: () => void }) {
+  return (
+    <div className="hero-demo-foot">
+      <button type="button" className="btn btn-secondary btn-sm hero-replay" onClick={onReplay}>
+        Replay
+      </button>
+      <p className="hero-note mono">Example data · no real customers</p>
+    </div>
+  );
+}
+
 export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
@@ -101,7 +112,6 @@ export function HeroDemo() {
     const step = (t: number) => {
       if (t0 === null) t0 = t;
       const k = Math.min(1, Math.max(0, (t - t0) / ms));
-      // ease-out quart
       const e = 1 - Math.pow(1 - k, 4);
       const next = Math.max(START_MRR, from + (target - from) * e);
       mrrRef.current = next;
@@ -258,24 +268,29 @@ export function HeroDemo() {
         role="img"
         aria-label="Animation: three stores sync orders into one spreadsheet while MRR rises (example data)"
       >
-        <div className="hero-stores" aria-hidden="true">
-          {[
-            { name: "Lemon Squeezy", store: "example-store" },
-            { name: "Polar", store: "example-org" },
-            { name: "Gumroad", store: "example-seller" },
-          ].map((s, i) => (
-            <div
-              key={s.name}
-              className={`hero-store${activeStores[i] ? " on" : ""}`}
-            >
-              <span>
-                {s.name}
-                <br />
-                <small>{s.store}</small>
-              </span>
-              <i className="st" aria-hidden="true" />
-            </div>
-          ))}
+        <div className="hero-stores-col" aria-hidden="true">
+          <div className="hero-stores">
+            {[
+              { name: "Lemon Squeezy", store: "example-store" },
+              { name: "Polar", store: "example-org" },
+              { name: "Gumroad", store: "example-seller" },
+            ].map((s, i) => (
+              <div
+                key={s.name}
+                className={`hero-store${activeStores[i] ? " on" : ""}`}
+              >
+                <span>
+                  {s.name}
+                  <br />
+                  <small>{s.store}</small>
+                </span>
+                <i className="st" aria-hidden="true" />
+              </div>
+            ))}
+          </div>
+          <div className="hero-stores-foot">
+            <DemoFoot onReplay={run} />
+          </div>
         </div>
 
         <div className="hero-sheet-wrap">
@@ -317,11 +332,8 @@ export function HeroDemo() {
               </tbody>
             </table>
           </div>
-          <div className="hero-demo-foot">
-            <p className="hero-note mono">Example data · no real customers</p>
-            <button type="button" className="btn btn-secondary btn-sm hero-replay" onClick={run}>
-              Replay
-            </button>
+          <div className="hero-sheet-foot">
+            <DemoFoot onReplay={run} />
           </div>
         </div>
 

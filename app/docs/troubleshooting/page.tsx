@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
+import { supportEmail, supportMailto } from "@/lib/support";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default function TroubleshootingPage() {
+  const support = supportEmail();
+  const mailto = supportMailto();
   return (
     <main className="docs-page">
       <p className="eyebrow">Help</p>
@@ -37,9 +40,15 @@ export default function TroubleshootingPage() {
           <li>Paste the license key from the success page or your receipt email.</li>
           <li>Confirm you are online — verify calls {brand.domain}.</li>
           <li>
-            Still failing after purchase? Email{" "}
-            <a href={`mailto:${brand.legal.supportEmail}`}>{brand.legal.supportEmail}</a> with the
-            checkout session id.
+            Still failing after purchase?
+            {support && mailto ? (
+              <>
+                {" "}
+                Email <a href={mailto}>{support}</a> with the checkout session id.
+              </>
+            ) : (
+              " Use the contact details on your receipt with the checkout session id."
+            )}
           </li>
         </ul>
         <h2>Wrong MRR number</h2>

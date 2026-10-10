@@ -19,13 +19,10 @@ export default function ChangelogPage() {
   const entries = getChangelogEntries();
 
   return (
-    <main className="legal container">
+    <main className="legal container page-shell">
       <p className="eyebrow">Product</p>
       <h1>Changelog</h1>
-      <p className="body-lg muted" style={{ maxWidth: "62ch", marginBottom: "var(--space-10)" }}>
-        Release notes for the marketing site, license API, and Sheets add-on. Authored in{" "}
-        <code className="mono">content/changelog</code>. Dates are UTC.
-      </p>
+      <p className="body-lg muted page-lede">What&apos;s new in {brand.name}.</p>
       <ol className="changelog-list">
         {entries.map((entry) => (
           <li key={entry.slug} className="changelog-item">
@@ -38,9 +35,9 @@ export default function ChangelogPage() {
                 <MdxContent source={entry.body} />
               </div>
               {entry.tags?.length ? (
-                <ul className="changelog-tags">
+                <ul className="tag-pills">
                   {entry.tags.map((tag) => (
-                    <li key={tag} className="mono">
+                    <li key={tag} className="tag-pill mono">
                       {tag}
                     </li>
                   ))}

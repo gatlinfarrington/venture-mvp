@@ -36,6 +36,7 @@
   --t-price-size:40px; /* Pricing amount */
   --t-chart-label-size:10px; /* Table/chart micro labels */
   --space-0:0px;
+  --space-px:2px; /* hairline pad (tag pills) */
   --space-1:4px;
   --space-2:8px;
   --space-3:12px;
@@ -48,6 +49,7 @@
   --space-16:64px;
   --layout-hero-sheet-left:212px; /* Mobile hero sheet inset beside store pills */
   --layout-docs-nav-top:calc(72px + var(--space-4)); /* Sticky docs nav below header */
+  --layout-page-top:var(--space-16); /* Shared top padding for inner pages */
   --radius-sm:6px;
   --radius-md:12px;
   --radius-lg:22px;
