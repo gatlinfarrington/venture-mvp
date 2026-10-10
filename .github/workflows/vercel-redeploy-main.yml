@@ -1,0 +1,41 @@
+name: Vercel redeploy main (post rate-limit)
+
+# Hobby accounts hit api-deployments-free-per-day (100 / rolling 24h).
+# After the window opens, poke main so production can catch up to HEAD
+# without waiting for an unrelated merge. Safe no-op if already current.
+on:
+  schedule:
+    # ~11:00 PM PDT / 06:00 UTC — shortly after oldest deploys in the
+    # 2026-10-10 burst age out of the rolling window (~10:55 PM PDT).
+    - cron: "0 6 * * *"
+    # Backup poke mid-morning PT in case the first attempt still limited.
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-redeploy-main
+  cancel-in-progress: false
+
+jobs:
+  poke-main:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Empty commit to trigger Vercel production deploy
+        env:
+          GIT_AUTHOR_NAME: vercel-redeploy-bot
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: vercel-redeploy-bot
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          set -euo pipefail
+          git pull --ff-only origin main
+          git commit --allow-empty -m "chore: poke Vercel production deploy (rate-limit recovery)"
+          git push origin main
