@@ -2,13 +2,14 @@
 
 Google Sheets add-on marketing site + license API. Sync Lemon Squeezy, Polar, and Gumroad revenue into a sheet you own, with an MRR dashboard.
 
-> **Name is swappable.** Edit [`lib/brand.ts`](lib/brand.ts) (`name`, `domain`, `logo`, legal emails). The placeholder logo is the **Ledger Cell** mark (`design/logo-v2/c3-symbol.svg`).
+> **Name is swappable.** Edit [`lib/brand.ts`](lib/brand.ts) (`name`, `domain`, `logo`, legal emails) for the site, and [`addon/src/lib/brand.ts`](addon/src/lib/brand.ts) for the Sheets add-on. The placeholder logo is the **Ledger Cell** mark (`design/logo-v2/c3-symbol.svg` / `addon/design/ledger-cell-mark.svg`).
 
 ## Stack
 
 - Next.js 16 (App Router) on Vercel
 - Stripe Checkout (test mode) for Pro / Business
 - License storage: **Upstash Redis** in production, **`.data/licenses.json`** filesystem fallback for local/dev
+- **`/addon`** — clasp-ready Google Sheets add-on (TypeScript / Apps Script). See [`addon/README.md`](addon/README.md).
 
 ## Setup
 
@@ -98,4 +99,6 @@ Connected to Vercel (`venture-mvp`). Push to `main` for production. Set env vars
 
 ## Apps Script add-on
 
-The Sheets add-on lives under `/addon` (separate workstream). It should call `POST /api/license/verify` with the user’s license key before enabling scheduled sync or multi-source.
+The Sheets add-on lives under [`/addon`](addon/). Setup, clasp, OAuth scopes, and Marketplace steps: [`addon/README.md`](addon/README.md).
+
+It calls `POST /api/license/verify` with the user’s license key (script property `LICENSE_API_BASE` overrides the default origin). Free tier = 1 source, manual refresh; paid unlocks schedule + multi-source. Unreachable license API degrades to free limits.
