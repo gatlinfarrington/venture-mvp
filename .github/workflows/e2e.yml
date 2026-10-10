@@ -1,0 +1,142 @@
+name: E2E + Lighthouse
+
+on:
+  deployment_status:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Target URL (defaults to production)"
+        required: false
+        default: "https://venture-mvp.vercel.app"
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve-url:
+    name: Resolve target URL
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name != 'deployment_status' ||
+      github.event.deployment_status.state == 'success'
+    outputs:
+      base_url: ${{ steps.url.outputs.base_url }}
+    steps:
+      - name: Pick base URL
+        id: url
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          DEPLOY_URL: ${{ github.event.deployment_status.environment_url }}
+          INPUT_URL: ${{ github.event.inputs.base_url }}
+          E2E_BASE_URL_VAR: ${{ vars.E2E_BASE_URL }}
+        run: |
+          set -euo pipefail
+          PRODUCTION="https://venture-mvp.vercel.app"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "${INPUT_URL:-}" ]; then
+            echo "base_url=$INPUT_URL" >> "$GITHUB_OUTPUT"
+            echo "Using workflow_dispatch URL: $INPUT_URL"
+            exit 0
+          fi
+
+          if [ "$EVENT_NAME" = "deployment_status" ] && [ -n "${DEPLOY_URL:-}" ]; then
+            echo "base_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+            echo "Using Vercel deployment URL: $DEPLOY_URL"
+            exit 0
+          fi
+
+          if [ -n "${E2E_BASE_URL_VAR:-}" ]; then
+            echo "base_url=$E2E_BASE_URL_VAR" >> "$GITHUB_OUTPUT"
+            echo "Using vars.E2E_BASE_URL"
+            exit 0
+          fi
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            PREVIEW_ID="$(gh api "repos/${{ github.repository }}/deployments" \
+              --jq '[.[] | select(.environment | test("Preview|preview|vercel"; "i"))] | .[0].id' 2>/dev/null || true)"
+            if [ -n "${PREVIEW_ID:-}" ] && [ "$PREVIEW_ID" != "null" ]; then
+              ENV_URL="$(gh api "repos/${{ github.repository }}/deployments/${PREVIEW_ID}/statuses" \
+                --jq '[.[] | select(.state=="success")][0].environment_url' 2>/dev/null || true)"
+              if [ -n "${ENV_URL:-}" ] && [ "$ENV_URL" != "null" ]; then
+                echo "base_url=$ENV_URL" >> "$GITHUB_OUTPUT"
+                echo "Using PR preview URL: $ENV_URL"
+                exit 0
+              fi
+            fi
+            echo "No preview URL found for PR; falling back to production"
+          fi
+
+          echo "base_url=$PRODUCTION" >> "$GITHUB_OUTPUT"
+          echo "Using production: $PRODUCTION"
+
+  playwright:
+    name: Playwright E2E
+    needs: resolve-url
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Playwright against ${{ needs.resolve-url.outputs.base_url }}
+        env:
+          BASE_URL: ${{ needs.resolve-url.outputs.base_url }}
+          CI: "true"
+        run: npx playwright test
+
+      - name: Upload Playwright screenshots & report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+            e2e/**/*-snapshots/
+          retention-days: 14
+
+  lighthouse:
+    name: Lighthouse CI (≥95)
+    needs: resolve-url
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Lighthouse CI
+        env:
+          BASE_URL: ${{ needs.resolve-url.outputs.base_url }}
+        run: npx lhci autorun --config=lighthouserc.cjs
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lhci-report-${{ github.run_id }}
+          path: |
+            lhci-report/
+            .lighthouseci/
+          retention-days: 14
