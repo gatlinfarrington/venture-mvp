@@ -40,7 +40,7 @@ export default function PrivacyPage() {
         <h3>1. Data in your spreadsheet</h3>
         <p>
           Order, subscription, customer, and refund rows are written into Google Sheets in your
-          Google account when you connect Lemon Squeezy, Polar, or Gumroad. We do not keep a
+          Google account when you connect Lemon Squeezy, Polar, Gumroad, or Stripe. We do not keep a
           separate full copy of your revenue ledger on {brand.name} servers. If you uninstall the
           add-on or delete the sheet, that spreadsheet data remains under your Google account
           controls.
@@ -80,8 +80,8 @@ export default function PrivacyPage() {
             is opened from
           </li>
           <li>
-            <code>script.external_request</code> — HTTPS calls to Lemon Squeezy, Polar, Gumroad, and
-            our license API
+            <code>script.external_request</code> — HTTPS calls to Lemon Squeezy, Polar, Gumroad,
+            Stripe, and our license API
           </li>
           <li>
             <code>script.scriptapp</code> — install time-driven triggers for scheduled refresh
@@ -91,8 +91,9 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          We do not request Google Drive, Gmail, Contacts, or Calendar scopes, and we do not read
-          other Drive files.
+          We do not request Google Drive, Gmail, Contacts, or Calendar scopes. Spreadsheet access is
+          limited to the file the add-on is opened from (
+          <code>spreadsheets.currentonly</code>).
         </p>
         <p>Google user data (contents of the current spreadsheet) is used only to:</p>
         <ul>
@@ -131,6 +132,26 @@ export default function PrivacyPage() {
           </li>
         </ul>
 
+        <h2>Subprocessors</h2>
+        <p>We use the following processors to run the website, licenses, and billing:</p>
+        <ul>
+          <li>
+            <a href="https://vercel.com">Vercel</a> — hosts the marketing site and APIs
+          </li>
+          <li>
+            <a href="https://upstash.com">Upstash</a> — Redis storage for license records, support
+            submissions, and launch invites
+          </li>
+          <li>
+            <a href="https://stripe.com">Stripe</a> — payment processing and customer portal
+          </li>
+        </ul>
+        <p>
+          Source commerce APIs (Lemon Squeezy, Polar, Gumroad, Stripe) are called directly from your
+          Google Apps Script project with keys you store in User Properties — those keys are not
+          sent to our servers.
+        </p>
+
         <h2>Cookies and analytics</h2>
         <p>
           The marketing site does not require an account. We do not use a dark/light theme cookie.
@@ -143,13 +164,13 @@ export default function PrivacyPage() {
           License and billing records are kept while your subscription is active and for a
           reasonable period afterward for accounting, tax, and fraud prevention (typically up to
           seven years for financial records where required). Spreadsheet data retention is controlled
-          by you in Google Sheets / Drive.
+          by you in Google Sheets.
         </p>
 
         <h2>Deletion and access requests</h2>
         <p>You can:</p>
         <ul>
-          <li>Delete synced rows or the entire spreadsheet in Google Drive at any time</li>
+          <li>Delete synced rows or the entire spreadsheet in Google Sheets at any time</li>
           <li>Remove source API keys from the add-on sidebar / script properties</li>
           <li>Uninstall the add-on from the Google Workspace Marketplace / Extensions menu</li>
           <li>

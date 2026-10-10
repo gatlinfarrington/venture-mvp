@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { InstallCta } from "@/components/InstallCta";
+import { SupportForm } from "@/components/SupportForm";
 import { brand } from "@/lib/brand";
+import { REFUND_LINE } from "@/lib/copy";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -21,14 +24,14 @@ export default function SupportPage() {
       <h1>Support</h1>
       <p className="body-lg muted page-lede">
         Start with the docs. Most sync and license questions are answered there — without waiting on
-        an inbox.
+        an inbox. Still stuck? Send a message below.
       </p>
 
       <div className="prose">
         <h2>Self-serve</h2>
         <ul>
           <li>
-            <Link href="/docs">Docs</Link> — setup for Lemon Squeezy, Polar, and Gumroad
+            <Link href="/docs">Docs</Link> — setup for Lemon Squeezy, Polar, Gumroad, and Stripe
           </li>
           <li>
             <Link href="/docs/faq">FAQ</Link> — data storage, scopes, billing
@@ -47,20 +50,26 @@ export default function SupportPage() {
 
         <h2>Billing and licenses</h2>
         <p>
-          Paid plans run through Stripe Checkout. Use the customer portal link on your receipt to
-          update payment methods or cancel. After purchase, the success page shows your license key —
-          paste it in the add-on sidebar.
+          Paid plans run through Stripe Checkout when they open. Use the customer portal link on your
+          receipt to update payment methods or cancel. After purchase, the success page shows your
+          license key — paste it in the add-on sidebar.
         </p>
-        <p>
-          First-time charges may be refunded within 14 days. Open a request from the contact channel
-          on your Stripe receipt and include the checkout session id.
-        </p>
+        <p>{REFUND_LINE}</p>
 
+        <h2>Contact us</h2>
+        <p>Billing, license keys, sync errors, or setup questions — we reply to the email you provide.</p>
+      </div>
+
+      <div className="support-form-wrap">
+        <SupportForm />
+      </div>
+
+      <div className="prose" style={{ marginTop: "var(--space-10)" }}>
         <h2>Install</h2>
         <p>
-          <a className="btn btn-primary" href={siteConfig.installUrl}>
+          <InstallCta className="btn btn-primary" source="support">
             Install for Google Sheets
-          </a>
+          </InstallCta>
         </p>
       </div>
     </main>

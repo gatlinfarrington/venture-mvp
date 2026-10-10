@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <main className="pricing-page page-shell">
-      <Pricing />
+      <Pricing variant="page" />
     </main>
   );
 }

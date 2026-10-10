@@ -1143,9 +1143,15 @@ h2 {
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6); /* N6: 24px from price block to features */
   background: var(--c-surface);
   transition: border-color var(--dur-base) var(--ease-standard);
+}
+
+.price-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .price-card:hover {
@@ -1272,8 +1278,9 @@ h2 {
   display: none;
 }
 
+/* N4: summary stays ink; only the + icon muted → ink on hover (no signal green). */
 .faq-item summary:hover {
-  color: var(--c-signal);
+  color: var(--c-ink);
 }
 
 .faq-item summary::after {
@@ -1281,7 +1288,14 @@ h2 {
   font-family: var(--font-mono);
   font-size: var(--t-h3-size);
   color: var(--c-ink-muted);
-  transition: transform var(--dur-base) var(--ease-out);
+  transition:
+    color 140ms var(--ease-standard),
+    transform var(--dur-base) var(--ease-out);
+}
+
+.faq-item summary:hover::after,
+.faq-item[open] summary::after {
+  color: var(--c-ink);
 }
 
 .faq-item[open] summary::after {
@@ -1342,14 +1356,15 @@ h2 {
   letter-spacing: 0.06em;
 }
 
+/* N4: footer links muted → ink on hover (140ms); no signal green. */
 .footer-col a {
-  color: var(--c-ink);
+  color: var(--c-ink-muted);
   font-size: var(--t-ui-sm-size);
-  transition: color var(--dur-fast) var(--ease-standard);
+  transition: color 140ms var(--ease-standard);
 }
 
 .footer-col a:hover {
-  color: var(--c-signal);
+  color: var(--c-ink);
 }
 
 .footer-bottom {
@@ -1404,12 +1419,28 @@ h2 {
 
 .legal h1,
 .seo-page h1,
-.docs-page h1 {
+.docs-page h1,
+.blog-page h1,
+.changelog-page h1,
+.pricing-page-head h1 {
   font-size: var(--t-h1-size);
   font-weight: var(--t-h1-weight);
   line-height: var(--t-h1-lh);
   letter-spacing: var(--t-h1-track);
-  margin: var(--space-3) 0 0;
+  margin: var(--space-3) 0 var(--space-4); /* N3: H1 margin-bottom 16px */
+}
+
+.pricing-page-head .eyebrow {
+  margin-bottom: 0;
+}
+
+.pricing-page-lede {
+  margin-top: var(--space-4); /* N2: lede 16px below H1 */
+  max-width: 62ch;
+}
+
+.pricing-section-page {
+  padding-block: 0 calc(var(--space-16) * 2);
 }
 
 .legal > .eyebrow + h1,
@@ -1522,12 +1553,25 @@ h2 {
   gap: var(--space-5);
 }
 
+/* N3: prose H2 — lh 1.15, 48px top / 12px bottom */
 .docs-page h2,
-.docs-main .prose h2 {
+.docs-main .prose h2,
+.legal .prose h2,
+.seo-page .prose h2,
+.blog-page .prose h2,
+.changelog-page .prose h2 {
   font-size: var(--t-h2-size);
   font-weight: 600;
   letter-spacing: -0.03em;
-  margin: var(--space-4) 0 0;
+  line-height: 1.15;
+  margin: var(--space-12) 0 var(--space-3);
+}
+
+.docs-page .prose > section:first-child h2,
+.docs-page .prose > h2:first-child,
+.legal .prose > h2:first-child,
+.seo-page .prose > h2:first-child {
+  margin-top: var(--space-8);
 }
 
 .docs-page h3,
@@ -1727,16 +1771,16 @@ a.tag-pill:hover {
   }
 }
 
-/* 404 — launch/404 handoff (light Monolith, tokens only) */
+/* N1 simplified 404 */
 .not-found {
-  padding-block: var(--space-16);
+  padding-block: var(--layout-page-top) var(--space-16);
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
 }
 
-.not-found-grid {
-  display: grid;
-  grid-template-columns: 5fr 6fr;
-  gap: var(--space-16);
-  align-items: center;
+.not-found-copy {
+  max-width: 40rem;
 }
 
 .not-found-lede {
@@ -1870,4 +1914,117 @@ a.tag-pill:hover {
   .not-found-table .nf-wide {
     display: none;
   }
+}
+
+/* N3: phone H1 clamped 36–40 at ~375 */
+@media (max-width: 480px) {
+  .legal h1,
+  .seo-page h1,
+  .docs-page h1,
+  .blog-page h1,
+  .changelog-page h1,
+  .pricing-page-head h1,
+  .not-found h1 {
+    font-size: clamp(var(--t-h1-phone-min), 9.6vw, var(--t-h1-phone-max));
+  }
+}
+
+/* Support form (on existing /support page) */
+.support-form-wrap {
+  margin-top: var(--space-8);
+  max-width: 40rem;
+}
+
+.support-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.support-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.support-field label,
+.invite-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-label-size);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-ink-muted);
+}
+
+.support-field input,
+.support-field textarea,
+.invite-form input[type="email"] {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface);
+  color: var(--c-ink);
+  font: inherit;
+  border-radius: var(--radius-sm);
+}
+
+.support-field input:focus,
+.support-field textarea:focus,
+.invite-form input[type="email"]:focus {
+  outline: 2px solid var(--c-signal);
+  outline-offset: 1px;
+}
+
+.support-field textarea {
+  resize: vertical;
+  min-height: 10rem;
+}
+
+.support-hp {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.support-error {
+  color: var(--c-danger);
+  margin: 0;
+}
+
+.support-confirm,
+.invite-confirm,
+.invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.invite-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--c-ink) 40%, transparent);
+}
+
+.invite-dialog {
+  width: min(100%, 28rem);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+}
+
+.invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }

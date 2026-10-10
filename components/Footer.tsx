@@ -29,6 +29,7 @@ export function Footer() {
             <Link href="/lemon-squeezy-analytics">Lemon Squeezy</Link>
             <Link href="/polar-analytics">Polar</Link>
             <Link href="/gumroad-analytics-google-sheets">Gumroad</Link>
+            <Link href="/stripe-to-google-sheets">Stripe</Link>
           </div>
           <div className="footer-col">
             <h3>Guides</h3>

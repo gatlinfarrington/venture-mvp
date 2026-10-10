@@ -10,25 +10,25 @@ export const brand = {
   nameStatus: "placeholder" as const,
   pitch: "All your stores, in a sheet you own.",
   description:
-    "Lemon Squeezy, Polar and Gumroad revenue, synced on a schedule into Google Sheets, with an MRR dashboard built for you.",
+    "Lemon Squeezy, Polar, Gumroad and Stripe revenue, synced on a schedule into Google Sheets, with an MRR dashboard built for you.",
   taglineShort: "Google Sheets add-on",
   /** Logo concept currently shipping (Ledger Cell = c3). */
   logo: {
     concept: "Ledger Cell",
     conceptId: "c3",
     mark: "/design/logo-mark.svg",
-    markAlt: "Ledger Cell mark — 3×3 grid with rising diagonal",
+    markAlt: "RevenueSheet",
     icon32: "/design/icon-32.png",
     icon128: "/design/icon-128.png",
   },
   legal: {
     entity: "RevenueSheet",
-    /** @deprecated Use `supportEmail()` from `@/lib/support` — empty until SUPPORT_EMAIL is set. */
+    /** @deprecated Prefer /support. */
     supportEmail: "",
-    /** @deprecated Use `privacyEmail()` from `@/lib/support` when set. */
+    /** @deprecated Prefer /support or PRIVACY_EMAIL when set. */
     privacyEmail: "",
   },
-  sources: ["Lemon Squeezy", "Polar", "Gumroad"] as const,
+  sources: ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"] as const,
   social: {
     x: "",
   },
@@ -67,10 +67,20 @@ export function siteHostname(): string {
   }
 }
 
-export function installUrl(): string {
-  return (
+/**
+ * Workspace Marketplace listing when published.
+ * Prefer NEXT_PUBLIC_MARKETPLACE_URL, then NEXT_PUBLIC_INSTALL_URL.
+ * When unset, Install CTAs open the launch-invite capture (never the generic Marketplace homepage).
+ */
+export function marketplaceUrl(): string | null {
+  const raw =
     process.env.NEXT_PUBLIC_MARKETPLACE_URL?.trim() ||
     process.env.NEXT_PUBLIC_INSTALL_URL?.trim() ||
-    "https://workspace.google.com/marketplace"
-  );
+    "";
+  return raw.length > 0 ? raw : null;
+}
+
+/** @deprecated Use marketplaceUrl() — null when no listing is configured. */
+export function installUrl(): string | null {
+  return marketplaceUrl();
 }

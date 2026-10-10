@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { InstallCta } from "@/components/InstallCta";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
@@ -65,9 +66,9 @@ export default function AboutPage() {
         </p>
 
         <p>
-          <a className="btn btn-primary" href={siteConfig.installUrl}>
+          <InstallCta className="btn btn-primary" source="about">
             Install for Google Sheets
-          </a>
+          </InstallCta>
         </p>
       </div>
     </main>

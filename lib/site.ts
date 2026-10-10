@@ -7,6 +7,7 @@ export const siteConfig = {
   get url() {
     return siteUrl();
   },
+  /** Marketplace listing when set; otherwise CTAs use launch-invite capture. */
   get installUrl() {
     return installUrl();
   },
@@ -49,11 +50,11 @@ export const pricing = {
     monthly: 9,
     /** Annual = 10× monthly (2 months free). */
     annual: 90,
-    sources: 3,
+    sources: 4,
     refresh: "Scheduled (hourly)",
     stores: 1,
     features: [
-      "All three sources",
+      "All connected sources",
       "Scheduled refresh",
       "Full history backfill",
       "MRR, churn, revenue by product",
@@ -64,7 +65,7 @@ export const pricing = {
     name: "Business",
     monthly: 19,
     annual: 190,
-    sources: 3,
+    sources: 4,
     refresh: "Scheduled (hourly)",
     stores: "Multiple",
     features: [
@@ -80,13 +81,13 @@ export function tierLimits(tier: Tier) {
   switch (tier) {
     case "business":
       return {
-        maxSources: 3,
+        maxSources: 4,
         maxStores: 20,
         scheduledRefresh: true,
       };
     case "pro":
       return {
-        maxSources: 3,
+        maxSources: 4,
         maxStores: 1,
         scheduledRefresh: true,
       };

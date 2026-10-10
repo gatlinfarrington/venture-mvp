@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BrandWordmark } from "@/components/BrandWordmark";
-import { siteConfig } from "@/lib/site";
+import { InstallCta } from "@/components/InstallCta";
 
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
@@ -29,9 +29,9 @@ export function Nav() {
           <Link href="/changelog">Changelog</Link>
         </nav>
         <div className="nav-actions">
-          <a className="btn btn-primary btn-sm" href={siteConfig.installUrl}>
+          <InstallCta className="btn btn-primary btn-sm" source="nav">
             Install free
-          </a>
+          </InstallCta>
           <button
             type="button"
             className="icon-btn mobile-nav"
@@ -39,7 +39,15 @@ export function Nav() {
             aria-label={open ? "Close menu" : "Open menu"}
             onClick={() => setOpen((v) => !v)}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
               {open ? (
                 <path d="M6 6l12 12M18 6L6 18" />
               ) : (
@@ -51,13 +59,25 @@ export function Nav() {
       </div>
       {open ? (
         <div className="mobile-drawer container">
-          <Link href="/pricing" onClick={() => setOpen(false)}>Pricing</Link>
-          <Link href="/#how-it-works" onClick={() => setOpen(false)}>How it works</Link>
-          <Link href="/#faq" onClick={() => setOpen(false)}>FAQ</Link>
-          <Link href="/docs" onClick={() => setOpen(false)}>Docs</Link>
-          <Link href="/blog" onClick={() => setOpen(false)}>Blog</Link>
-          <Link href="/changelog" onClick={() => setOpen(false)}>Changelog</Link>
-          <a href={siteConfig.installUrl}>Install free</a>
+          <Link href="/pricing" onClick={() => setOpen(false)}>
+            Pricing
+          </Link>
+          <Link href="/#how-it-works" onClick={() => setOpen(false)}>
+            How it works
+          </Link>
+          <Link href="/#faq" onClick={() => setOpen(false)}>
+            FAQ
+          </Link>
+          <Link href="/docs" onClick={() => setOpen(false)}>
+            Docs
+          </Link>
+          <Link href="/blog" onClick={() => setOpen(false)}>
+            Blog
+          </Link>
+          <Link href="/changelog" onClick={() => setOpen(false)}>
+            Changelog
+          </Link>
+          <InstallCta source="nav-mobile">Install free</InstallCta>
         </div>
       ) : null}
     </header>
