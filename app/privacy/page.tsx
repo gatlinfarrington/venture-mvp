@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
+import { privacyEmail, supportEmail, supportMailto } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
@@ -9,6 +10,9 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
+  const support = supportEmail();
+  const supportMail = supportMailto();
+  const privacy = privacyEmail();
   return (
     <main className="legal container">
       <h1>Privacy policy</h1>
@@ -23,9 +27,19 @@ export default function PrivacyPage() {
 
         <h2>Who we are</h2>
         <p>
-          Legal entity name used in communications: {brand.legal.entity}. Privacy contact:{" "}
-          <a href={`mailto:${brand.legal.privacyEmail}`}>{brand.legal.privacyEmail}</a>. Support:{" "}
-          <a href={`mailto:${brand.legal.supportEmail}`}>{brand.legal.supportEmail}</a>.
+          Legal entity name used in communications: {brand.legal.entity}.
+          {privacy ? (
+            <>
+              {" "}
+              Privacy contact: <a href={`mailto:${privacy}`}>{privacy}</a>.
+            </>
+          ) : null}
+          {support && supportMail ? (
+            <>
+              {" "}
+              Support: <a href={supportMail}>{support}</a>.
+            </>
+          ) : null}
         </p>
 
         <h2>Data we process</h2>
@@ -145,10 +159,17 @@ export default function PrivacyPage() {
           <li>Remove source API keys from the add-on sidebar / script properties</li>
           <li>Uninstall the add-on from the Google Workspace Marketplace / Extensions menu</li>
           <li>
-            Request deletion of license and billing records we store by emailing{" "}
-            <a href={`mailto:${brand.legal.privacyEmail}`}>{brand.legal.privacyEmail}</a> from the
-            email on your receipt (we may retain minimal records required for legal or accounting
-            obligations)
+            Request deletion of license and billing records we store
+            {privacy ? (
+              <>
+                {" "}
+                by emailing <a href={`mailto:${privacy}`}>{privacy}</a> from the email on your
+                receipt
+              </>
+            ) : (
+              " via the contact channel listed when you purchase"
+            )}{" "}
+            (we may retain minimal records required for legal or accounting obligations)
           </li>
         </ul>
         <p>
@@ -177,11 +198,19 @@ export default function PrivacyPage() {
 
         <h2>Contact</h2>
         <p>
-          Privacy:{" "}
-          <a href={`mailto:${brand.legal.privacyEmail}`}>{brand.legal.privacyEmail}</a>
-          <br />
-          Support:{" "}
-          <a href={`mailto:${brand.legal.supportEmail}`}>{brand.legal.supportEmail}</a>
+          {privacy ? (
+            <>
+              Privacy: <a href={`mailto:${privacy}`}>{privacy}</a>
+              {support && supportMail ? <br /> : null}
+            </>
+          ) : null}
+          {support && supportMail ? (
+            <>
+              Support: <a href={supportMail}>{support}</a>
+            </>
+          ) : !privacy ? (
+            <>Contact details will be published when {brand.name} launches paid plans.</>
+          ) : null}
         </p>
       </div>
     </main>

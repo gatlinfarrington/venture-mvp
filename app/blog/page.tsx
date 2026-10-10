@@ -20,18 +20,17 @@ export default function BlogIndexPage() {
   const tags = getBlogTags();
 
   return (
-    <main className="legal container">
+    <main className="legal container page-shell">
       <p className="eyebrow">Writing</p>
       <h1>Blog</h1>
-      <p className="body-lg muted" style={{ maxWidth: "62ch", marginBottom: "var(--space-6)" }}>
-        Product notes and setup guidance. Subscribe via{" "}
-        <a href="/blog/rss.xml">RSS</a>.
+      <p className="body-lg muted page-lede">
+        Product notes and setup guidance. Subscribe via <a href="/blog/rss.xml">RSS</a>.
       </p>
       {tags.length ? (
-        <ul className="blog-tag-row">
+        <ul className="tag-pills blog-tag-pills">
           {tags.map((tag) => (
             <li key={tag}>
-              <Link className="mono" href={`/blog/tag/${encodeURIComponent(tag)}`}>
+              <Link className="tag-pill mono" href={`/blog/tag/${encodeURIComponent(tag)}`}>
                 {tag}
               </Link>
             </li>

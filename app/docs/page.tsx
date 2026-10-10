@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
+import { supportEmail, supportMailto } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -38,26 +39,24 @@ const cards = [
   {
     href: "/docs/faq",
     title: "FAQ",
-    body: "Data storage, Google scopes, billing, and Lemon Squeezy → Stripe notes.",
+    body: "Data storage, Google scopes, billing, and Lemon Squeezy to Stripe notes.",
   },
   {
     href: "/docs/troubleshooting",
     title: "Troubleshooting",
     body: "Empty tabs, auth errors, rate limits, and license verification.",
   },
-  {
-    href: "/docs/go-live",
-    title: "Stripe go-live",
-    body: "Owner checklist: paste keys, webhook events, lookup_keys, admin status.",
-  },
 ] as const;
 
 export default function DocsIndexPage() {
+  const support = supportEmail();
+  const mailto = supportMailto();
+
   return (
     <main className="docs-page">
       <p className="eyebrow">Help center</p>
       <h1>Docs</h1>
-      <p className="body-lg muted" style={{ maxWidth: "62ch" }}>
+      <p className="body-lg muted docs-lede">
         Setup for each source, API key handling, FAQ, and fixes when sync stalls. Install the add-on
         from the Workspace Marketplace, then return here when a step is unclear.
       </p>
@@ -71,10 +70,11 @@ export default function DocsIndexPage() {
           </li>
         ))}
       </ul>
-      <p className="muted" style={{ marginTop: "var(--space-8)" }}>
-        Still stuck? Email{" "}
-        <a href={`mailto:${brand.legal.supportEmail}`}>{brand.legal.supportEmail}</a>.
-      </p>
+      {support && mailto ? (
+        <p className="muted docs-support">
+          Still stuck? Email <a href={mailto}>{support}</a>.
+        </p>
+      ) : null}
     </main>
   );
 }

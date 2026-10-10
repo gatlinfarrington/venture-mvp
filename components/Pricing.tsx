@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Reveal } from "@/components/Reveal";
-import { checkoutEnabled, pricing, type BillingInterval } from "@/lib/site";
+import { checkoutEnabled, pricing, siteConfig, type BillingInterval } from "@/lib/site";
 
 export function Pricing() {
   const [interval, setInterval] = useState<BillingInterval>("month");
@@ -31,7 +31,6 @@ export function Pricing() {
       const data = (await res.json()) as { url?: string; error?: string };
       if (data.url) {
         const checkoutUrl = data.url;
-        // Navigate after paint so the immutability lint does not flag location writes.
         queueMicrotask(() => {
           window.location.assign(checkoutUrl);
         });
@@ -111,27 +110,27 @@ export function Pricing() {
                   ))}
                 </ul>
                 {plan.tier === "free" ? (
-                  <Link className="btn btn-secondary" href="/#how-it-works">
+                  <Link className="btn btn-secondary" href={siteConfig.installUrl}>
                     Start free
                   </Link>
                 ) : checkoutEnabled ? (
-                  <button
-                    type="button"
-                    className={featured ? "btn btn-primary" : "btn btn-secondary"}
-                    disabled={pendingTier === plan.tier}
-                    onClick={() => startCheckout(plan.tier, interval)}
-                  >
-                    {pendingTier === plan.tier ? "Opening…" : `Get ${plan.name}`}
-                  </button>
+                  <div className="price-cta-stack">
+                    <button
+                      type="button"
+                      className={featured ? "btn btn-primary" : "btn btn-secondary"}
+                      disabled={pendingTier === plan.tier}
+                      onClick={() => startCheckout(plan.tier, interval)}
+                    >
+                      {pendingTier === plan.tier ? "Opening…" : `Get ${plan.name}`}
+                    </button>
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled
-                    title="Stripe Checkout is not configured yet"
-                  >
-                    Checkout opens at launch
-                  </button>
+                  <div className="price-cta-stack">
+                    <a className="btn btn-secondary" href={siteConfig.installUrl}>
+                      Coming soon
+                    </a>
+                    <p className="price-cta-caption mono muted">Checkout opens at launch</p>
+                  </div>
                 )}
               </Reveal>
             );

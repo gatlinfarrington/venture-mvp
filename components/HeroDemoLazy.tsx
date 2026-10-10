@@ -8,6 +8,9 @@ const HeroDemo = dynamic(
     ssr: false,
     loading: () => (
       <div className="hero-stage" aria-hidden="true">
+        <div className="hero-stores-col">
+          <div className="hero-stores" />
+        </div>
         <div className="hero-sheet-wrap">
           <div className="hero-sheet">
             <div className="hero-sheet-top">
@@ -17,9 +20,6 @@ const HeroDemo = dynamic(
                 <span className="hero-delta">+3.2%</span>
               </div>
             </div>
-          </div>
-          <div className="hero-demo-foot">
-            <p className="hero-note mono">Example data · no real customers</p>
           </div>
         </div>
       </div>

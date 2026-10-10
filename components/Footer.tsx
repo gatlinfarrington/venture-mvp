@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { BrandWordmark } from "@/components/BrandWordmark";
 import { brand } from "@/lib/brand";
+import { supportEmail, supportMailto } from "@/lib/support";
 
 export function Footer() {
+  const support = supportEmail();
+  const mailto = supportMailto();
+
   return (
     <footer className="site-footer">
       <div className="container">
@@ -40,7 +44,7 @@ export function Footer() {
             <h3>Legal</h3>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
-            <a href={`mailto:${brand.legal.supportEmail}`}>Support</a>
+            {support && mailto ? <a href={mailto}>Support</a> : null}
           </div>
         </div>
         <div className="footer-bottom">

@@ -16,7 +16,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/docs/api-keys",
     "/docs/faq",
     "/docs/troubleshooting",
-    "/docs/go-live",
     "/blog",
     "/changelog",
     "/privacy",

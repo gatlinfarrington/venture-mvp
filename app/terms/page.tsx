@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
+import { privacyEmail, supportEmail, supportMailto } from "@/lib/support";
 
 export const metadata: Metadata = {
   title: "Terms of service",
@@ -10,6 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function TermsPage() {
+  const support = supportEmail();
+  const supportMail = supportMailto();
+  const privacy = privacyEmail();
   return (
     <main className="legal container">
       <h1>Terms of service</h1>
@@ -73,8 +77,8 @@ export default function TermsPage() {
 
         <h2>Refunds</h2>
         <p>
-          First-time charges may be refunded within 14 days on request to{" "}
-          {brand.legal.supportEmail}. After that, cancellations stop future renewals.
+          First-time charges may be refunded within 14 days on request
+          {support ? <> to {support}</> : null}. After that, cancellations stop future renewals.
         </p>
 
         <h2>Intellectual property</h2>
@@ -113,10 +117,19 @@ export default function TermsPage() {
 
         <h2>Contact</h2>
         <p>
-          <a href={`mailto:${brand.legal.supportEmail}`}>{brand.legal.supportEmail}</a>
-          <br />
-          Privacy:{" "}
-          <a href={`mailto:${brand.legal.privacyEmail}`}>{brand.legal.privacyEmail}</a>
+          {support && supportMail ? (
+            <>
+              <a href={supportMail}>{support}</a>
+              {privacy ? <br /> : null}
+            </>
+          ) : null}
+          {privacy ? (
+            <>
+              Privacy: <a href={`mailto:${privacy}`}>{privacy}</a>
+            </>
+          ) : !support ? (
+            <>Contact details will be published when {brand.name} launches paid plans.</>
+          ) : null}
         </p>
       </div>
     </main>

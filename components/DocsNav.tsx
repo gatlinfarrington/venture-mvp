@@ -11,7 +11,6 @@ const links = [
   { href: "/docs/api-keys", label: "API keys" },
   { href: "/docs/faq", label: "FAQ" },
   { href: "/docs/troubleshooting", label: "Troubleshooting" },
-  { href: "/docs/go-live", label: "Stripe go-live" },
 ] as const;
 
 export function DocsNav() {
@@ -19,7 +18,6 @@ export function DocsNav() {
 
   return (
     <nav className="docs-nav" aria-label="Docs">
-      <p className="eyebrow">Help center</p>
       <ul>
         {links.map((link) => {
           const active =
