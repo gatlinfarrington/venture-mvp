@@ -73,14 +73,28 @@ function SuccessHeader() {
   );
 }
 
+function readChecks(sessionId: string | null): [boolean, boolean, boolean] {
+  if (!sessionId || typeof window === "undefined") {
+    return [false, false, false];
+  }
+  return [
+    localStorage.getItem(storageKey(sessionId, 1)) === "1",
+    localStorage.getItem(storageKey(sessionId, 2)) === "1",
+    localStorage.getItem(storageKey(sessionId, 3)) === "1",
+  ];
+}
+
 function SuccessInner() {
   const params = useSearchParams();
   const sessionId = params.get("session_id");
   const h1Ref = useRef<HTMLHeadingElement>(null);
   const keyBoxRef = useRef<HTMLDivElement>(null);
   const liveId = useId();
-  const startedAt = useRef<number>(Date.now());
-  const [ui, setUi] = useState<UiState>(sessionId ? "loading" : "notfound");
+  const startedAt = useRef<number | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
+  const [ui, setUi] = useState<UiState>(() =>
+    sessionId ? "loading" : "notfound",
+  );
   const [data, setData] = useState<SessionPayload | null>(null);
   const [httpStatus, setHttpStatus] = useState<number | null>(null);
   const [slow, setSlow] = useState(false);
@@ -88,11 +102,9 @@ function SuccessInner() {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyNote, setCopyNote] = useState<string | null>(null);
-  const [checks, setChecks] = useState<[boolean, boolean, boolean]>([
-    false,
-    false,
-    false,
-  ]);
+  const [checks, setChecks] = useState<[boolean, boolean, boolean]>(() =>
+    readChecks(sessionId),
+  );
   const prevUi = useRef<UiState | null>(null);
 
   const templateUrl = templateCopyUrl();
@@ -100,15 +112,6 @@ function SuccessInner() {
   const supportMail = supportEmail();
   const supportHref = supportMailto() || "/support";
   const supportLabel = supportMail || "Support";
-
-  useEffect(() => {
-    if (!sessionId) return;
-    setChecks([
-      localStorage.getItem(storageKey(sessionId, 1)) === "1",
-      localStorage.getItem(storageKey(sessionId, 2)) === "1",
-      localStorage.getItem(storageKey(sessionId, 3)) === "1",
-    ]);
-  }, [sessionId]);
 
   const markCheck = useCallback(
     (step: 1 | 2 | 3) => {
@@ -123,21 +126,14 @@ function SuccessInner() {
     [sessionId],
   );
 
-  const [retryNonce, setRetryNonce] = useState(0);
-
   useEffect(() => {
-    if (!sessionId) {
-      setUi("notfound");
-      return;
-    }
+    if (!sessionId) return;
 
     let cancelled = false;
     let pollId: number | null = null;
     let settled = false;
+    let slowArmed = false;
     startedAt.current = Date.now();
-    setSlow(false);
-    setTimeoutLede(false);
-    setUi("loading");
 
     const stop = () => {
       if (pollId != null) {
@@ -148,7 +144,8 @@ function SuccessInner() {
 
     const tick = async () => {
       if (cancelled || settled) return;
-      const elapsed = Date.now() - startedAt.current;
+      const start = startedAt.current ?? Date.now();
+      const elapsed = Date.now() - start;
       if (elapsed >= GIVE_UP_MS) {
         settled = true;
         stop();
@@ -156,7 +153,10 @@ function SuccessInner() {
         setUi("notfound");
         return;
       }
-      if (elapsed >= SLOW_MS) setSlow(true);
+      if (!slowArmed && elapsed >= SLOW_MS) {
+        slowArmed = true;
+        setSlow(true);
+      }
 
       try {
         const res = await fetch(
@@ -564,7 +564,12 @@ function SuccessInner() {
                   <button
                     type="button"
                     className="btn btn-primary success-btn"
-                    onClick={() => setRetryNonce((n) => n + 1)}
+                    onClick={() => {
+                      setSlow(false);
+                      setTimeoutLede(false);
+                      setUi("loading");
+                      setRetryNonce((n) => n + 1);
+                    }}
                   >
                     Try again
                   </button>
