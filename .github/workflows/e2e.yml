@@ -56,19 +56,12 @@ jobs:
             exit 0
           fi
 
+          # pull_request: default to production so license/Stripe probes hit a stable
+          # env. Preview URLs are covered via deployment_status (and vars.E2E_BASE_URL).
           if [ "$EVENT_NAME" = "pull_request" ]; then
-            PREVIEW_ID="$(gh api "repos/${{ github.repository }}/deployments" \
-              --jq '[.[] | select(.environment | test("Preview|preview|vercel"; "i"))] | .[0].id' 2>/dev/null || true)"
-            if [ -n "${PREVIEW_ID:-}" ] && [ "$PREVIEW_ID" != "null" ]; then
-              ENV_URL="$(gh api "repos/${{ github.repository }}/deployments/${PREVIEW_ID}/statuses" \
-                --jq '[.[] | select(.state=="success")][0].environment_url' 2>/dev/null || true)"
-              if [ -n "${ENV_URL:-}" ] && [ "$ENV_URL" != "null" ]; then
-                echo "base_url=$ENV_URL" >> "$GITHUB_OUTPUT"
-                echo "Using PR preview URL: $ENV_URL"
-                exit 0
-              fi
-            fi
-            echo "No preview URL found for PR; falling back to production"
+            echo "base_url=$PRODUCTION" >> "$GITHUB_OUTPUT"
+            echo "PR event — using production (set vars.E2E_BASE_URL or rely on deployment_status for preview)"
+            exit 0
           fi
 
           echo "base_url=$PRODUCTION" >> "$GITHUB_OUTPUT"
