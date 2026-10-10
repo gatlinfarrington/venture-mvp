@@ -1,4 +1,4 @@
-/** Fallback sitemap paths — kept in sync with app/sitemap.ts. */
+/** Fallback sitemap paths — kept in sync with app/sitemap.ts static routes + seoPages. */
 export const SITEMAP_ROUTES_FALLBACK = [
   "/",
   "/pricing",
@@ -9,6 +9,8 @@ export const SITEMAP_ROUTES_FALLBACK = [
   "/docs/api-keys",
   "/docs/faq",
   "/docs/troubleshooting",
+  "/docs/go-live",
+  "/blog",
   "/changelog",
   "/privacy",
   "/terms",
@@ -21,7 +23,7 @@ export const SITEMAP_ROUTES_FALLBACK = [
 /** Key marketing pages for Lighthouse CI budgets (≥95). */
 export const LIGHTHOUSE_ROUTES = ["/", "/pricing", "/docs", "/privacy"] as const;
 
-/** Public pages that are intentionally omitted from the sitemap (e.g. noindex). */
+/** Public pages intentionally omitted from the sitemap (e.g. noindex). */
 export const EXTRA_SMOKE_ROUTES = ["/success"] as const;
 
 export async function fetchSitemapRoutes(baseURL: string): Promise<string[]> {
