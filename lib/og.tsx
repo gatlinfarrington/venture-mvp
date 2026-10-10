@@ -1,4 +1,4 @@
-import { brand } from "@/lib/brand";
+import { brand, siteHostname } from "@/lib/brand";
 
 /** Shared Open Graph frame for marketing routes (ImageResponse JSX). */
 export function OgFrame({
@@ -108,7 +108,7 @@ export function OgFrame({
           fontFamily: "ui-monospace, monospace",
         }}
       >
-        {brand.domain}
+        {siteHostname()}
       </div>
     </div>
   );

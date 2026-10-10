@@ -1,4 +1,4 @@
-import { brand, installUrl, siteUrl } from "@/lib/brand";
+import { brand, installUrl, siteHostname, siteUrl } from "@/lib/brand";
 
 export const siteConfig = {
   name: brand.name,
@@ -12,7 +12,9 @@ export const siteConfig = {
   },
   sources: brand.sources,
   logo: brand.logo,
-  domain: brand.domain,
+  get domain() {
+    return siteHostname();
+  },
 };
 
 /** Paid Checkout is off until a real Stripe publishable key is set. */

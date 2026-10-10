@@ -49,7 +49,7 @@ Minimum for paid Checkout:
 
 | Variable | Notes |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | `https://revenuesheet.app` (no trailing slash) |
+| `NEXT_PUBLIC_SITE_URL` | Canonical origin (e.g. `https://venture-mvp.vercel.app`); falls back to `VERCEL_PROJECT_PRODUCTION_URL` |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` or `pk_live_…` (no `REPLACE`) — **enables paid buttons** |
 | `STRIPE_SECRET_KEY` | Matching `sk_test_…` / `sk_live_…` |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_…` from the webhook endpoint |

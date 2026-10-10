@@ -1,7 +1,10 @@
 /** Runtime configuration. Override LICENSE_API_BASE via Script Properties. */
 export const CONFIG = {
-  /** Default license verify endpoint (Script Property LICENSE_API_BASE wins). */
-  DEFAULT_LICENSE_API_BASE: "https://revenuesheet.app",
+  /**
+   * Default license verify endpoint (Script Property LICENSE_API_BASE wins).
+   * Uses the Vercel production host until a custom domain is set via Script Properties.
+   */
+  DEFAULT_LICENSE_API_BASE: "https://venture-mvp.vercel.app",
   LICENSE_PATH: "/api/license/verify",
   /** Free tier: one connected source, manual refresh only. */
   FREE_MAX_SOURCES: 1,

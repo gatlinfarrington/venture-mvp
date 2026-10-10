@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { brand } from "@/lib/brand";
+import { brand, siteHostname } from "@/lib/brand";
 import { supportEmail, supportMailto } from "@/lib/support";
 import { siteConfig } from "@/lib/site";
 
@@ -38,7 +38,7 @@ export default function TroubleshootingPage() {
         <h2>License not recognized</h2>
         <ul>
           <li>Paste the license key from the success page or your receipt email.</li>
-          <li>Confirm you are online — verify calls {brand.domain}.</li>
+          <li>Confirm you are online — verify calls {siteHostname()}.</li>
           <li>
             Still failing after purchase?
             {support && mailto ? (
