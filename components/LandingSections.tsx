@@ -90,7 +90,7 @@ export function HowItWorks() {
               <span className="step-num">{step.n}</span>
               <h3 className="h3">{step.title}</h3>
               <p className="muted">{step.body}</p>
-              <div className="step-frame">
+              <div className={`step-frame${step.n === "02" ? " step-frame-backfill" : ""}`}>
                 <ResponsiveCrop
                   desktop={step.desktop}
                   phone={step.phone}

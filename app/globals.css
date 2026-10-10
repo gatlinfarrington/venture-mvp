@@ -955,6 +955,19 @@ h2 {
   display: none;
 }
 
+/* Desktop backfill crop is a card on a wide grey stage; zoom to the card. */
+.step-frame-backfill .responsive-crop-desktop {
+  transform: scale(1.55);
+  transform-origin: center center;
+}
+
+@media (max-width: 600px) {
+  .step-frame-backfill .responsive-crop-phone {
+    transform: scale(1.12);
+    transform-origin: center top;
+  }
+}
+
 /* Phone crops are 3:4 with baked-in 16px margins (MARKETING-CROPS.md). */
 @media (max-width: 600px) {
   .step-frame {
