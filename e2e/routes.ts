@@ -4,6 +4,7 @@ export const SITEMAP_ROUTES_FALLBACK = [
   "/pricing",
   "/about",
   "/security",
+  "/support",
   "/docs",
   "/docs/setup/lemon-squeezy",
   "/docs/setup/polar",

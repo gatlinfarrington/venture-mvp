@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/pricing",
     "/about",
     "/security",
+    "/support",
     "/docs",
     "/docs/setup/lemon-squeezy",
     "/docs/setup/polar",
