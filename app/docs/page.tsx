@@ -5,7 +5,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Docs",
-  description: `Help center for ${brand.name}: connect Lemon Squeezy, Polar, or Gumroad, manage API keys, FAQ, and troubleshooting.`,
+  description: `Help center for ${brand.name}: connect Lemon Squeezy, Polar, Gumroad, or Stripe, manage API keys, FAQ, and troubleshooting.`,
   alternates: { canonical: `${siteConfig.url}/docs` },
   openGraph: {
     title: `Docs · ${brand.name}`,
@@ -24,7 +24,7 @@ const quickstart = [
   {
     n: "02",
     title: "Connect a store with an API key",
-    body: "Paste a Lemon Squeezy, Polar, or Gumroad key in the sidebar.",
+    body: "Paste a Lemon Squeezy, Polar, Gumroad, or Stripe key in the sidebar.",
     href: "/docs/api-keys",
   },
   {
@@ -50,6 +50,16 @@ const setup = [
     href: "/docs/setup/gumroad",
     title: "Gumroad setup",
     body: "Access token, sales history, refunds, and combining with other sources.",
+  },
+  {
+    href: "/docs/setup/stripe",
+    title: "Stripe setup",
+    body: "Restricted key, read-only scopes, charges and subscriptions backfill.",
+  },
+  {
+    href: "/docs/csv-import",
+    title: "CSV import",
+    body: "Bring orders from any other store when there is no API connector.",
   },
   {
     href: "/docs/api-keys",

@@ -142,7 +142,7 @@ export function HeroDemo() {
     () => BASE_BARS.map((h) => (h - 40) * 2),
   );
   const [packets, setPackets] = useState<
-    Array<{ id: string; amount: number; path: string }>
+    Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
   >([]);
   const packetBusy = useRef(false);
 
@@ -154,21 +154,22 @@ export function HeroDemo() {
     const stageRect = stage.getBoundingClientRect();
     const store = stage.querySelectorAll<HTMLElement>(".hero-store")[storeIndex];
     const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
-    if (!store || !sheet) {
+    const table = sheet?.querySelector<HTMLElement>("table");
+    const thead = sheet?.querySelector<HTMLElement>("thead");
+    if (!store || !sheet || !table || !thead) {
       return "M 150 138 C 230 138, 250 160, 330 175";
     }
     const storeRect = store.getBoundingClientRect();
-    const sheetRect = sheet.getBoundingClientRect();
+    const tableRect = table.getBoundingClientRect();
+    const headRect = thead.getBoundingClientRect();
     // Spawn at the card's right edge +8px (never over the status dot).
     const startX = storeRect.right - stageRect.left + 8;
     const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    // End at sheet.left + 16, center of the new first body row.
-    const endX = sheetRect.left - stageRect.left + 16;
+    // Aim at the new row's ORDER cell: table left + 12px, header bottom + half a row.
     const firstRow = sheet.querySelector<HTMLElement>("tbody tr");
-    const rowRect = firstRow?.getBoundingClientRect();
-    const endY = rowRect
-      ? rowRect.top + rowRect.height / 2 - stageRect.top
-      : sheetRect.top - stageRect.top + sheetRect.height * 0.45;
+    const rowH = firstRow?.getBoundingClientRect().height ?? 36;
+    const endX = tableRect.left - stageRect.left + 12;
+    const endY = headRect.bottom - stageRect.top + rowH / 2;
     const midX = startX + (endX - startX) * 0.55;
     return `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
   }
@@ -226,10 +227,9 @@ export function HeroDemo() {
         return next;
       });
 
-      // One packet in flight; fade/scale over the last 160ms as the row inserts.
+      // Fly to the new ORDER cell, then insert the row and dissolve the packet.
       const flyMs = 900;
-      const fadeTailMs = 160;
-      const rowAt = flyMs - fadeTailMs;
+      const dissolveMs = 160;
 
       const spawnPacket = packetsAllowed() && !packetBusy.current;
       if (spawnPacket) {
@@ -239,9 +239,16 @@ export function HeroDemo() {
         setPackets([{ id: pid, amount, path }]);
         timers.current.push(
           window.setTimeout(() => {
+            setPackets((prev) =>
+              prev.map((p) => (p.id === pid ? { ...p, dissolving: true } : p)),
+            );
+          }, flyMs),
+        );
+        timers.current.push(
+          window.setTimeout(() => {
             setPackets([]);
             packetBusy.current = false;
-          }, flyMs + 20),
+          }, flyMs + dissolveMs + 20),
         );
       }
 
@@ -272,7 +279,7 @@ export function HeroDemo() {
               }, 1200),
             );
           },
-          reduced ? 0 : spawnPacket ? rowAt : 0,
+          reduced ? 0 : spawnPacket ? flyMs : 0,
         ),
       );
     },
@@ -303,8 +310,8 @@ export function HeroDemo() {
       return;
     }
 
-    // Stagger so only one packet is in flight (fly 900ms + small gap).
-    const gapMs = 980;
+    // Stagger so only one packet is in flight (fly 900ms + dissolve 160ms + gap).
+    const gapMs = 1100;
     for (let i = 0; i < LANDING_SPECS.length; i++) {
       timers.current.push(
         window.setTimeout(() => landOrder(i), 600 + i * gapMs),
@@ -374,7 +381,7 @@ export function HeroDemo() {
         ref={stageRef}
         className="hero-stage"
         role="img"
-        aria-label="Animation: four stores sync orders into one spreadsheet while MRR rises (example data)"
+        aria-label="Animated example: orders from Lemon Squeezy, Polar, Gumroad and Stripe land in a Google Sheet and the MRR total updates. Example data."
       >
         <div className="hero-stores-col" aria-hidden="true">
           <div className="hero-stores">
@@ -449,7 +456,7 @@ export function HeroDemo() {
         {packets.map((p) => (
           <div
             key={p.id}
-            className="hero-packet"
+            className={`hero-packet${p.dissolving ? " is-dissolving" : ""}`}
             style={{ offsetPath: `path("${p.path}")` }}
           >
             +${p.amount}

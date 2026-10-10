@@ -16,6 +16,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/docs/setup/lemon-squeezy",
     "/docs/setup/polar",
     "/docs/setup/gumroad",
+    "/docs/setup/stripe",
+    "/docs/csv-import",
     "/docs/api-keys",
     "/docs/faq",
     "/docs/troubleshooting",

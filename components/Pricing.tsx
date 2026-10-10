@@ -13,7 +13,8 @@ type Props = {
 };
 
 export function Pricing({ variant = "section" }: Props) {
-  const [interval, setInterval] = useState<BillingInterval>("month");
+  // Monthly only — annual toggle and $90/$190 are unconfirmed; hide until locked.
+  const interval: BillingInterval = "month";
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [pendingTier, setPendingTier] = useState<string | null>(null);
 
@@ -58,47 +59,17 @@ export function Pricing({ variant = "section" }: Props) {
           <header className="pricing-page-head">
             <p className="eyebrow">Pricing</p>
             <h1>Free to start. Paid plans open at launch.</h1>
-            <p className="mono muted pricing-ann">
-              Annual billing is two months free.
-            </p>
           </header>
         ) : (
           <Reveal className="section-head">
             <p className="eyebrow">Pricing</p>
             <h2 className="h2">Free to start. Paid plans open at launch.</h2>
-            <p className="mono muted pricing-ann">
-              Annual billing is two months free.
-            </p>
           </Reveal>
         )}
 
-        <div className="billing-toggle" role="group" aria-label="Billing interval">
-          <button
-            type="button"
-            className="chip"
-            aria-pressed={interval === "month"}
-            onClick={() => setInterval("month")}
-          >
-            Monthly
-          </button>
-          <button
-            type="button"
-            className="chip"
-            aria-pressed={interval === "year"}
-            onClick={() => setInterval("year")}
-          >
-            Annual · 2 months free
-          </button>
-        </div>
-
         <div className="pricing-grid">
           {plans.map((plan, i) => {
-            const amount =
-              plan.tier === "free"
-                ? 0
-                : interval === "month"
-                  ? plan.monthly
-                  : Math.round(plan.annual / 12);
+            const amount = plan.tier === "free" ? 0 : plan.monthly;
             const featured = plan.tier === "pro";
             const btnClass = featured ? "btn btn-primary" : "btn btn-secondary";
             const cardClass = `price-card${featured ? " is-featured" : ""}`;
@@ -108,17 +79,8 @@ export function Pricing({ variant = "section" }: Props) {
                   <p className="eyebrow">{plan.name}</p>
                   <p className="price-amount">
                     ${amount}
-                    <span>
-                      {plan.tier === "free"
-                        ? " forever"
-                        : interval === "month"
-                          ? "/mo"
-                          : "/mo billed yearly"}
-                    </span>
+                    <span>{plan.tier === "free" ? " forever" : "/mo"}</span>
                   </p>
-                  {plan.tier !== "free" && interval === "year" ? (
-                    <p className="mono muted price-annual">${plan.annual}/yr</p>
-                  ) : null}
                 </div>
                 <ul className="price-features">
                   {plan.features.map((f) => (

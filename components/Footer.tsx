@@ -37,6 +37,8 @@ export function Footer() {
             <Link href="/docs/setup/lemon-squeezy">Lemon Squeezy setup</Link>
             <Link href="/docs/setup/polar">Polar setup</Link>
             <Link href="/docs/setup/gumroad">Gumroad setup</Link>
+            <Link href="/docs/setup/stripe">Stripe setup</Link>
+            <Link href="/docs/csv-import">CSV import</Link>
             <Link href="/docs/api-keys">API keys</Link>
             <Link href="/stripe-to-google-sheets">Stripe comparison</Link>
             <Link href="/vs/baremetrics">vs Baremetrics</Link>

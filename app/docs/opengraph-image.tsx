@@ -12,7 +12,7 @@ export default function Image() {
       <OgFrame
         eyebrow="Help center"
         title="Docs for sync, keys, and fixes"
-        subtitle="Setup guides for Lemon Squeezy, Polar, and Gumroad."
+        subtitle="Setup guides for Lemon Squeezy, Polar, Gumroad, Stripe, and CSV."
       />
     ),
     { ...size },
