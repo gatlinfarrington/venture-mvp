@@ -945,10 +945,10 @@ h2 {
 .lands-frame img {
   width: 100%;
   height: 100%;
-  /* Crops already include 16px margins; don't re-crop with cover. */
-  object-fit: contain;
-  object-position: center top;
-  background: var(--c-surface);
+  /* Fill the frame; crops bake 16px margin inside the UI card, not the grey stage. */
+  object-fit: cover;
+  object-position: center center;
+  background: var(--c-surface-2);
 }
 
 .responsive-crop-phone {
@@ -959,6 +959,11 @@ h2 {
 @media (max-width: 600px) {
   .step-frame {
     aspect-ratio: 3 / 4;
+  }
+
+  .step-frame img,
+  .lands-frame img {
+    object-position: center top;
   }
 
   .responsive-crop-desktop {
@@ -1032,13 +1037,6 @@ h2 {
   background: var(--c-surface-2);
   align-self: stretch;
   display: flex;
-}
-
-.lands-frame img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top left;
 }
 
 @media (max-width: 600px) {
