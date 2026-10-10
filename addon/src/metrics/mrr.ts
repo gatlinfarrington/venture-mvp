@@ -1,54 +1,85 @@
 import type { NormalizedSubscription } from "../importers/types";
+import { toMonthlyAmount as intervalToMonthly } from "../lib/intervals";
 
 export interface MrrBreakdown {
   total: number;
   bySource: Record<string, number>;
   byProduct: Record<string, number>;
   activeCount: number;
+  /** Trialing subs (excluded from total unless includeTrialingPastDue). */
+  trialingCount: number;
+  trialingMrr: number;
+  /** Past-due subs (excluded from total unless includeTrialingPastDue). */
+  pastDueCount: number;
+  pastDueMrr: number;
 }
 
-const ACTIVE = new Set(["active", "trialing", "trial", "past_due", "on_trial"]);
+export interface MrrOptions {
+  /**
+   * When true, trialing + past_due count toward `total` (legacy behavior).
+   * Default false — only paid `active` subscriptions contribute to MRR.
+   */
+  includeTrialingPastDue?: boolean;
+}
 
+const TRIAL = new Set(["trialing", "trial", "on_trial"]);
+const PAST_DUE = new Set(["past_due", "past-due", "pastdue"]);
+
+export function isTrialingStatus(status: string): boolean {
+  return TRIAL.has(String(status || "").toLowerCase());
+}
+
+export function isPastDueStatus(status: string): boolean {
+  return PAST_DUE.has(String(status || "").toLowerCase());
+}
+
+/** Paid active only (excludes trial / past_due / cancelled / paused). */
+export function isMrrEligibleStatus(status: string, opts: MrrOptions = {}): boolean {
+  const s = String(status || "").toLowerCase();
+  if (s === "active") return true;
+  if (opts.includeTrialingPastDue && (isTrialingStatus(s) || isPastDueStatus(s))) return true;
+  return false;
+}
+
+/** @deprecated Prefer isMrrEligibleStatus — kept for older call sites. */
 export function isActiveSubscription(status: string): boolean {
-  return ACTIVE.has(String(status || "").toLowerCase());
+  return isMrrEligibleStatus(status, { includeTrialingPastDue: true });
 }
 
-/** Normalize interval amount to monthly recurring revenue. */
 export function toMonthlyAmount(
   amount: number,
   interval: NormalizedSubscription["interval"] | string,
 ): number {
-  const n = Number(amount) || 0;
-  switch (String(interval || "month").toLowerCase()) {
-    case "year":
-    case "yearly":
-    case "annual":
-      return n / 12;
-    case "week":
-    case "weekly":
-      return (n * 52) / 12;
-    case "day":
-    case "daily":
-      return (n * 365) / 12;
-    case "month":
-    case "monthly":
-    default:
-      return n;
-  }
+  return intervalToMonthly(amount, interval);
 }
 
-export function computeMrr(subscriptions: NormalizedSubscription[]): MrrBreakdown {
+export function computeMrr(
+  subscriptions: NormalizedSubscription[],
+  opts: MrrOptions = {},
+): MrrBreakdown {
   const bySource: Record<string, number> = {};
   const byProduct: Record<string, number> = {};
   let total = 0;
   let activeCount = 0;
+  let trialingCount = 0;
+  let trialingMrr = 0;
+  let pastDueCount = 0;
+  let pastDueMrr = 0;
 
   for (const sub of subscriptions) {
-    if (!isActiveSubscription(sub.status)) continue;
-    const monthly = sub.mrr > 0 ? sub.mrr : toMonthlyAmount(sub.mrr, sub.interval);
-    // Prefer explicit mrr field (already monthly); if mapper set mrr correctly, use it.
     const value = Number(sub.mrr) || 0;
     if (value <= 0) continue;
+    const status = String(sub.status || "").toLowerCase();
+
+    if (isTrialingStatus(status)) {
+      trialingCount += 1;
+      trialingMrr += value;
+    } else if (isPastDueStatus(status)) {
+      pastDueCount += 1;
+      pastDueMrr += value;
+    }
+
+    if (!isMrrEligibleStatus(status, opts)) continue;
     activeCount += 1;
     total += value;
     bySource[sub.source] = (bySource[sub.source] || 0) + value;
@@ -61,14 +92,19 @@ export function computeMrr(subscriptions: NormalizedSubscription[]): MrrBreakdow
     bySource: mapRound(bySource),
     byProduct: mapRound(byProduct),
     activeCount,
+    trialingCount,
+    trialingMrr: round2(trialingMrr),
+    pastDueCount,
+    pastDueMrr: round2(pastDueMrr),
   };
 }
 
-/** Build month-end MRR series from subscription create/cancel history. */
+/** Build month-end MRR series — paid active only by default (same rules as computeMrr). */
 export function computeMrrTrend(
   subscriptions: NormalizedSubscription[],
   months = 12,
   asOf: Date = new Date(),
+  opts: MrrOptions = {},
 ): { month: string; mrr: number; bySource: Record<string, number> }[] {
   const points: { month: string; mrr: number; bySource: Record<string, number> }[] = [];
   for (let i = months - 1; i >= 0; i--) {
@@ -81,9 +117,13 @@ export function computeMrrTrend(
       if (!created || created > end) continue;
       const cancelled = sub.cancelledAt ? parseDate(sub.cancelledAt) : null;
       if (cancelled && cancelled <= end) continue;
-      // Treat as active at month-end if not cancelled by then (include past_due historically)
       const status = String(sub.status || "").toLowerCase();
-      if (status === "expired" && cancelled && cancelled <= end) continue;
+      if (status === "paused") continue;
+      if (isTrialingStatus(status) || isPastDueStatus(status)) {
+        if (!opts.includeTrialingPastDue) continue;
+      } else if (status !== "active" && status !== "cancelled" && status !== "expired") {
+        continue;
+      }
       const value = Number(sub.mrr) || 0;
       if (value <= 0) continue;
       mrr += value;

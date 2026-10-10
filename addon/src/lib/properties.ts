@@ -5,6 +5,7 @@ const CURRENCY_PROP = "DISPLAY_CURRENCY";
 const CURSOR_PREFIX = "SYNC_CURSOR_";
 const LAST_SYNC_PROP = "LAST_SYNC_AT";
 const DEMO_MODE_PROP = "DEMO_MODE";
+const INCLUDE_TRIAL_PAST_DUE_PROP = "MRR_INCLUDE_TRIAL_PAST_DUE";
 
 function userProps(): GoogleAppsScript.Properties.Properties {
   return PropertiesService.getUserProperties();
@@ -47,11 +48,11 @@ export function setDisplayCurrency(code: string): void {
   userProps().setProperty(CURRENCY_PROP, (code || "USD").toUpperCase());
 }
 
-export function getSyncCursor(source: SourceId): { lastSyncedAt?: string; pageToken?: string } {
+export function getSyncCursor(source: SourceId): import("../importers/types").SyncCursor {
   const raw = userProps().getProperty(CURSOR_PREFIX + source);
   if (!raw) return {};
   try {
-    return JSON.parse(raw) as { lastSyncedAt?: string; pageToken?: string };
+    return JSON.parse(raw) as import("../importers/types").SyncCursor;
   } catch {
     return {};
   }
@@ -59,9 +60,19 @@ export function getSyncCursor(source: SourceId): { lastSyncedAt?: string; pageTo
 
 export function setSyncCursor(
   source: SourceId,
-  cursor: { lastSyncedAt?: string; pageToken?: string },
+  cursor: import("../importers/types").SyncCursor,
 ): void {
   userProps().setProperty(CURSOR_PREFIX + source, JSON.stringify(cursor));
+}
+
+/** When true, trialing + past_due count toward headline MRR (default false). */
+export function getIncludeTrialingPastDue(): boolean {
+  return userProps().getProperty(INCLUDE_TRIAL_PAST_DUE_PROP) === "1";
+}
+
+export function setIncludeTrialingPastDue(on: boolean): void {
+  if (on) userProps().setProperty(INCLUDE_TRIAL_PAST_DUE_PROP, "1");
+  else userProps().deleteProperty(INCLUDE_TRIAL_PAST_DUE_PROP);
 }
 
 export function clearSyncCursor(source: SourceId): void {
@@ -93,6 +104,7 @@ export function getAllSettingsForSidebar(): {
   currency: string;
   lastSyncAt: string;
   demoMode: boolean;
+  includeTrialingPastDue: boolean;
 } {
   return {
     lemonSqueezy: getApiKey("lemon_squeezy") ? "••••••••" : "",
@@ -102,5 +114,6 @@ export function getAllSettingsForSidebar(): {
     currency: getDisplayCurrency(),
     lastSyncAt: getLastSyncAt(),
     demoMode: isDemoMode(),
+    includeTrialingPastDue: getIncludeTrialingPastDue(),
   };
 }

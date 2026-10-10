@@ -3,10 +3,10 @@ import type { SourceId } from "../lib/config";
 export interface NormalizedOrder {
   id: string;
   source: SourceId;
-  created: string; // ISO date or yyyy-mm-dd
+  created: string;
   product: string;
   customerEmail: string;
-  amount: number; // major units
+  amount: number;
   currency: string;
   status: string;
   rawId: string;
@@ -18,11 +18,12 @@ export interface NormalizedSubscription {
   created: string;
   product: string;
   customerEmail: string;
-  mrr: number; // monthly recurring in major units
+  /** Always monthly-normalized recurring revenue. */
+  mrr: number;
   currency: string;
-  status: string; // active | cancelled | past_due | paused | trial | expired
+  status: string;
   cancelledAt: string | null;
-  interval: "month" | "year" | "week" | "day" | "unknown";
+  interval: "month" | "year" | "week" | "day" | "quarter" | "biannual" | "unknown";
   rawId: string;
 }
 
@@ -53,11 +54,35 @@ export interface ImportBundle {
   refunds: NormalizedRefund[];
 }
 
+export type SyncResource =
+  | "orders"
+  | "subscriptions"
+  | "customers"
+  | "refunds"
+  | "sales"
+  /** Terminal marker stored on completed cursors. */
+  | "done";
+
+/**
+ * Persisted checkpoint for incremental sync AND chunked backfills.
+ * `pageToken` lets a run that hits Apps Script time/page budget resume mid-pagination.
+ */
 export interface SyncCursor {
-  /** ISO timestamp of last successful incremental sync */
+  /** ISO timestamp of last fully completed sync (incremental watermark). */
   lastSyncedAt?: string;
-  /** Opaque cursor / page token if the API needs it */
+  /** Opaque pagination cursor (Gumroad page_key, Stripe starting_after, next URL, etc.). */
   pageToken?: string;
+  /** Resource currently being paginated during a chunked backfill. */
+  resource?: SyncResource;
+  /** True when the current backfill finished all pages for all resources. */
+  backfillComplete?: boolean;
+}
+
+export interface ImportResult {
+  bundle: ImportBundle;
+  cursor: SyncCursor;
+  /** True when more pages remain — caller should persist cursor and continue next run. */
+  incomplete: boolean;
 }
 
 export interface Importer {

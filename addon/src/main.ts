@@ -7,6 +7,7 @@ import {
   getAllSettingsForSidebar,
   setApiKey,
   setDisplayCurrency,
+  setIncludeTrialingPastDue,
   setLicenseKey,
 } from "./lib/properties";
 import {
@@ -94,6 +95,7 @@ function sidebarSaveSettings(payload: {
   gumroad?: string;
   licenseKey?: string;
   currency?: string;
+  includeTrialingPastDue?: boolean;
 }): string {
   const maybeSet = (source: "lemon_squeezy" | "polar" | "gumroad", value?: string) => {
     if (value == null || value === "" || value.indexOf("••") === 0) return;
@@ -108,6 +110,9 @@ function sidebarSaveSettings(payload: {
     else setLicenseKey(payload.licenseKey);
   }
   if (payload.currency) setDisplayCurrency(payload.currency);
+  if (typeof payload.includeTrialingPastDue === "boolean") {
+    setIncludeTrialingPastDue(payload.includeTrialingPastDue);
+  }
   return "Saved. Keys stay in your User Properties.";
 }
 

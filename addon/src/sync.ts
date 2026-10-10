@@ -1,10 +1,12 @@
 import { CONFIG, SHEET_NAMES, SOURCES, type SourceId } from "./lib/config";
+import { isBackfillIncomplete, resolveFetchCursor } from "./lib/backfill";
 import { checkLicenseSync, enforceSourceLimit, type LicenseStatus } from "./lib/license";
 import {
   clearSyncCursor,
   getApiKey,
   getConnectedSources,
   getDisplayCurrency,
+  getIncludeTrialingPastDue,
   getLastSyncAt,
   getSyncCursor,
   setDemoMode,
@@ -13,10 +15,10 @@ import {
 } from "./lib/properties";
 import { BRAND } from "./lib/brand";
 import { COLORS } from "./lib/tokens";
-import { fetchGumroadSync } from "./importers/gumroad";
-import { fetchLemonSqueezySync } from "./importers/lemonSqueezy";
-import { fetchPolarSync } from "./importers/polar";
-import type { ImportBundle, SyncCursor } from "./importers/types";
+import { fetchGumroadResultSync } from "./importers/gumroad";
+import { fetchLemonSqueezyResultSync } from "./importers/lemonSqueezy";
+import { fetchPolarResultSync } from "./importers/polar";
+import type { ImportBundle, ImportResult, SyncCursor } from "./importers/types";
 import { buildSampleBundle } from "./demo/sampleData";
 import { buildDashboard } from "./sheets/dashboard";
 import {
@@ -31,6 +33,8 @@ export interface SyncResult {
   message: string;
   sources: SourceId[];
   sample?: boolean;
+  /** True when at least one source still has pages left (resume on next run). */
+  incomplete?: boolean;
 }
 
 function emptyBundle(): ImportBundle {
@@ -46,21 +50,28 @@ function mergeBundles(a: ImportBundle, b: ImportBundle): ImportBundle {
   };
 }
 
-function fetchSourceSync(source: SourceId, apiKey: string, cursor: SyncCursor | undefined, full: boolean): ImportBundle {
-  const c = full ? undefined : cursor;
+function fetchSourceResult(
+  source: SourceId,
+  apiKey: string,
+  cursor: SyncCursor,
+): ImportResult {
   switch (source) {
     case "lemon_squeezy":
-      return fetchLemonSqueezySync(apiKey, c);
+      return fetchLemonSqueezyResultSync(apiKey, cursor);
     case "polar":
-      return fetchPolarSync(apiKey, c);
+      return fetchPolarResultSync(apiKey, cursor);
     case "gumroad":
-      return fetchGumroadSync(apiKey, c);
+      return fetchGumroadResultSync(apiKey, cursor);
     default:
-      return emptyBundle();
+      return {
+        bundle: emptyBundle(),
+        cursor: { backfillComplete: true, lastSyncedAt: new Date().toISOString() },
+        incomplete: false,
+      };
   }
 }
 
-/** Full backfill (full=true) or incremental sync from stored cursors. */
+/** Full backfill (full=true) or incremental sync. Incomplete backfills resume from saved cursors. */
 export function runSync(opts: { full?: boolean } = {}): SyncResult {
   const ss = SpreadsheetApp.getActive();
   ensureDataSheets(ss);
@@ -83,23 +94,29 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
 
   let bundle = emptyBundle();
   const errors: string[] = [];
+  const incompleteSources: SourceId[] = [];
+  let resuming = false;
 
   for (const source of limited.allowed as SourceId[]) {
     const key = getApiKey(source);
     if (!key) continue;
     try {
-      const cursor = getSyncCursor(source);
-      const part = fetchSourceSync(source, key, cursor, !!opts.full);
-      bundle = mergeBundles(bundle, part);
-      setSyncCursor(source, { lastSyncedAt: new Date().toISOString() });
+      const stored = getSyncCursor(source);
+      if (isBackfillIncomplete(stored)) resuming = true;
+      const { cursor } = resolveFetchCursor(stored, !!opts.full);
+      const result = fetchSourceResult(source, key, cursor);
+      bundle = mergeBundles(bundle, result.bundle);
+      setSyncCursor(source, result.cursor);
+      if (result.incomplete) incompleteSources.push(source);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`${source}: ${msg}`);
     }
   }
 
+  // Fresh full backfill clears on the first chunk; resumed chunks merge.
   writeImportBundle(ss, bundle, {
-    merge: !opts.full,
+    merge: !opts.full || resuming,
     currency: getDisplayCurrency(),
   });
 
@@ -119,15 +136,21 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
     currency: getDisplayCurrency(),
     licenseNote: license.degraded ? license.message : "",
     stale: false,
+    includeTrialingPastDue: getIncludeTrialingPastDue(),
+    backfillIncomplete: incompleteSources.length > 0,
   });
 
   ensureSettingsSheet(ss, license);
 
+  const incomplete = incompleteSources.length > 0;
   return {
     ok: errors.length === 0,
+    incomplete,
     message: errors.length
       ? `Synced with errors: ${errors.join("; ")}`
-      : `Synced ${labels.join(", ") || "no sources"}.`,
+      : incomplete
+        ? `Synced ${labels.join(", ") || "no sources"} (backfill in progress — will resume on next sync).`
+        : `Synced ${labels.join(", ") || "no sources"}.`,
     sources: limited.allowed as SourceId[],
   };
 }
@@ -148,6 +171,7 @@ export function runDemoMode(): SyncResult {
     scheduleLabel: "HOURLY",
     studioLabel: "EXAMPLE STUDIO",
     currency: "USD",
+    includeTrialingPastDue: getIncludeTrialingPastDue(),
   });
 
   ensureSettingsSheet(ss, {
@@ -194,11 +218,11 @@ export function runScheduledSync(): void {
     console.warn("Scheduled sync skipped — license does not allow schedule.");
     return;
   }
+  // Prefer finishing incomplete backfills; otherwise incremental.
   runSync({ full: false });
 }
 
 function colorDataTabs(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void {
-  // Launch v2 tab colors: Dashboard + data = ink; Refunds = danger; Settings/MRR monthly = muted
   ss.getSheetByName(SHEET_NAMES.dashboard)?.setTabColor(COLORS.ink);
   ss.getSheetByName(SHEET_NAMES.orders)?.setTabColor(COLORS.ink);
   ss.getSheetByName(SHEET_NAMES.subscriptions)?.setTabColor(COLORS.ink);
@@ -208,7 +232,10 @@ function colorDataTabs(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): void {
   ss.getSheetByName(SHEET_NAMES.mrrMonthly)?.setTabColor(COLORS.settingsTab);
 }
 
-function ensureSettingsSheet(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, license: LicenseStatus): void {
+function ensureSettingsSheet(
+  ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
+  license: LicenseStatus,
+): void {
   let sheet = ss.getSheetByName(SHEET_NAMES.settings);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAMES.settings);
   sheet.clear();
@@ -220,6 +247,7 @@ function ensureSettingsSheet(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, licen
     ["License status", license.message],
     ["Schedule allowed", license.allowSchedule ? "yes" : "no"],
     ["Currency", getDisplayCurrency()],
+    ["MRR includes trial/past_due", getIncludeTrialingPastDue() ? "yes" : "no (default)"],
     ["Connected sources", getConnectedSources().join(", ") || "—"],
     ["License API", "Script property LICENSE_API_BASE (optional override)"],
     ["Brand", BRAND.name],

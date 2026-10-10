@@ -1,12 +1,17 @@
 import { CONFIG } from "../lib/config";
+import { completedCursor } from "../lib/backfill";
+import { normalizeBillingInterval, roundMoney, toMonthlyAmount } from "../lib/intervals";
 import { centsToMajor, fetchJson, fetchJsonSync, toIsoDate, toIsoTimestamp } from "../lib/http";
+import { emptyBundle, nextResource } from "./paginate";
 import type {
   ImportBundle,
+  ImportResult,
   NormalizedCustomer,
   NormalizedOrder,
   NormalizedRefund,
   NormalizedSubscription,
   SyncCursor,
+  SyncResource,
 } from "./types";
 
 const BASE = "https://api.polar.sh/v1";
@@ -54,11 +59,11 @@ export function mapPolarSubscription(row: PolarRecord): NormalizedSubscription {
     (row.amount as number) ??
     (row.recurring_interval_amount as number) ??
     0;
-  const interval = normalizeInterval(
+  const interval = normalizeBillingInterval(
     String(price.recurring_interval || row.recurring_interval || "month"),
   );
   const major = centsToMajor(amountCents);
-  const mrr = interval === "year" ? major / 12 : major;
+  const mrr = roundMoney(toMonthlyAmount(major, interval));
   const status = String(row.status || "").toLowerCase();
   const cancelledAt = row.ended_at || row.canceled_at || row.cancelled_at || null;
 
@@ -68,7 +73,7 @@ export function mapPolarSubscription(row: PolarRecord): NormalizedSubscription {
     created: toIsoTimestamp(String(row.created_at || "")),
     product: String(product.name || row.product_name || "Subscription"),
     customerEmail: String(customer.email || row.email || ""),
-    mrr: Math.round(mrr * 100) / 100,
+    mrr,
     currency: String(price.price_currency || row.currency || "USD").toUpperCase(),
     status: status || "active",
     cancelledAt: cancelledAt ? toIsoTimestamp(String(cancelledAt)) : null,
@@ -101,15 +106,6 @@ export function mapPolarRefund(row: PolarRecord): NormalizedRefund {
   };
 }
 
-function normalizeInterval(raw: string): NormalizedSubscription["interval"] {
-  const v = raw.toLowerCase();
-  if (v.startsWith("year")) return "year";
-  if (v.startsWith("week")) return "week";
-  if (v.startsWith("day")) return "day";
-  if (v.startsWith("month")) return "month";
-  return "unknown";
-}
-
 function startUrl(path: string, cursor?: SyncCursor): string {
   const params = new URLSearchParams({ limit: String(CONFIG.PAGE_SIZE) });
   if (cursor?.lastSyncedAt) params.set("created_at.gt", cursor.lastSyncedAt);
@@ -127,26 +123,126 @@ function itemsOf(data: PolarPage<PolarRecord> | PolarRecord[]): PolarRecord[] {
   return Array.isArray(data) ? data : data.items || data.result || [];
 }
 
+function pathFor(resource: SyncResource): string {
+  switch (resource) {
+    case "subscriptions":
+      return "/subscriptions";
+    case "customers":
+      return "/customers";
+    case "refunds":
+      return "/refunds";
+    default:
+      return "/orders";
+  }
+}
+
+function mapFor(resource: SyncResource): (row: PolarRecord) => unknown {
+  switch (resource) {
+    case "subscriptions":
+      return mapPolarSubscription;
+    case "customers":
+      return mapPolarCustomer;
+    case "refunds":
+      return mapPolarRefund;
+    default:
+      return mapPolarOrder;
+  }
+}
+
+function assignResource(bundle: ImportBundle, resource: SyncResource, items: unknown[]): void {
+  switch (resource) {
+    case "subscriptions":
+      bundle.subscriptions.push(...(items as NormalizedSubscription[]));
+      break;
+    case "customers":
+      bundle.customers.push(...(items as NormalizedCustomer[]));
+      break;
+    case "refunds":
+      bundle.refunds.push(...(items as NormalizedRefund[]));
+      break;
+    default:
+      bundle.orders.push(...(items as NormalizedOrder[]));
+  }
+}
+
+function paginateBudgetSync(
+  path: string,
+  apiKey: string,
+  mapFn: (row: PolarRecord) => unknown,
+  start: string | null,
+  maxPages: number,
+): { items: unknown[]; next: string | null; pagesUsed: number; incomplete: boolean } {
+  const out: unknown[] = [];
+  let url: string | null = start;
+  let pages = 0;
+  while (url && pages < maxPages) {
+    pages += 1;
+    const { status, data } = fetchJsonSync<PolarPage<PolarRecord> | PolarRecord[]>(url, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${apiKey}` },
+    });
+    if (status === 401 || status === 403) throw new Error("Polar API key rejected");
+    if (status >= 400) {
+      if (path === "/refunds") return { items: out, next: null, pagesUsed: pages, incomplete: false };
+      throw new Error(`Polar error ${status}`);
+    }
+    for (const item of itemsOf(data)) out.push(mapFn(item));
+    url = nextUrl(data);
+  }
+  return { items: out, next: url, pagesUsed: pages, incomplete: Boolean(url) };
+}
+
+export function fetchPolarResultSync(
+  apiKey: string,
+  cursor?: SyncCursor,
+  maxPages = CONFIG.MAX_PAGES_PER_RUN,
+): ImportResult {
+  const bundle = emptyBundle();
+  let pagesLeft = maxPages;
+  let resource: SyncResource | "done" = (cursor?.resource as SyncResource) || "orders";
+  let pageToken = cursor?.pageToken;
+
+  while (pagesLeft > 0 && resource !== "done") {
+    const path = pathFor(resource);
+    const start =
+      pageToken ||
+      startUrl(path, cursor?.lastSyncedAt && !pageToken ? cursor : undefined);
+    const page = paginateBudgetSync(path, apiKey, mapFor(resource), start, pagesLeft);
+    assignResource(bundle, resource, page.items);
+    pagesLeft -= page.pagesUsed;
+    if (page.incomplete) {
+      return {
+        bundle,
+        cursor: { pageToken: page.next || undefined, resource, backfillComplete: false },
+        incomplete: true,
+      };
+    }
+    pageToken = undefined;
+    resource = nextResource(resource);
+  }
+
+  if (resource !== "done") {
+    return {
+      bundle,
+      cursor: { pageToken: undefined, resource, backfillComplete: false },
+      incomplete: true,
+    };
+  }
+  return { bundle, cursor: completedCursor(new Date().toISOString()), incomplete: false };
+}
+
 function paginateSync(
   path: string,
   apiKey: string,
   mapFn: (row: PolarRecord) => unknown,
   cursor?: SyncCursor,
 ): unknown[] {
-  const out: unknown[] = [];
-  let url: string | null = startUrl(path, cursor);
-  let pages = 0;
-  while (url && pages < CONFIG.MAX_PAGES) {
-    pages += 1;
-    const { status, data } = fetchJsonSync<PolarPage<PolarRecord> | PolarRecord[]>(url, {
-      headers: { Accept: "application/json", Authorization: `Bearer ${apiKey}` },
-    });
-    if (status === 401 || status === 403) throw new Error("Polar API key rejected");
-    if (status >= 400) throw new Error(`Polar error ${status}`);
-    for (const item of itemsOf(data)) out.push(mapFn(item));
-    url = nextUrl(data);
-  }
-  return out;
+  return paginateBudgetSync(
+    path,
+    apiKey,
+    mapFn,
+    cursor?.pageToken || startUrl(path, cursor),
+    CONFIG.MAX_PAGES,
+  ).items;
 }
 
 async function paginateAsync(
@@ -157,7 +253,7 @@ async function paginateAsync(
   fetchImpl: typeof fetch,
 ): Promise<unknown[]> {
   const out: unknown[] = [];
-  let url: string | null = startUrl(path, cursor);
+  let url: string | null = cursor?.pageToken || startUrl(path, cursor);
   let pages = 0;
   while (url && pages < CONFIG.MAX_PAGES) {
     pages += 1;
@@ -166,7 +262,10 @@ async function paginateAsync(
       fetchImpl,
     });
     if (status === 401 || status === 403) throw new Error("Polar API key rejected");
-    if (status >= 400) throw new Error(`Polar error ${status}`);
+    if (status >= 400) {
+      if (path === "/refunds") return out;
+      throw new Error(`Polar error ${status}`);
+    }
     for (const item of itemsOf(data)) out.push(mapFn(item));
     url = nextUrl(data);
   }
@@ -174,23 +273,7 @@ async function paginateAsync(
 }
 
 export function fetchPolarSync(apiKey: string, cursor?: SyncCursor): ImportBundle {
-  let refunds: NormalizedRefund[] = [];
-  try {
-    refunds = paginateSync("/refunds", apiKey, mapPolarRefund, cursor) as NormalizedRefund[];
-  } catch {
-    refunds = [];
-  }
-  return {
-    orders: paginateSync("/orders", apiKey, mapPolarOrder, cursor) as NormalizedOrder[],
-    subscriptions: paginateSync(
-      "/subscriptions",
-      apiKey,
-      mapPolarSubscription,
-      cursor,
-    ) as NormalizedSubscription[],
-    customers: paginateSync("/customers", apiKey, mapPolarCustomer, cursor) as NormalizedCustomer[],
-    refunds,
-  };
+  return fetchPolarResultSync(apiKey, cursor, CONFIG.MAX_PAGES).bundle;
 }
 
 export async function fetchPolar(
