@@ -31,6 +31,11 @@ export type Tier = "free" | "pro" | "business";
 
 export type BillingInterval = "month" | "year";
 
+/**
+ * Pro card lead copy. Monday MRR email digest is intentionally omitted:
+ * addon/src/lib/emailDigest.ts needs script.send_mail, which is not in the
+ * default appsscript.json oauthScopes (sensitive; opt-in only).
+ */
 export const pricing = {
   free: {
     tier: "free" as const,
@@ -38,11 +43,11 @@ export const pricing = {
     monthly: 0,
     annual: 0,
     sources: 1,
-    refresh: "Manual",
+    refresh: "Manual (one click)",
     stores: 1,
     features: [
       "1 source",
-      "Manual refresh",
+      "Manual (one click) refresh",
       "Full history backfill",
       "MRR dashboard tab",
     ],
@@ -51,14 +56,16 @@ export const pricing = {
     tier: "pro" as const,
     name: "Pro",
     monthly: 9,
-    /** Annual = 10× monthly (2 months free). */
+    /** Annual = 10× monthly (2 months free). Catalog only; UI is monthly. */
     annual: 90,
     sources: 4,
-    refresh: "Scheduled (hourly)",
+    refresh: "Hourly, every 6 hours, daily or weekly",
     stores: 1,
+    lead: "One MRR number across every store, refreshed while you sleep.",
+    leadNote: "Auto-refresh as often as hourly",
     features: [
-      "All four stores, plus CSV import",
-      "Scheduled refresh",
+      "All five sources in one sheet",
+      "Hourly, 6h, daily or weekly refresh",
       "Full history backfill",
       "MRR, churn, revenue by product",
     ],
@@ -69,7 +76,7 @@ export const pricing = {
     monthly: 19,
     annual: 190,
     sources: 4,
-    refresh: "Scheduled (hourly)",
+    refresh: "Hourly, every 6 hours, daily or weekly",
     stores: "Multiple",
     features: [
       "Everything in Pro",

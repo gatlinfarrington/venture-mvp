@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { InstallCta } from "@/components/InstallCta";
 import { Reveal } from "@/components/Reveal";
+import { SampleSheetLink } from "@/components/SampleSheetLink";
 import { REFUND_LINE } from "@/lib/copy";
 import { marketplaceUrlClient } from "@/lib/marketplace-client";
 import { checkoutEnabled, pricing, type BillingInterval } from "@/lib/site";
@@ -72,6 +73,8 @@ export function Pricing({ variant = "section" }: Props) {
             const featured = plan.tier === "pro";
             const btnClass = featured ? "btn btn-primary" : "btn btn-secondary";
             const cardClass = `price-card${featured ? " is-featured" : ""}`;
+            const lead = "lead" in plan ? plan.lead : null;
+            const leadNote = "leadNote" in plan ? plan.leadNote : null;
             const body = (
               <>
                 <div className="price-card-top">
@@ -81,7 +84,13 @@ export function Pricing({ variant = "section" }: Props) {
                     <span>{plan.tier === "free" ? " forever" : "/mo"}</span>
                   </p>
                 </div>
-                <ul className="price-features">
+                {lead ? (
+                  <div className="price-pro-lead">
+                    <p className="price-pro-lead-text">{lead}</p>
+                    {leadNote ? <p className="price-pro-lead-note mono muted">{leadNote}</p> : null}
+                  </div>
+                ) : null}
+                <ul className={`price-features${lead ? " has-lead" : ""}`}>
                   {plan.features.map((f) => (
                     <li key={f}>{f}</li>
                   ))}
@@ -95,6 +104,7 @@ export function Pricing({ variant = "section" }: Props) {
                     >
                       {listing ? "Install free" : "Join the launch list"}
                     </InstallCta>
+                    <SampleSheetLink className="btn btn-secondary" source="pricing-free-sample" />
                   </div>
                 ) : paidCheckoutReady ? (
                   <div className="price-cta-stack">
@@ -121,7 +131,6 @@ export function Pricing({ variant = "section" }: Props) {
                 )}
               </>
             );
-            // /pricing is a page-top layout: no Reveal on cards. Home keeps Reveal (below fold).
             if (variant === "page") {
               return (
                 <div key={plan.tier} className={cardClass}>
@@ -140,6 +149,10 @@ export function Pricing({ variant = "section" }: Props) {
             );
           })}
         </div>
+        <p className="pricing-upgrade-note">
+          Free covers one store with one-click refresh. Upgrade when you sell in two places or want
+          it to run on its own.
+        </p>
         {showLaunchCaption ? (
           <p className="pricing-grid-caption mono muted">
             Opens with the Marketplace listing

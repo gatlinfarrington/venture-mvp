@@ -66,6 +66,11 @@ const setup = [
     title: "API keys",
     body: "Where keys are stored, how to rotate them, and what never leaves your sheet.",
   },
+  {
+    href: "/docs/mrr-and-churn",
+    title: "How we calculate MRR and churn",
+    body: "Interval normalization, monthly conversion, and logo churn windows from the add-on code.",
+  },
 ] as const;
 
 const help = [

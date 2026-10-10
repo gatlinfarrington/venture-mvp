@@ -1055,6 +1055,23 @@ a.chip[aria-current="page"] {
   color: var(--c-ink-muted);
 }
 
+.step-keys-note {
+  margin: 0;
+  font-size: var(--t-mono-size);
+  max-width: 36ch;
+}
+
+.step-keys-note a {
+  color: var(--c-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--c-border);
+  text-underline-offset: 3px;
+}
+
+.step-keys-note a:hover {
+  text-decoration-color: var(--c-ink);
+}
+
 .step-frame {
   border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
@@ -1423,6 +1440,43 @@ a.chip[aria-current="page"] {
 
 .price-card .price-features {
   margin-top: var(--space-6); /* price → list 24px */
+}
+
+.price-card .price-features.has-lead {
+  margin-top: var(--space-4); /* lead → bullets 16px */
+}
+
+.price-pro-lead {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.price-pro-lead-text {
+  margin: 0;
+  font-size: var(--t-body-lg-size);
+  font-weight: 500;
+  line-height: var(--t-body-lg-lh);
+  letter-spacing: var(--t-body-lg-track);
+  color: var(--c-ink);
+  max-width: 28ch;
+}
+
+.price-pro-lead-note {
+  margin: 0;
+  font-size: var(--t-mono-size);
+  color: var(--c-ink-muted);
+}
+
+.pricing-upgrade-note {
+  margin: var(--space-6) auto 0;
+  max-width: 560px;
+  text-align: center;
+  font-size: var(--t-body-size);
+  font-weight: var(--t-body-weight);
+  line-height: var(--t-body-lh);
+  color: var(--c-ink-muted);
 }
 
 .price-card.is-featured {
@@ -3309,5 +3363,89 @@ a.tag-pill:hover {
   .blog-dense-list li {
     grid-template-columns: 1fr;
     gap: var(--space-1);
+  }
+}
+
+/* /vs/polar-dashboard */
+.vs-polar-h1 {
+  text-wrap: balance;
+}
+
+.vs-polar-lede {
+  max-width: 56ch;
+}
+
+.vs-combined-table {
+  margin: var(--space-10) 0 0;
+  max-width: 28rem;
+}
+
+.vs-combined-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vs-combined-table td {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--c-hairline);
+  font-size: var(--t-mono-size);
+}
+
+.vs-combined-table td.n {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.vs-combined-table tr.vs-combined-total td {
+  border-top: 2px solid var(--c-ink);
+  border-bottom: none;
+  padding-top: var(--space-4);
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.vs-combined-dot {
+  display: inline-block;
+  width: var(--space-2);
+  height: var(--space-2);
+  margin-right: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--c-signal);
+  vertical-align: middle;
+}
+
+.vs-combined-table figcaption {
+  margin-top: var(--space-3);
+  font-size: var(--t-mono-size);
+}
+
+.vs-polar-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+}
+
+.vs-polar-ghost {
+  font-size: var(--t-ui-sm-size);
+  color: var(--c-ink-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--c-border);
+  text-underline-offset: 3px;
+}
+
+.vs-polar-ghost:hover {
+  color: var(--c-ink);
+  text-decoration-color: var(--c-ink);
+}
+
+.vs-polar-compare {
+  margin-top: var(--space-12);
+}
+
+@media (min-width: 901px) {
+  .compare-table-3 {
+    min-width: 720px;
   }
 }

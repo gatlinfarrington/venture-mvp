@@ -4,8 +4,10 @@ import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
 import { ResponsiveCrop } from "@/components/ResponsiveCrop";
 import { Reveal } from "@/components/Reveal";
+import { SampleSheetLink } from "@/components/SampleSheetLink";
 import { brand, marketplaceUrl } from "@/lib/brand";
 import { REFUND_LINE } from "@/lib/copy";
+import Link from "next/link";
 
 export function Hero() {
   const listing = marketplaceUrl();
@@ -36,9 +38,13 @@ export function Hero() {
                 <a className="btn btn-secondary" href="#dashboard">
                   See the dashboard
                 </a>
+                <SampleSheetLink className="btn btn-secondary" source="hero-sample" />
               </>
             ) : (
-              <LaunchInvite id="launch" source="hero" />
+              <>
+                <LaunchInvite id="launch" source="hero" />
+                <SampleSheetLink className="btn btn-secondary" source="hero-sample" />
+              </>
             )}
           </div>
           {!listing ? (
@@ -67,11 +73,21 @@ export function Hero() {
 }
 
 export function HowItWorks() {
-  const steps = [
+  const steps: Array<{
+    n: string;
+    title: string;
+    body: string;
+    keysNote?: boolean;
+    src: string;
+    w: number;
+    h: number;
+    alt: string;
+  }> = [
     {
       n: "01",
       title: "Connect",
       body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe, or import CSV for anything else. No OAuth dance with those stores: the add-on reads what you grant.",
+      keysNote: true,
       src: "/design/how-connect-2x.png",
       w: 600,
       h: 600,
@@ -110,6 +126,12 @@ export function HowItWorks() {
               <span className="step-num">{step.n}</span>
               <h3 className="h3">{step.title}</h3>
               <p className="muted">{step.body}</p>
+              {step.keysNote ? (
+                <p className="step-keys-note mono muted">
+                  Keys stay in your Google account. We never receive them. Rotate anytime.{" "}
+                  <Link href="/security">How it works →</Link>
+                </p>
+              ) : null}
               <div className="step-frame">
                 <ResponsiveCrop
                   desktop={step.src}
