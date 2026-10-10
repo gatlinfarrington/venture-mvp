@@ -560,7 +560,7 @@ h2 {
 }
 
 .hero-store {
-  width: 168px;
+  width: 100%;
   background: transparent;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
