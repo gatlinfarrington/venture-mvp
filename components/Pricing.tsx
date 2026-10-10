@@ -59,7 +59,7 @@ export function Pricing({ variant = "section" }: Props) {
             <p className="eyebrow">Pricing</p>
             <h1>Free to start. Paid plans open at launch.</h1>
             <p className="mono muted pricing-ann">
-              Prices are estimates until launch. Annual billing is two months free.
+              Annual billing is two months free.
             </p>
           </header>
         ) : (
@@ -67,7 +67,7 @@ export function Pricing({ variant = "section" }: Props) {
             <p className="eyebrow">Pricing</p>
             <h2 className="h2">Free to start. Paid plans open at launch.</h2>
             <p className="mono muted pricing-ann">
-              Prices are estimates until launch. Annual billing is two months free.
+              Annual billing is two months free.
             </p>
           </Reveal>
         )}

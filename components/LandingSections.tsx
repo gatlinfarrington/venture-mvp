@@ -51,7 +51,7 @@ export function Hero() {
               </div>
               <div>
                 <dt>Sources</dt>
-                <dd>Lemon Squeezy, Polar, Gumroad</dd>
+                <dd>Lemon Squeezy, Polar, Gumroad and Stripe, plus CSV</dd>
               </div>
               <div>
                 <dt>Free plan</dt>
@@ -73,7 +73,7 @@ export function HowItWorks() {
     {
       n: "01",
       title: "Connect",
-      body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe. No OAuth dance with those stores: the add-on reads what you grant.",
+      body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe, or import CSV for anything else. No OAuth dance with those stores: the add-on reads what you grant.",
       desktop: "/design/how-connect-2x.png",
       phone: "/design/how-connect-phone-2x.png",
       alt: "Connect sources panel with example store connections",

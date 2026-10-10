@@ -27,8 +27,8 @@ const compareRows = [
   {
     label: "Sources",
     free: String(pricing.free.sources),
-    pro: "All three",
-    business: "All three",
+    pro: "LS, Polar, Gumroad, Stripe + CSV",
+    business: "LS, Polar, Gumroad, Stripe + CSV",
   },
   {
     label: "Refresh",
@@ -68,10 +68,6 @@ const faq = [
   {
     q: "What about refunds?",
     a: REFUND_LINE,
-  },
-  {
-    q: "Are prices final?",
-    a: "No. They're estimates until launch.",
   },
 ];
 

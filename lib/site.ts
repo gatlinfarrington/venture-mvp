@@ -57,7 +57,7 @@ export const pricing = {
     refresh: "Scheduled (hourly)",
     stores: 1,
     features: [
-      "All three sources",
+      "Lemon Squeezy, Polar, Gumroad, Stripe + CSV",
       "Scheduled refresh",
       "Full history backfill",
       "MRR, churn, revenue by product",

@@ -50,11 +50,11 @@ export const seoPages: SeoPage[] = [
   {
     slug: "stripe-to-google-sheets",
     title: "Stripe to Google Sheets: sync charges, subs, and MRR",
-    description: `Import Stripe charges, subscriptions, customers, and refunds into Google Sheets with ${brand.name}. Stack Stripe MRR beside Lemon Squeezy, Polar, and Gumroad.`,
+    description: `Import Stripe charges, subscriptions, customers, and refunds into Google Sheets with ${brand.name}. Stack Stripe MRR beside Lemon Squeezy, Polar, and Gumroad, or bring other stores via CSV.`,
     h1: "Stripe revenue, synced into Google Sheets",
-    lede: `Stripe’s Dashboard is the system of record for payouts and disputes. ${brand.name} pulls charges, subscriptions, customers, and refunds into named tabs so you can QUERY, share, and stack MRR with Lemon Squeezy, Polar, and Gumroad in one sheet.`,
+    lede: `Stripe’s Dashboard is the system of record for payouts and disputes. ${brand.name} pulls charges, subscriptions, customers, and refunds into named tabs so you can QUERY, share, and stack MRR with Lemon Squeezy, Polar, Gumroad, and CSV imports in one sheet.`,
     ogEyebrow: "Stripe",
-    ogTitle: "Stripe → Google Sheets",
+    ogTitle: "Stripe to Google Sheets",
     sections: [
       {
         h2: "What syncs from Stripe",
@@ -62,8 +62,8 @@ export const seoPages: SeoPage[] = [
           "Connect a restricted read-only Stripe API key. The add-on backfills charges (as orders), subscriptions with MRR contribution, customers, and refunds into stable column headers, then scheduled sync keeps the sheet current on Pro and Business.",
         ],
         bullets: [
-          "Charges → Orders tab (amount, email, status, country)",
-          "Subscriptions → MRR contribution and interval",
+          "Charges to Orders tab (amount, email, status, country)",
+          "Subscriptions to MRR contribution and interval",
           "Customers and refunds linked by Stripe ids",
         ],
       },
@@ -75,13 +75,13 @@ export const seoPages: SeoPage[] = [
         bullets: [
           "Stripe Dashboard: payouts, disputes, Radar, Tax",
           "Google Sheets: formulas, shared models, multi-source MRR",
-          `${brand.name}: syncs Stripe alongside Lemon Squeezy, Polar, and Gumroad`,
+          `${brand.name}: Lemon Squeezy, Polar, Gumroad and Stripe, plus CSV import for anything else`,
         ],
       },
       {
         h2: "How to connect",
         paragraphs: [
-          `Install ${brand.name}, open the sidebar, choose Stripe, and paste a restricted key with read access to charges, subscriptions, customers, and refunds. Run Backfill once, then enable scheduled refresh on Pro or Business.`,
+          `Install ${brand.name}, open the sidebar, choose Stripe, and paste a restricted key with read access to charges, subscriptions, customers, and refunds. Run Backfill once, then enable scheduled refresh on Pro or Business. For stores without an API, use CSV import in the sidebar.`,
         ],
       },
     ],

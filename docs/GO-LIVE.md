@@ -60,11 +60,17 @@ Optional:
 | Variable | Notes |
 | --- | --- |
 | `STRIPE_PRICE_*` | Override lookup_keys with fixed price IDs |
-| `STRIPE_SHOW_ADMIN_BANNER=1` | Site-wide admin warning strip (owner only — turn off for public) |
+| `STRIPE_SHOW_ADMIN_BANNER=1` | Site-wide admin warning strip (owner only; turn off for public) |
 | `STRIPE_ADMIN_TOKEN` or `LICENSE_API_SECRET` | Bearer token for `GET /api/admin/stripe-status` |
-| `NEXT_PUBLIC_INSTALL_URL` | Marketplace listing URL |
+| `NEXT_PUBLIC_MARKETPLACE_URL` | Workspace Marketplace listing URL (preferred). Flips Install CTAs from launch-list capture to the listing. |
+| `NEXT_PUBLIC_INSTALL_URL` | Legacy alias for `NEXT_PUBLIC_MARKETPLACE_URL` |
 
-Paid CTAs enable as soon as `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is a real `pk_test_` / `pk_live_` value (see `checkoutEnabled` in `lib/site.ts`).
+**CTA flips (env only, no code change):**
+
+- Paid Checkout buttons turn on when `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is a real `pk_test_` / `pk_live_` value (see `checkoutEnabled` in `lib/site.ts`). The Checkout API still needs `STRIPE_SECRET_KEY` (and webhook secret for licenses).
+- Install CTAs flip from “Join the launch list” to the Marketplace listing when `NEXT_PUBLIC_MARKETPLACE_URL` (or `NEXT_PUBLIC_INSTALL_URL`) is set.
+
+**Launch-list email sends:** if you send launch emails (Resend or similar), use `launchListUnsubscribeHeaders(email)` and `launchUnsubscribeFooter(email)` from `lib/launch-email.ts` so every message has a one-click unsubscribe URL plus `List-Unsubscribe` / `List-Unsubscribe-Post`. Optional `LAUNCH_UNSUB_SECRET` signs tokens (falls back to `LICENSE_API_SECRET` / `STRIPE_WEBHOOK_SECRET`).
 
 ## 4. Verify
 
