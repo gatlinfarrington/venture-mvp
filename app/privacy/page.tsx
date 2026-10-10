@@ -39,9 +39,10 @@ export default function PrivacyPage() {
         </p>
         <h3>2. Source API keys</h3>
         <p>
-          API keys or access tokens you paste into the add-on are stored in Apps Script Properties
-          on that spreadsheet’s script project so sync can run from Google’s servers to the source
-          APIs. Those keys are not stored in our license database or marketing backend.
+          API keys or access tokens you paste into the add-on are stored in Apps Script User
+          Properties for your Google account (not in the sheet cells, and not on{" "}
+          {brand.name} servers) so sync can call the source APIs. Those keys are not stored in our
+          license database or marketing backend.
         </p>
         <h3>3. Account and billing data</h3>
         <p>When you purchase a paid plan we process, through Stripe:</p>
@@ -63,15 +64,33 @@ export default function PrivacyPage() {
 
         <h2>Google user data</h2>
         <p>
-          The add-on uses Google OAuth / Apps Script authorization limited to the spreadsheet it is
-          installed on and related Drive file access required to operate that spreadsheet. We do
-          not read Gmail, Google Contacts, Calendar, or unrelated Drive files.
+          The add-on uses Google OAuth / Apps Script authorization limited to these scopes:
         </p>
-        <p>Google user data (spreadsheet contents and file metadata needed for the add-on) is used only to:</p>
+        <ul>
+          <li>
+            <code>spreadsheets.currentonly</code> — read and write only the spreadsheet the add-on
+            is opened from
+          </li>
+          <li>
+            <code>script.external_request</code> — HTTPS calls to Lemon Squeezy, Polar, Gumroad, and
+            our license API
+          </li>
+          <li>
+            <code>script.scriptapp</code> — install time-driven triggers for scheduled refresh
+          </li>
+          <li>
+            <code>script.container.ui</code> — sidebar and menu UI inside Sheets
+          </li>
+        </ul>
+        <p>
+          We do not request Google Drive, Gmail, Contacts, or Calendar scopes, and we do not read
+          other Drive files.
+        </p>
+        <p>Google user data (contents of the current spreadsheet) is used only to:</p>
         <ul>
           <li>Create and update tabs the add-on manages</li>
           <li>Write synced commerce rows and dashboard formulas</li>
-          <li>Read settings and license status the user stores in the sheet / script properties</li>
+          <li>Read settings the user keeps in the sheet and keys/license state in User Properties</li>
         </ul>
 
         <h2>Google API Services Limited Use disclosure</h2>

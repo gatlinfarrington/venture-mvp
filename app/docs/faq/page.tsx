@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "Which Google scopes does the add-on use?",
-    a: "Scopes are limited to the spreadsheet the add-on is installed on (and related Drive file access required by Apps Script). We do not request Gmail, Contacts, or broad Drive access. See the Privacy policy for Google user data and Limited Use.",
+    a: "Only: current spreadsheet (spreadsheets.currentonly), outbound HTTPS for source and license APIs (script.external_request), time-driven triggers (script.scriptapp), and sidebar/menu UI (script.container.ui). No Google Drive, Gmail, or Contacts scopes. See the Privacy policy for Google user data and Limited Use.",
   },
   {
     q: "Can I use more than one storefront?",

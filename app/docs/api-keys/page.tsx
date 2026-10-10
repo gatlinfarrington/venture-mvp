@@ -20,10 +20,10 @@ export default function ApiKeysPage() {
         </p>
         <h2>Where keys are stored</h2>
         <p>
-          When you paste a key in the sidebar, {brand.name} writes it to Apps Script Properties on
-          the spreadsheet’s script project. Keys are not sent to {brand.domain} marketing servers
-          and are not stored in our license database. Sync calls go from Apps Script to the source
-          APIs directly.
+          When you paste a key in the sidebar, {brand.name} writes it to Apps Script User Properties
+          for your Google account (not into sheet cells). Keys are not sent to {brand.domain}{" "}
+          marketing servers and are not stored in our license database. Sync calls go from Apps
+          Script to the source APIs directly.
         </p>
         <h2>License keys vs source keys</h2>
         <p>
@@ -45,7 +45,7 @@ export default function ApiKeysPage() {
         <ul>
           <li>Google account passwords</li>
           <li>Stripe secret keys for your customer payments (Checkout for {brand.name} licenses is separate)</li>
-          <li>Gmail, Contacts, or unrelated Drive scopes</li>
+          <li>Gmail, Contacts, or Google Drive scopes</li>
         </ul>
       </div>
     </main>

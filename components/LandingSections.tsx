@@ -241,7 +241,7 @@ export function FAQ() {
     },
     {
       q: "What Google scopes do you need?",
-      a: "The Marketplace listing will show the final OAuth scopes. The planned set is limited to the spreadsheet the add-on is installed on (plus related Drive file access required by Apps Script) — not Gmail or Contacts. Confirm on the consent screen at install.",
+      a: "Only four Apps Script scopes: the current spreadsheet (spreadsheets.currentonly), outbound HTTPS to source and license APIs (script.external_request), time-driven triggers for scheduled refresh (script.scriptapp), and the sidebar/menu UI (script.container.ui). No Google Drive, Gmail, or Contacts access. Confirm on the consent screen at install.",
     },
     {
       q: "Lemon Squeezy is moving to Stripe — will this still work?",
