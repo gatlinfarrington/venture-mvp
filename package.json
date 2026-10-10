@@ -15,7 +15,10 @@
     "stripe:sync-prices": "node scripts/stripe-sync-prices.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "test:lhci": "lhci autorun --config=lighthouserc.cjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.39.0",
@@ -29,6 +32,8 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.7",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.64.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/node": "22.15.29",
