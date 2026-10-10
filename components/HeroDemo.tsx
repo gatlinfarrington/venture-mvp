@@ -12,7 +12,10 @@ const PRODUCTS = [
 ];
 const AMOUNTS = [9, 19, 29, 49, 12];
 const BASE_BARS = [52, 55, 58, 57, 61, 64, 66, 70, 73, 76, 80, 84];
-const START_MRR = 4180;
+/** 0% reference for the example delta. */
+const BASE_MRR = 4180;
+const SEED_DELTA = 0.032;
+const START_MRR = Math.round(BASE_MRR * (1 + SEED_DELTA));
 
 type Row = {
   id: string;
@@ -31,6 +34,10 @@ const SEED_ROWS: Row[] = [
 
 function fmt(v: number) {
   return `$${Math.round(v).toLocaleString("en-US")}`;
+}
+
+function deltaLabel(mrr: number) {
+  return `+${(((mrr / BASE_MRR) - 1) * 100).toFixed(1)}%`;
 }
 
 function prefersReducedMotion() {
@@ -55,7 +62,7 @@ export function HeroDemo() {
   const mrrRef = useRef(START_MRR);
   const orderN = useRef(10450);
   const [mrr, setMrr] = useState(START_MRR);
-  const [delta, setDelta] = useState("+0.0%");
+  const [delta, setDelta] = useState(deltaLabel(START_MRR));
   const [rows, setRows] = useState<Row[]>(SEED_ROWS);
   const [activeStores, setActiveStores] = useState([false, false, false]);
   const [barHeights, setBarHeights] = useState(
@@ -85,7 +92,7 @@ export function HeroDemo() {
     if (prefersReducedMotion()) {
       mrrRef.current = target;
       setMrr(target);
-      setDelta(`+${(((target / START_MRR) - 1) * 100).toFixed(1)}%`);
+      setDelta(deltaLabel(target));
       return;
     }
 
@@ -94,11 +101,12 @@ export function HeroDemo() {
     const step = (t: number) => {
       if (t0 === null) t0 = t;
       const k = Math.min(1, Math.max(0, (t - t0) / ms));
+      // ease-out quart
       const e = 1 - Math.pow(1 - k, 4);
       const next = Math.max(START_MRR, from + (target - from) * e);
       mrrRef.current = next;
       setMrr(next);
-      setDelta(`+${(((next / START_MRR) - 1) * 100).toFixed(1)}%`);
+      setDelta(deltaLabel(next));
       if (k < 1) raf.current = requestAnimationFrame(step);
       else raf.current = null;
     };
@@ -172,7 +180,7 @@ export function HeroDemo() {
     orderN.current = 10450;
     mrrRef.current = START_MRR;
     setMrr(START_MRR);
-    setDelta("+0.0%");
+    setDelta(deltaLabel(START_MRR));
     setRows(SEED_ROWS);
     setActiveStores([false, false, false]);
     setBarHeights(BASE_BARS.map((h) => (h - 40) * 2));
@@ -270,43 +278,51 @@ export function HeroDemo() {
           ))}
         </div>
 
-        <div className="hero-sheet" aria-hidden="true">
-          <div className="hero-sheet-top">
-            <div className="eyebrow">MRR · all sources</div>
-            <div className="hero-mrr">
-              <b>{fmt(mrr)}</b>
-              <span className="hero-delta">{delta}</span>
+        <div className="hero-sheet-wrap">
+          <div className="hero-sheet" aria-hidden="true">
+            <div className="hero-sheet-top">
+              <div className="eyebrow">MRR · all sources</div>
+              <div className="hero-mrr">
+                <b>{fmt(mrr)}</b>
+                <span className="hero-delta">{delta}</span>
+              </div>
+              <div className="hero-bars">
+                {barHeights.map((h, i) => (
+                  <i
+                    key={i}
+                    style={{ height: `${h}%` }}
+                    className={i === barHeights.length - 1 ? "signal" : undefined}
+                  />
+                ))}
+              </div>
             </div>
-            <div className="hero-bars">
-              {barHeights.map((h, i) => (
-                <i
-                  key={i}
-                  style={{ height: `${h}%` }}
-                  className={i === barHeights.length - 1 ? "signal" : undefined}
-                />
-              ))}
-            </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Order</th>
-                <th>Source</th>
-                <th>Product</th>
-                <th style={{ textAlign: "right" }}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} className={r.fresh ? "new" : undefined}>
-                  <td className="mono">{r.id}</td>
-                  <td>{r.source}</td>
-                  <td>{r.product}</td>
-                  <td className="n">${r.amount}.00</td>
+            <table>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Source</th>
+                  <th className="hero-col-product">Product</th>
+                  <th style={{ textAlign: "right" }}>Amount</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className={r.fresh ? "new" : undefined}>
+                    <td className="mono">{r.id}</td>
+                    <td>{r.source}</td>
+                    <td className="hero-col-product">{r.product}</td>
+                    <td className="n">${r.amount}.00</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="hero-demo-foot">
+            <p className="hero-note mono">Example data · no real customers</p>
+            <button type="button" className="btn btn-secondary btn-sm hero-replay" onClick={run}>
+              Replay
+            </button>
+          </div>
         </div>
 
         {packets.map((p) => (
@@ -320,12 +336,7 @@ export function HeroDemo() {
             +${p.amount}
           </div>
         ))}
-
-        <div className="hero-note mono">Example data · no real customers</div>
       </div>
-      <button type="button" className="btn btn-secondary btn-sm hero-replay" onClick={run}>
-        Replay
-      </button>
     </div>
   );
 }

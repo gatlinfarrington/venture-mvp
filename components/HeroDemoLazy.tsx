@@ -8,16 +8,20 @@ const HeroDemo = dynamic(
     ssr: false,
     loading: () => (
       <div className="hero-stage" aria-hidden="true">
-        <div className="hero-sheet">
-          <div className="hero-sheet-top">
-            <div className="eyebrow">MRR · all sources</div>
-            <div className="hero-mrr">
-              <b>$4,180</b>
-              <span className="hero-delta">+0.0%</span>
+        <div className="hero-sheet-wrap">
+          <div className="hero-sheet">
+            <div className="hero-sheet-top">
+              <div className="eyebrow">MRR · all sources</div>
+              <div className="hero-mrr">
+                <b>$4,314</b>
+                <span className="hero-delta">+3.2%</span>
+              </div>
             </div>
           </div>
+          <div className="hero-demo-foot">
+            <p className="hero-note mono">Example data · no real customers</p>
+          </div>
         </div>
-        <div className="hero-note mono">Example data · no real customers</div>
       </div>
     ),
   },

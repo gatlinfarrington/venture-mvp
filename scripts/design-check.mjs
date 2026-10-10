@@ -5,6 +5,7 @@
  * Fails on:
  * - linear/radial/conic gradients or glow-like text-shadow/box-shadow (outside exceptions)
  * - dark page backgrounds on html/body
+ * - --c-dark-bg or backgrounds darker than #e5e5e5 outside buttons
  * - hex/rgb/hsl colors outside design/tokens.css
  * - raw px font-size / spacing outside token files
  * - emoji in UI strings or JSX
@@ -187,6 +188,42 @@ function scanFile(file) {
         report(file, line, "light-only", "dark background on html/body disallowed for v1");
       }
     }
+
+    // Ban --c-dark-bg and hex backgrounds darker than #e5e5e5 outside buttons.
+    let selectorCtx = "";
+    lines.forEach((line, i) => {
+      const n = i + 1;
+      if (line.includes("{")) {
+        selectorCtx = line.split("{")[0] ?? selectorCtx;
+      }
+      if (line.includes("}")) selectorCtx = "";
+      const isButton =
+        /\.btn\b|button\b|\.icon-btn\b/i.test(selectorCtx) ||
+        /\.btn\b|button\b|\.icon-btn\b/i.test(line);
+      if (lineHasException(lines, i, "light-only") || lineHasException(lines, i, "A1")) return;
+
+      if (/--c-dark-bg/.test(line) && /background/.test(line) && !isButton) {
+        report(file, n, "light-only", "--c-dark-bg background outside buttons disallowed");
+      }
+
+      const bgMatch = line.match(/background(?:-color)?\s*:\s*([^;]+)/i);
+      if (bgMatch && !isButton) {
+        const hexes = bgMatch[1].match(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g) || [];
+        for (const hex of hexes) {
+          let h = hex.slice(1);
+          if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+          const value = parseInt(h, 16);
+          if (value < 0xe5e5e5) {
+            report(
+              file,
+              n,
+              "light-only",
+              `background ${hex} is darker than #e5e5e5 outside buttons`,
+            );
+          }
+        }
+      }
+    });
   }
 }
 

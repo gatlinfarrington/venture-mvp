@@ -63,7 +63,10 @@ const config = {
       "/^(margin|margin-block|margin-inline|margin-top|margin-right|margin-bottom|margin-left|padding|padding-block|padding-inline|padding-top|padding-right|padding-bottom|padding-left|gap|row-gap|column-gap|top|right|bottom|left|inset)$/":
         ["/[1-9][0-9]*(\\.[0-9]+)?px/"],
       "/^font-size$/": ["/[0-9]+(\\.[0-9]+)?px/"],
-      "/^background(-color)?$/": ["/#0[aA]0[aA]0[bB]/"],
+      "/^background(-color)?$/": [
+        "/#0[aA]0[aA]0[bB]/",
+        "/var\\(\\s*--c-dark-bg/",
+      ],
     },
   },
 };
