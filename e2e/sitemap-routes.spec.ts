@@ -86,3 +86,40 @@ test("covers every sitemap route at this viewport", async ({ page, request }, te
     });
   }
 });
+
+test("404 page returns 404 with noindex and stable screenshot", async ({ page }, testInfo) => {
+  const viewport = testInfo.project.name.includes("mobile")
+    ? "mobile-390"
+    : "desktop-1440";
+
+  const response = await page.goto("/this-page-is-not-a-real-route", {
+    waitUntil: "domcontentloaded",
+  });
+  expect(response, "404 navigation").not.toBeNull();
+  expect(response!.status(), "404 HTTP status").toBe(404);
+
+  await page.waitForLoadState("load");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(
+    "This page isn't in the sheet",
+  );
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    "content",
+    "noindex",
+  );
+
+  await page.waitForTimeout(400);
+  await expectNoHorizontalOverflow(page);
+
+  const artifactPath = await saveFullPageScreenshot(page, "/404", viewport);
+  await testInfo.attach(`${viewport}/404`, {
+    path: artifactPath,
+    contentType: "image/png",
+  });
+
+  await expect(page).toHaveScreenshot("404.png", {
+    fullPage: false,
+    maxDiffPixelRatio: 0.05,
+    animations: "disabled",
+    caret: "hide",
+  });
+});

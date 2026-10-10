@@ -1848,6 +1848,67 @@ a.tag-pill:hover {
   color: var(--c-ink);
 }
 
+/* Long fenced code / tables must scroll inside the prose column, not widen the page. */
+.legal .prose,
+.seo-page .prose,
+.docs-page .prose,
+.docs-main .prose,
+.blog-post .prose {
+  min-width: 0;
+}
+
+.legal .prose pre,
+.seo-page .prose pre,
+.docs-page .prose pre,
+.docs-main .prose pre,
+.blog-post .prose pre {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-hairline);
+  border-radius: 2px;
+  font-size: 0.875em;
+  line-height: 1.5;
+}
+
+.legal .prose pre code,
+.seo-page .prose pre code,
+.docs-page .prose pre code,
+.docs-main .prose pre code,
+.blog-post .prose pre code {
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: inherit;
+}
+
+.legal .prose :not(pre) > code,
+.seo-page .prose :not(pre) > code,
+.docs-page .prose :not(pre) > code,
+.docs-main .prose :not(pre) > code,
+.blog-post .prose :not(pre) > code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.legal .prose table,
+.seo-page .prose table,
+.docs-page .prose table,
+.docs-main .prose table,
+.blog-post .prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .changelog-body p {
   margin: 0;
 }
