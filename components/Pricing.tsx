@@ -4,7 +4,6 @@ import { useState } from "react";
 import { InstallCta } from "@/components/InstallCta";
 import { Reveal } from "@/components/Reveal";
 import { REFUND_LINE } from "@/lib/copy";
-import { marketplaceUrlClient } from "@/lib/marketplace-client";
 import { checkoutEnabled, pricing, type BillingInterval } from "@/lib/site";
 
 type Props = {
@@ -18,14 +17,11 @@ export function Pricing({ variant = "section" }: Props) {
   const [pendingTier, setPendingTier] = useState<string | null>(null);
 
   const plans = [pricing.free, pricing.pro, pricing.business];
-  const listing = marketplaceUrlClient();
-  const paidCheckoutReady = Boolean(listing) && checkoutEnabled;
+  /** Live Checkout when Stripe publishable key is set; secret + prices resolve server-side. */
+  const paidCheckoutReady = checkoutEnabled;
 
   async function startCheckout(tier: "pro" | "business", billing: BillingInterval) {
-    if (!checkoutEnabled) {
-      setCheckoutMessage("Checkout opens at launch. Stripe keys are not configured yet.");
-      return;
-    }
+    if (!checkoutEnabled) return;
     setPendingTier(tier);
     setCheckoutMessage(null);
     try {
@@ -140,11 +136,15 @@ export function Pricing({ variant = "section" }: Props) {
                     >
                       {pendingTier === plan.tier ? "Opening…" : `Get ${plan.name}`}
                     </button>
+                    <p className="price-cta-caption mono muted">{REFUND_LINE}</p>
                   </div>
                 ) : (
                   <div className="price-cta-stack">
-                    <InstallCta className="btn btn-secondary" source={`pricing-${plan.tier}`}>
-                      Get launch invite
+                    <InstallCta
+                      className={featured ? "btn btn-primary" : "btn btn-secondary"}
+                      source={`pricing-${plan.tier}`}
+                    >
+                      Opens at launch
                     </InstallCta>
                     <p className="price-cta-caption mono muted">{REFUND_LINE}</p>
                   </div>

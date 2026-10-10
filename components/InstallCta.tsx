@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { brand } from "@/lib/brand";
 import { marketplaceUrlClient } from "@/lib/marketplace-client";
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 
 /**
  * Install / paid CTA. Links to the Marketplace listing when NEXT_PUBLIC_MARKETPLACE_URL
- * (or INSTALL_URL) is set; otherwise opens the launch-invite email capture.
+ * (or INSTALL_URL) is set; otherwise opens the early-access email capture.
  * Never links to the generic Workspace Marketplace homepage.
  */
 export function InstallCta({ children, className, source = "install" }: Props) {
@@ -64,8 +65,8 @@ export function InstallCta({ children, className, source = "install" }: Props) {
       setStatus("done");
       setMessage(
         json.created
-          ? "You're on the list. We'll email you when the Workspace listing opens."
-          : "You're already on the list. We'll email you at launch.",
+          ? "You're on the list. We'll send the install link the day Google approves the listing."
+          : "You're already on the list. We'll send the install link when it's approved.",
       );
     } catch {
       setStatus("error");
@@ -89,9 +90,9 @@ export function InstallCta({ children, className, source = "install" }: Props) {
           <div className="invite-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId}>
             {status === "done" ? (
               <div className="invite-confirm">
-                <p className="eyebrow">You&apos;re in</p>
+                <p className="eyebrow">You&apos;re on the list</p>
                 <h2 id={titleId} className="h3">
-                  Thanks. We&apos;ll ping you at launch.
+                  We&apos;ll email the install link when it&apos;s approved.
                 </h2>
                 <p className="muted">{message}</p>
                 <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>
@@ -100,13 +101,12 @@ export function InstallCta({ children, className, source = "install" }: Props) {
               </div>
             ) : (
               <form className="invite-form" onSubmit={onSubmit}>
-                <p className="eyebrow">Launch invite</p>
+                <p className="eyebrow">Early access</p>
                 <h2 id={titleId} className="h3">
-                  Get emailed when install opens
+                  Get the install link
                 </h2>
                 <p className="muted">
-                  The Workspace Marketplace listing isn&apos;t live yet. Leave your email and
-                  we&apos;ll notify you when you can install.
+                  {brand.name} is in Google review. Get the install link the day it&apos;s approved.
                 </p>
                 <label className="invite-label" htmlFor={`${titleId}-email`}>
                   Email
@@ -120,6 +120,7 @@ export function InstallCta({ children, className, source = "install" }: Props) {
                   autoComplete="email"
                   maxLength={254}
                   disabled={status === "submitting"}
+                  placeholder="you@company.com"
                 />
                 <div className="support-hp" aria-hidden="true">
                   <label htmlFor={`${titleId}-company`}>Company</label>

@@ -1,0 +1,178 @@
+---
+title: "Gumroad Sales Spreadsheet: Get Your Full History Into Google Sheets"
+description: "Three ways to get every Gumroad sale into Google Sheets: the CSV export, a free Apps Script you can copy, or an add-on. Plus formulas for monthly revenue and refunds."
+date: "2026-10-10"
+tags: ["guides", "gumroad", "sheets"]
+draft: false
+ogTitle: "Gumroad sales into Google Sheets"
+---
+
+Gumroad's dashboard is fine for checking today's sales. It's less helpful when you want to answer questions like "what did each product earn last year, after refunds?" or "how did this October compare to last October?" For those, you want every sale in a spreadsheet where you can sort, filter and write formulas.
+
+This guide covers three ways to get there, from free and manual to automatic, and then the formulas that turn a list of sales into answers.
+
+## Option 1: Export a CSV from Gumroad
+
+Gumroad can export your sales as a CSV from the dashboard. The export option has moved between the Sales, Analytics and Audience pages over the years; if you can't find it, search Gumroad's help center for "export sales."
+
+Import it with **File > Import > Upload** in Google Sheets and choose "Insert new sheet."
+
+**Good for:** a one-off look, tax time, a quick backup.
+**The catch:** it's a snapshot. Next month you export again, paste again, and fix the same column formats again. And if you paste over last month's rows, any notes or formulas you added next to them can shift out of line.
+
+## Option 2: Pull sales from the Gumroad API with Apps Script (free)
+
+If you're comfortable pasting code, Google Sheets can call Gumroad's API directly. The script below writes every sale into a tab and survives the two limits that usually break homemade versions:
+
+- **Gumroad returns 10 sales per request.** A store with 5,000 sales needs 500 requests.
+- **Apps Script stops any run after 6 minutes.** A big store won't finish in one go.
+
+So the script saves its place (Gumroad's `next_page_key`) after each page, stops itself before the time limit, and picks up where it left off the next time you run it.
+
+### Get an access token
+
+1. In Gumroad, go to **Settings > Advanced**.
+2. Create an application. Give it any name, and enter `http://127.0.0.1` as the redirect URI (it isn't used when the token is just for your own account).
+3. Open the application and click **Generate access token**. Copy it. Treat it like a password.
+
+### Add the script
+
+In your sheet, open **Extensions > Apps Script**, delete what's there, and paste this:
+
+```javascript
+// Run once with your token pasted in, then delete the token from this function.
+function saveGumroadToken() {
+  PropertiesService.getUserProperties().setProperty('GUMROAD_TOKEN', 'PASTE_TOKEN_HERE');
+}
+
+// Writes all Gumroad sales (newest first) to a "Gumroad sales" tab.
+// If it stops with "paused", run it again and it continues from where it left off.
+function syncGumroadSales() {
+  const props = PropertiesService.getUserProperties();
+  const token = props.getProperty('GUMROAD_TOKEN');
+  if (!token) throw new Error('Run saveGumroadToken first.');
+
+  const ss = SpreadsheetApp.getActive();
+  const sheet = ss.getSheetByName('Gumroad sales') || ss.insertSheet('Gumroad sales');
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['Sale ID', 'Created', 'Product', 'Email', 'Amount', 'Refunded', 'Chargeback']);
+  }
+
+  let pageKey = props.getProperty('GUMROAD_PAGE_KEY') || '';
+  const started = Date.now();
+
+  while (Date.now() - started < 5 * 60 * 1000) {   // stop at 5 minutes, before the 6-minute limit
+    let url = 'https://api.gumroad.com/v2/sales';
+    if (pageKey) url += '?page_key=' + encodeURIComponent(pageKey);
+
+    const res = UrlFetchApp.fetch(url, {
+      headers: { Authorization: 'Bearer ' + token },
+      muteHttpExceptions: true,
+    });
+    const code = res.getResponseCode();
+    if (code === 429) { Utilities.sleep(10000); continue; }   // rate limited: wait and retry
+    if (code !== 200) throw new Error('Gumroad returned ' + code + ': ' + res.getContentText());
+
+    const data = JSON.parse(res.getContentText());
+    const rows = (data.sales || []).map(s => [
+      s.id,
+      s.created_at,
+      s.product_name,
+      s.email,
+      Number(s.price) / 100,          // Gumroad sends amounts in cents
+      s.refunded === true,
+      s.chargedback === true,
+    ]);
+    if (rows.length) {
+      sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
+    }
+
+    if (!data.next_page_key) {        // no more pages: finished
+      props.deleteProperty('GUMROAD_PAGE_KEY');
+      return 'done';
+    }
+    pageKey = data.next_page_key;
+    props.setProperty('GUMROAD_PAGE_KEY', pageKey);
+  }
+  return 'paused: run syncGumroadSales again to continue';
+}
+```
+
+Run `saveGumroadToken` once (Google will ask you to approve access for your own script), then delete your token from the code and save. Run `syncGumroadSales`. If it says "paused," run it again until it says "done."
+
+A few notes:
+
+- The token is stored in your Google account's user properties, not in a cell, so sharing the sheet doesn't share the token.
+- Sales come back newest first. To see every field Gumroad sends (there are many more than seven), add `Logger.log(JSON.stringify(data.sales[0]))` after the `JSON.parse` line and check the log.
+- **Keeping it current:** after the first full run, new sales need a different approach, because starting over would duplicate rows. Gumroad's sales endpoint accepts `after=YYYY-MM-DD`, so a daily version fetches only sales since the last run and skips any Sale ID already in column A.
+- Partial refunds exist. The `refunded` flag only covers full refunds; Gumroad marks partial ones separately (`partially_refunded`). If you issue partial refunds, add that field.
+
+**Good for:** people who like owning the code.
+**The catch:** you maintain it. If Gumroad changes a field or pagination, the script breaks quietly and your sheet stops updating without telling you.
+
+## Option 3: A Sheets add-on that does the sync
+
+Add-ons handle the token, paging, retries and refreshes for you. RevenueSheet, which we make, is one built for this job: it pulls Gumroad sales, membership subscribers and refunds into named tabs, and it does the same for Polar and Lemon Squeezy if you sell there too. More on it at the end.
+
+## Turning sales into answers
+
+With sales in a tab (columns as in the script: A Sale ID, B Created, C Product, D Email, E Amount, F Refunded, G Chargeback), these formulas cover the questions people ask most.
+
+**Clean dates.** Gumroad's `created_at` is a timestamp string. Type `Date` in H1, then put this in H2 and fill it down:
+
+```
+=IF(B2="", "", DATEVALUE(LEFT(B2, 10)))
+```
+
+**Net revenue for a month** (refunds and chargebacks excluded), with the first day of the month in `K1`:
+
+```
+=SUMIFS(E:E, H:H, ">="&K1, H:H, "<"&EDATE(K1, 1), F:F, FALSE, G:G, FALSE)
+```
+
+**Revenue by product, all time, net of refunds:**
+
+```
+=QUERY(A:H, "select C, sum(E) where F = false and G = false group by C order by sum(E) desc label sum(E) 'Net revenue'", 1)
+```
+
+**Revenue by month, as a table you can chart:**
+
+```
+=QUERY(A:H, "select year(H), month(H)+1, sum(E) where F = false and G = false and H is not null group by year(H), month(H)+1 order by year(H), month(H)+1", 1)
+```
+
+(`month()` in QUERY counts from 0, hence the `+1`.)
+
+**Refund rate by product:**
+
+```
+=QUERY(A:H, "select C, count(A), sum(E) where F = true group by C", 1)
+```
+
+Divide each product's refunded count by its total sales count to get a rate. A product with a refund rate well above the rest usually has a description problem, not a product problem.
+
+**Unique customers:**
+
+```
+=COUNTUNIQUE(ARRAYFORMULA(LOWER(TRIM(D2:D))))
+```
+
+Lowercasing matters: the same buyer can appear as `Sam@Example.com` and `sam@example.com`.
+
+## If you sell memberships on Gumroad
+
+Sales show charges. They don't show which memberships are still running. For recurring revenue you need subscriber data (one request per membership product to `/v2/products/:id/subscribers`), and you need to divide quarterly, six-month and yearly memberships down to a monthly figure. Our guide to [tracking MRR across Gumroad, Polar and Lemon Squeezy](/blog/mrr-across-gumroad-polar-lemon-squeezy) has the formulas.
+
+## Doing it automatically with RevenueSheet
+
+RevenueSheet is a Google Sheets add-on. You paste your Gumroad access token once and it:
+
+- pulls your Gumroad sales, membership subscribers and refunds into Orders, Subscriptions, Customers and Refunds tabs;
+- builds a Dashboard tab with MRR, churn and revenue by product;
+- refreshes every hour on the paid plan, without you running anything;
+- does the same for Polar and Lemon Squeezy, combined in the same tabs, if you sell there too.
+
+Your data stays in your Google account. The add-on can only open the sheet it's installed in, and our server checks your license key and nothing else.
+
+Free for one store with manual refresh; $9/mo for hourly sync and all three platforms. [Install RevenueSheet for Google Sheets](/pricing)

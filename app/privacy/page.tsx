@@ -127,29 +127,39 @@ export default function PrivacyPage() {
           </li>
           <li>
             We do not allow humans to read Google user data unless you give affirmative consent for
-            specific messages, it is necessary for security/compliance, or we are required by law.
+            specific messages, it is necessary for security/compliance, or we are required by law,
             and then only with access limited to the minimum needed.
           </li>
         </ul>
 
         <h2>Subprocessors</h2>
-        <p>We use the following processors to run the website, licenses, and billing:</p>
+        <p>
+          These processors help run the website, license checks, support forms, billing, and the
+          add-on runtime. None of them receive your storefront API keys from us.
+        </p>
         <ul>
           <li>
-            <a href="https://vercel.com">Vercel</a>: hosts the marketing site and APIs
+            <a href="https://vercel.com">Vercel</a>: hosts the marketing site and API routes, and
+            may retain standard HTTP request logs (IP, user agent, URL) for security and reliability
           </li>
           <li>
             <a href="https://upstash.com">Upstash</a>: Redis storage for license records, support
-            submissions, and launch invites
+            form submissions, and early-access / launch-invite emails
           </li>
           <li>
-            <a href="https://stripe.com">Stripe</a>: payment processing and customer portal
+            <a href="https://stripe.com">Stripe</a>: Checkout, Customer Portal, subscription state,
+            and payment methods (card data never touches our servers)
+          </li>
+          <li>
+            <a href="https://workspace.google.com">Google</a> (Workspace / Apps Script / Sheets):
+            runs the add-on in your account and holds spreadsheet rows you sync; source API keys you
+            paste stay in Apps Script User Properties
           </li>
         </ul>
         <p>
           Source commerce APIs (Lemon Squeezy, Polar, Gumroad, Stripe) are called directly from your
           Google Apps Script project with keys you store in User Properties. Those keys are not
-          sent to our servers.
+          sent to our servers for sync.
         </p>
 
         <h2>Cookies and analytics</h2>
@@ -161,11 +171,39 @@ export default function PrivacyPage() {
 
         <h2>Retention</h2>
         <p>
-          License and billing records are kept while your subscription is active and for a
-          reasonable period afterward for accounting, tax, and fraud prevention (typically up to
-          seven years for financial records where required). Spreadsheet data retention is controlled
-          by you in Google Sheets.
+          Retention matches what the product actually stores today. We do not run automatic
+          deletion timers in code, so records we hold stay until you ask us to delete them (or you
+          delete them yourself where the product lets you).
         </p>
+        <ul>
+          <li>
+            <strong>Spreadsheet rows and source API keys:</strong> in your Google account. You
+            control retention by editing or deleting the sheet, removing keys in the sidebar, or
+            uninstalling the add-on.
+          </li>
+          <li>
+            <strong>License records</strong> (key, tier, status, Stripe customer/subscription ids,
+            email when provided): stored in Upstash Redis (or a local file in development) until you
+            ask us to delete them.
+          </li>
+          <li>
+            <strong>Support submissions</strong> (name, email, subject, message, timestamp): stored
+            in Upstash Redis (or a local file in development) until you ask us to delete them.
+          </li>
+          <li>
+            <strong>Early-access / launch-invite emails:</strong> stored (deduped) in Upstash Redis
+            (or a local file in development) until you ask us to delete them.
+          </li>
+          <li>
+            <strong>Vercel HTTP logs:</strong> retained under Vercel’s platform defaults for hosting
+            security and operations.
+          </li>
+          <li>
+            <strong>Stripe billing records:</strong> retained under{" "}
+            <a href="https://stripe.com/privacy">Stripe’s privacy policy</a> for processed payments
+            and subscriptions.
+          </li>
+        </ul>
 
         <h2>Deletion and access requests</h2>
         <p>You can:</p>
@@ -174,17 +212,15 @@ export default function PrivacyPage() {
           <li>Remove source API keys from the add-on sidebar / script properties</li>
           <li>Uninstall the add-on from the Google Workspace Marketplace / Extensions menu</li>
           <li>
-            Request deletion of license and billing records we store
+            Request deletion of license records, support messages, or launch-invite emails we store
+            via <Link href="/support">Support</Link>
             {privacy ? (
               <>
                 {" "}
-                by emailing <a href={`mailto:${privacy}`}>{privacy}</a> from the email on your
-                receipt
+                or <a href={`mailto:${privacy}`}>{privacy}</a>
               </>
-            ) : (
-              " via the contact channel listed when you purchase"
-            )}{" "}
-            (we may retain minimal records required for legal or accounting obligations)
+            ) : null}{" "}
+            (Stripe may still retain payment records under its own policy)
           </li>
         </ul>
         <p>

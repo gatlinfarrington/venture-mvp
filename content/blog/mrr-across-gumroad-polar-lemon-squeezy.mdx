@@ -1,0 +1,166 @@
+---
+title: "How to Track MRR Across Gumroad, Polar and Lemon Squeezy"
+description: "One MRR number when you sell on more than one platform: what counts, how to normalize billing intervals, and Google Sheets formulas you can copy."
+date: "2026-10-10"
+tags: ["guides", "mrr", "lemon-squeezy", "polar", "gumroad"]
+draft: false
+ogTitle: "MRR across Gumroad, Polar, and Lemon Squeezy"
+---
+
+If you sell in one place, your platform's dashboard probably tells you enough. Once you sell in two or three, each dashboard tells you part of the story, and none of them adds the parts up. Polar shows Polar. Gumroad shows Gumroad. An old Lemon Squeezy store keeps collecting renewals that no other tool knows about.
+
+This guide shows how to get one monthly recurring revenue (MRR) number, and a churn rate to go with it, in a Google Sheet. Everything here works by hand. At the end there's a section on doing it automatically, which is what we build at RevenueSheet, but you don't need it to follow along.
+
+## What counts as MRR
+
+MRR is the revenue you can expect every month from active subscriptions, at today's prices. Four rules cover almost every case:
+
+1. **Monthly subscriptions count at their monthly price.**
+2. **Longer billing periods are divided down to a month.** A $120 yearly plan is $10 of MRR, not $120 in the month it renews.
+3. **One-time sales don't count.** An ebook sale is revenue, but it isn't recurring. Track it separately.
+4. **A subscription stops counting on the day access ends.** Not the day someone clicks cancel. If a customer cancels on the 3rd but has paid through the 28th, they're still in your MRR until the 28th.
+
+Two cases where you have to choose and then stay consistent:
+
+- **Free trials.** Most people leave trials out of MRR until the first payment, because a trial isn't revenue yet. Some count them separately as "trial MRR." Pick one.
+- **Failed payments (past due).** A subscription in a retry period is still technically active, but the money hasn't arrived. Some founders keep it in MRR for the retry window. We prefer to leave it out of the headline number and show it on its own line, so you see the risk without inflating MRR.
+
+## Step 1: Get your subscriptions out of each platform
+
+You need one row per subscription, with at least: platform, customer email, product, status, price, billing interval, start date and end date (if it ended).
+
+Every platform offers some kind of export in its dashboard, and those menus move around. The APIs are more stable, and all three have one:
+
+| Platform | Where subscriptions come from | Key you need |
+|---|---|---|
+| Lemon Squeezy | `GET https://api.lemonsqueezy.com/v1/subscriptions` | An API key from your Lemon Squeezy settings |
+| Polar | `GET https://api.polar.sh/v1/subscriptions/` | An organization access token with the `subscriptions:read` scope (Polar dashboard, organization Settings, Developers, New Token) |
+| Gumroad | `GET https://api.gumroad.com/v2/products/:id/subscribers`, once per membership product | An access token (Settings, Advanced, create an application, then Generate access token) |
+
+One detail that trips people up: **all three APIs return money in cents.** A $9.00 plan comes back as `900`. Divide by 100 when you write it to the sheet.
+
+## Step 2: Put everything in one table
+
+Make a tab called `Subs` with these columns. Use the same layout for every platform, so a formula never has to care where a row came from.
+
+| Column | Header | Example |
+|---|---|---|
+| A | Source | Polar |
+| B | Customer email | sam@example.com |
+| C | Product | Pro plan |
+| D | Status (as the platform says it) | active |
+| E | Price (dollars, per billing period) | 90 |
+| F | Interval | year |
+| G | Started | 2026-03-14 |
+| H | Ended (blank if still running) | |
+| I | Monthly amount | (formula) |
+| J | Bucket | (formula) |
+
+The platforms name billing intervals differently. Polar and Lemon Squeezy use `month` and `year` (Lemon Squeezy also has an interval count, so "every 3 months" is `month` with a count of 3; turn that into `quarterly` when you paste). Gumroad memberships use `monthly`, `quarterly`, `biannually`, `yearly` and `every_two_years`.
+
+**Column I, monthly amount.** One formula handles every platform's naming:
+
+```
+=IF(E2="", "", E2 / SWITCH(LOWER(F2),
+  "month",1, "monthly",1,
+  "quarterly",3, "biannually",6,
+  "year",12, "yearly",12, "annual",12,
+  "every_two_years",24,
+  1))
+```
+
+**Column J, bucket.** This turns each platform's status words into four you control: `active`, `trial`, `past_due` or `ended`.
+
+```
+=IFS(
+  H2<>"", "ended",
+  OR(D2="on_trial", D2="trialing"), "trial",
+  D2="past_due", "past_due",
+  OR(D2="active", D2="cancelled", D2="canceled"), "active",
+  TRUE, "ended")
+```
+
+Why does `cancelled` land in `active`? Because on Lemon Squeezy and Polar, a canceled subscription usually keeps access until the end of the period it paid for. The `Ended` date in column H is what moves it to `ended`. Fill H with the date access actually ends (Lemon Squeezy calls this `ends_at`, Polar `ended_at`), not the date the customer canceled.
+
+Gumroad uses its own status words for membership subscribers (for example `alive` for a running membership). Look at the values your Gumroad data actually contains and add the running ones to the `active` line.
+
+MRR then sums only the `active` bucket, and you can show trials and past-due as their own numbers with the same SUMIFS pointed at `trial` or `past_due`. If you'd rather count past-due subscriptions in MRR, change that line to return `active`.
+
+## Step 3: The MRR number
+
+Total MRR:
+
+```
+=SUMIFS(Subs!I:I, Subs!J:J, "active")
+```
+
+MRR by platform, which is the number no single dashboard gives you:
+
+```
+=SUMIFS(Subs!I:I, Subs!J:J, "active", Subs!A:A, "Polar")
+=SUMIFS(Subs!I:I, Subs!J:J, "active", Subs!A:A, "Gumroad")
+=SUMIFS(Subs!I:I, Subs!J:J, "active", Subs!A:A, "Lemon Squeezy")
+```
+
+MRR by product across every store:
+
+```
+=QUERY(Subs!A:J, "select C, sum(I) where J = 'active' group by C order by sum(I) desc", 1)
+```
+
+If you sell the same product on two platforms under slightly different names, add a small mapping tab (platform name to your name) and use that column instead of C.
+
+## Step 4: Churn
+
+MRR tells you where you are. Churn tells you how fast it leaks. There are two kinds, and they can tell very different stories.
+
+- **Logo churn:** the share of subscribers who left this month.
+- **Revenue churn:** the share of MRR that left this month.
+
+A quick example. You have 50 subscribers: 48 pay $9 and 2 pay $49, so MRR is $530. The two $49 customers cancel. Logo churn is 2 out of 50, or 4%. Revenue churn is $98 out of $530, about 18%. If you only watched logo churn, you'd miss that your best customers just left.
+
+To calculate both, put the first day of the month you're measuring in `M1` (for example `2026-09-01`) and the first day of the next month in `N1` (`=EDATE(M1, 1)`).
+
+Subscribers active at the start of the month (started before it, and not ended before it):
+
+```
+=SUMPRODUCT((Subs!G2:G<>"") * (Subs!G2:G<M1) * (Subs!J2:J<>"trial") * (((Subs!H2:H="") + (Subs!H2:H>=M1)) > 0))
+```
+
+Subscribers who ended during the month (and had started before it):
+
+```
+=COUNTIFS(Subs!H2:H, ">="&M1, Subs!H2:H, "<"&N1, Subs!G2:G, "<"&M1)
+```
+
+Logo churn is the second number divided by the first.
+
+For revenue churn, swap the counts for sums of column I:
+
+```
+MRR at start:
+=SUMPRODUCT((Subs!G2:G<>"") * (Subs!G2:G<M1) * (Subs!J2:J<>"trial") * (((Subs!H2:H="") + (Subs!H2:H>=M1)) > 0) * Subs!I2:I)
+
+MRR that ended in the month:
+=SUMIFS(Subs!I2:I, Subs!H2:H, ">="&M1, Subs!H2:H, "<"&N1, Subs!G2:G, "<"&M1)
+```
+
+Copy these across 12 columns with `M1` moving a month each time, and you have a churn trend.
+
+## Mistakes we see most
+
+- **Counting an annual renewal as that month's MRR.** It inflates one month and leaves the other eleven short. Always divide.
+- **Mixing currencies.** If one store sells in EUR, either convert at a fixed rate in a separate column or report MRR per currency. Don't add euros to dollars.
+- **Forgetting the cents.** A dashboard that says your MRR is $90,000 when it's $900 usually means one platform's amounts weren't divided by 100.
+- **Removing canceled customers too early.** Use the end-of-access date. Otherwise churn shows up a month before it happens.
+- **Pasting once and never again.** A sheet that was right in March is wrong by May. Whatever method you use, it needs a refresh you'll actually do.
+
+## Doing it automatically
+
+The method above works, and if you only check your numbers once a quarter it may be all you need. The cost is the paste: every refresh means three exports or three scripts, the same cleanup, and the same chance to forget the cents.
+
+RevenueSheet is a Google Sheets add-on that does that part. You paste one key per store, and it pulls the full history from Lemon Squeezy, Polar and Gumroad into Orders, Subscriptions, Customers and Refunds tabs with a layout much like the one above, then builds a Dashboard tab with MRR, churn and revenue by product. The paid plan refreshes every hour. The tabs come with named ranges (`rs_orders`, `rs_subs`, `rs_mrr_monthly`), so the formulas in this guide can point straight at them.
+
+It uses the same defaults as this guide: quarterly, six-month and yearly plans are normalized to monthly, and MRR counts active subscriptions; trials and past-due are shown separately.
+
+It's free for one store with manual refresh. [Install RevenueSheet for Google Sheets](/pricing)
