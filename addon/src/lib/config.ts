@@ -5,8 +5,8 @@ export const CONFIG = {
   LICENSE_PATH: "/api/license/verify",
   /** Free tier: one connected source, manual refresh only. */
   FREE_MAX_SOURCES: 1,
-  /** Paid tiers that unlock schedule + multi-source. */
-  PAID_TIERS: ["pro", "multi", "starter", "growth"] as const,
+  /** Paid tiers that unlock schedule + multi-source (matches site Tier). */
+  PAID_TIERS: ["pro", "business"] as const,
   SYNC_TRIGGER_HANDLER: "runScheduledSync",
   DEFAULT_CURRENCY: "USD",
   PAGE_SIZE: 100,

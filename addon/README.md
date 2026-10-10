@@ -31,7 +31,11 @@ clasp login
 npm run push
 ```
 
-4. In the Apps Script editor → **Project Settings** → set script property `LICENSE_API_BASE` to your web app origin (e.g. `https://revenuesheet.app`). The add-on calls `POST {LICENSE_API_BASE}/api/license/verify` with `{ "key": "…" }` and expects `{ "tier": "free"|"pro"|"multi", "ok": true }`.
+4. In the Apps Script editor → **Project Settings** → set script properties:
+   - `LICENSE_API_BASE` — web app origin (e.g. `https://revenuesheet.app`)
+   - `LICENSE_API_SECRET` — optional; sent as `x-license-secret` when the site sets `LICENSE_API_SECRET`
+
+   The add-on calls `POST {LICENSE_API_BASE}/api/license/verify` with `{ "key": "…" }` and expects `{ "valid": true, "tier": "free"|"pro"|"business", "limits": { "maxSources", "scheduledRefresh" } }`.
 
 ## Local scripts
 

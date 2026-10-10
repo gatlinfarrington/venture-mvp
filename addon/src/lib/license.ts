@@ -2,7 +2,8 @@ import { CONFIG, getLicenseApiBase } from "./config";
 import { fetchJson, fetchJsonSync } from "./http";
 import { getConnectedSources, getLicenseKey } from "./properties";
 
-export type LicenseTier = "free" | "pro" | "multi" | "starter" | "growth" | "unknown";
+/** Matches the Next.js site's Tier union. */
+export type LicenseTier = "free" | "pro" | "business" | "unknown";
 
 export interface LicenseStatus {
   tier: LicenseTier;
@@ -14,10 +15,6 @@ export interface LicenseStatus {
 }
 
 const CACHE_TTL_SECONDS = 300;
-
-function isPaid(tier: string): boolean {
-  return (CONFIG.PAID_TIERS as readonly string[]).includes(tier);
-}
 
 function freeStatus(message: string): LicenseStatus {
   return {
@@ -41,20 +38,42 @@ function degrade(message: string): LicenseStatus {
   };
 }
 
+function getLicenseApiSecret(): string {
+  try {
+    return PropertiesService.getScriptProperties().getProperty("LICENSE_API_SECRET") || "";
+  } catch {
+    return "";
+  }
+}
+
 function fromPayload(data: {
-  tier?: string;
+  tier?: string | null;
   ok?: boolean;
-  message?: string;
   valid?: boolean;
+  message?: string;
+  error?: string;
+  status?: string;
+  limits?: { maxSources?: number; scheduledRefresh?: boolean };
 }): LicenseStatus {
-  const tier = (data.tier || (data.valid || data.ok ? "pro" : "free")) as LicenseTier;
+  const valid = data.valid === true || data.ok === true;
+  if (!valid) {
+    return freeStatus(data.error || data.message || "Invalid license — free tier limits apply.");
+  }
+
+  const tier = (data.tier || "free") as LicenseTier;
+  const maxSources =
+    data.limits?.maxSources ??
+    (tier === "pro" || tier === "business" ? 3 : CONFIG.FREE_MAX_SOURCES);
+  const allowSchedule =
+    data.limits?.scheduledRefresh ?? (tier === "pro" || tier === "business");
+
   return {
-    tier,
-    ok: data.ok !== false && data.valid !== false,
+    tier: tier === "pro" || tier === "business" || tier === "free" ? tier : "unknown",
+    ok: true,
     degraded: false,
-    message: data.message || (isPaid(tier) ? "License active." : "Free tier."),
-    maxSources: tier === "multi" ? 99 : isPaid(tier) ? 3 : CONFIG.FREE_MAX_SOURCES,
-    allowSchedule: isPaid(tier),
+    message: data.message || (allowSchedule ? "License active." : "Free tier."),
+    maxSources,
+    allowSchedule,
   };
 }
 
@@ -74,6 +93,16 @@ function writeCache(result: LicenseStatus): void {
   CacheService.getUserCache().put("rs_license", JSON.stringify(result), CACHE_TTL_SECONDS);
 }
 
+function requestHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  };
+  const secret = getLicenseApiSecret();
+  if (secret) headers["x-license-secret"] = secret;
+  return headers;
+}
+
 /** Sync license check for Apps Script. Degrades to free limits if unreachable. */
 export function checkLicenseSync(opts: { skipCache?: boolean } = {}): LicenseStatus {
   const key = getLicenseKey();
@@ -86,16 +115,19 @@ export function checkLicenseSync(opts: { skipCache?: boolean } = {}): LicenseSta
   const url = `${getLicenseApiBase()}${CONFIG.LICENSE_PATH}`;
   try {
     const { status, data } = fetchJsonSync<{
-      tier?: string;
+      tier?: string | null;
       ok?: boolean;
-      message?: string;
       valid?: boolean;
+      message?: string;
+      error?: string;
+      limits?: { maxSources?: number; scheduledRefresh?: boolean };
     }>(url, {
       method: "post",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: requestHeaders(),
       body: JSON.stringify({ key }),
       sleep: () => undefined,
     });
+    if (status === 401) return degrade("License API unauthorized — check LICENSE_API_SECRET.");
     if (status >= 400) return degrade(`License API returned ${status}`);
     const result = fromPayload(data);
     writeCache(result);
@@ -117,13 +149,15 @@ export async function checkLicense(
   const url = `${getLicenseApiBase()}${CONFIG.LICENSE_PATH}`;
   try {
     const { status, data } = await fetchJson<{
-      tier?: string;
+      tier?: string | null;
       ok?: boolean;
-      message?: string;
       valid?: boolean;
+      message?: string;
+      error?: string;
+      limits?: { maxSources?: number; scheduledRefresh?: boolean };
     }>(url, {
       method: "post",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: requestHeaders(),
       body: JSON.stringify({ key }),
       fetchImpl: opts.fetchImpl,
       sleep: () => undefined,
