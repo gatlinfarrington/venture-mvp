@@ -57,7 +57,7 @@ Declared in `src/appsscript.json`:
 
 ## Features
 
-- **Sidebar** — API keys + license; MRR goal; template picker (classic / growth); schedule cadence; CSV paste; opt-in weekly digest. Keys in **User Properties**.
+- **Sidebar** — API keys + license; MRR goal; template picker (Growth default; Classic alternative); schedule cadence; CSV paste; opt-in weekly digest. Keys in **User Properties**.
 - **Importers** — Lemon Squeezy, Polar, Gumroad, Stripe (restricted read-only key), CSV fallback with column mapping. Resumable chunked backfill (`pageToken` / resource). Gumroad uses `page_key`. Intervals (quarterly / biannual / biennial / yearly / …) → monthly MRR.
 - **Metrics** — MRR (active-only by default), ARR, LTV, churn, cohort retention, refunds, top products, revenue by country, MRR goal progress bar.
 - **Schedule** — hourly / 6h / daily / weekly (paid tier); finishes incomplete backfills.

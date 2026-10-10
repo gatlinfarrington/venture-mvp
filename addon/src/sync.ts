@@ -211,7 +211,8 @@ export function runDemoMode(): SyncResult {
     dashboardOpts({
       sample: true,
       lastSyncAt: "2026-10-09 10:02",
-      sourceLabels: ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"],
+      // Sample data only covers LS / Polar / Gumroad — do not list Stripe unless connected.
+      sourceLabels: ["Lemon Squeezy", "Polar", "Gumroad"],
       scheduleLabel: "HOURLY",
       studioLabel: "EXAMPLE STUDIO",
     }),
@@ -229,7 +230,7 @@ export function runDemoMode(): SyncResult {
   return {
     ok: true,
     message: "Loaded EXAMPLE DATA (sample). Not real customers.",
-    sources: ["lemon_squeezy", "polar", "gumroad", "stripe"],
+    sources: ["lemon_squeezy", "polar", "gumroad"],
     sample: true,
   };
 }

@@ -4,9 +4,9 @@ import { COLORS, FONTS, CHART_SERIES } from "../lib/tokens";
 import type { NormalizedOrder, NormalizedRefund, NormalizedSubscription } from "../importers/types";
 import { computeRevenuePeriods } from "../metrics/arpu";
 import { computeChurn } from "../metrics/churn";
-import { computeGoalProgress, progressBarSlots } from "../metrics/goals";
+import { computeGoalProgress } from "../metrics/goals";
 import { computeMrr, computeMrrTrend } from "../metrics/mrr";
-import { appendGrowthPanels } from "./growthPanels";
+import { appendGrowthPanels, paintContinuousGoalBar } from "./growthPanels";
 
 export interface DashboardBuildOptions {
   sample?: boolean;
@@ -127,9 +127,14 @@ export function buildDashboard(
   sheet.getRange(2, 1, 1, 12).merge();
   sheet.getRange(2, 13, 1, 5).merge();
 
+  // Only list sources that were actually connected / provided (Stripe only when connected).
+  const connectedLabel =
+    sourceLabels.length > 0
+      ? sourceLabels.map((s) => s.toUpperCase()).join(", ")
+      : "NO SOURCES";
   const statusLeft = opts.stale
     ? `   ● LAST SYNC ${syncTime} — CHECK CONNECTION`
-    : `   ● SYNCED ${syncTime} · ${sourceLabels.map((s) => s.toUpperCase()).join(", ")} · ${schedule}`;
+    : `   ● SYNCED ${syncTime} · ${connectedLabel} · ${schedule}`;
   const statusRight = opts.sample
     ? "EXAMPLE DATA — NOT REAL CUSTOMERS  "
     : opts.licenseNote
@@ -142,14 +147,28 @@ export function buildDashboard(
       .setBackground(opts.stale ? COLORS.dangerTint : COLORS.surface2)
       .setBorder(false, false, true, false, false, false, COLORS.hairline, SpreadsheetApp.BorderStyle.SOLID);
   }
-  sheet
-    .getRange(2, 1)
+  // Green ● only; rest of status line is ink (no green fill).
+  const statusCell = sheet.getRange(2, 1);
+  statusCell
     .setFontFamily(FONTS.mono)
     .setFontSize(8)
-    .setFontColor(opts.stale ? COLORS.danger : COLORS.inkMuted)
     .setVerticalAlignment("middle")
-    .setHorizontalAlignment("left")
-    .setValue(statusLeft);
+    .setHorizontalAlignment("left");
+  if (opts.stale) {
+    statusCell.setFontColor(COLORS.danger).setValue(statusLeft);
+  } else {
+    try {
+      const rich = SpreadsheetApp.newRichTextValue()
+        .setText(statusLeft)
+        .setTextStyle(3, 4, SpreadsheetApp.newTextStyle().setForegroundColor(COLORS.signal).build())
+        .setTextStyle(0, 3, SpreadsheetApp.newTextStyle().setForegroundColor(COLORS.ink).build())
+        .setTextStyle(4, statusLeft.length, SpreadsheetApp.newTextStyle().setForegroundColor(COLORS.ink).build())
+        .build();
+      statusCell.setRichTextValue(rich);
+    } catch {
+      statusCell.setFontColor(COLORS.ink).setValue(statusLeft);
+    }
+  }
   sheet
     .getRange(2, 13)
     .setFontFamily(FONTS.mono)
@@ -288,7 +307,7 @@ export function buildDashboard(
     .build();
   sheet.insertChart(mrrChart);
 
-  // Churn line from MRR monthly col F (rate as fraction for 0.0% axis)
+  // Churn line — same axis/label treatment as the MRR chart (no fixed window).
   const churnChart = sheet
     .newChart()
     .setChartType(Charts.ChartType.LINE)
@@ -297,19 +316,20 @@ export function buildDashboard(
     .setPosition(9, 14, 0, 0)
     .setOption("title", "")
     .setOption("legend", { position: "none" })
-    .setOption("colors", [COLORS.danger])
+    .setOption("colors", [COLORS.ink])
     .setOption("backgroundColor", COLORS.bg)
     .setOption("lineWidth", 2)
     .setOption("pointSize", 4)
+    .setOption("hAxis", {
+      textStyle: { color: COLORS.inkMuted, fontName: FONTS.mono, fontSize: 9 },
+    })
     .setOption("vAxis", {
       textStyle: { color: COLORS.inkMuted, fontName: FONTS.mono, fontSize: 9 },
       gridlines: { color: COLORS.hairline },
       format: "0.0%",
-      viewWindow: { min: 0.02, max: 0.04 },
+      minValue: 0,
     })
-    .setOption("hAxis", {
-      textStyle: { color: COLORS.inkMuted, fontName: FONTS.mono, fontSize: 9 },
-    })
+    .setOption("chartArea", { width: "75%", height: "75%" })
     .setOption("width", 264)
     .setOption("height", 294)
     .build();
@@ -336,20 +356,7 @@ export function buildDashboard(
 
   const goal = computeGoalProgress(mrr.total, opts.mrrGoal || 0);
   if (goal.goal > 0) {
-    sheet.setRowHeight(34, 24);
-    const slots = 12;
-    const filled = progressBarSlots(goal.pct, slots);
-    sheet
-      .getRange(34, 2)
-      .setFontFamily(FONTS.mono)
-      .setFontSize(8)
-      .setFontColor(COLORS.inkMuted)
-      .setValue(`MRR GOAL  $${Math.round(goal.current)} / $${Math.round(goal.goal)}`);
-    for (let i = 0; i < slots; i++) {
-      sheet
-        .getRange(34, 5 + i)
-        .setBackground(i < filled ? (goal.met ? COLORS.signal : COLORS.ink) : COLORS.surface2);
-    }
+    paintContinuousGoalBar(sheet, 34, goal);
   }
 
   sheet.getRange(35, 2, 1, 15).merge();
@@ -360,7 +367,7 @@ export function buildDashboard(
     .setFontColor(COLORS.inkMuted)
     .setValue(managedByFooter(opts.sample ? "example data" : "live sync"));
 
-  if ((opts.template || "classic") === "growth") {
+  if ((opts.template || "growth") === "growth") {
     appendGrowthPanels(ss, sheet, orders, subscriptions, refunds, {
       mrrGoal: opts.mrrGoal,
       sample: opts.sample,
@@ -419,6 +426,7 @@ function paintKpiCard(sheet: GoogleAppsScript.Spreadsheet.Sheet, kpi: KpiDef): v
   sheet.getRange(6, c1, 1, span).merge();
   const up = kpi.delta > 0;
   const down = kpi.delta < 0;
+  // Text-only Δ: green ▲ / #B42318 ▼ / grey zero — never cell fills.
   const good = kpi.inverse ? down : up;
   const bad = kpi.inverse ? up : down;
   let text = "– 0.0%";
@@ -434,7 +442,7 @@ function paintKpiCard(sheet: GoogleAppsScript.Spreadsheet.Sheet, kpi: KpiDef): v
     .setFontFamily(FONTS.mono)
     .setFontSize(8)
     .setFontWeight("bold")
-    .setBackground(good ? COLORS.signalTint : bad ? COLORS.dangerTint : COLORS.bg)
+    .setBackground(COLORS.bg)
     .setFontColor(good ? COLORS.signal : bad ? COLORS.danger : COLORS.inkMuted)
     .setVerticalAlignment("middle")
     .setValue(text);
@@ -564,12 +572,7 @@ function writeSourceTable(
       .setHorizontalAlignment("right")
       .setFontColor(COLORS.inkMuted);
     paintDelta(sheet.getRange(row, 15), r.delta);
-    sheet
-      .getRange(row, 16)
-      .setValue(r.status)
-      .setFontFamily(FONTS.sans)
-      .setFontSize(9)
-      .setFontColor(r.status.includes("Synced") ? COLORS.signal : COLORS.inkMuted);
+    paintSyncedStatus(sheet.getRange(row, 16), r.status);
     for (const c of [10, 12, 13, 14, 15, 16]) {
       sheet
         .getRange(row, c)
@@ -595,16 +598,41 @@ function styleHeaderCells(
   }
 }
 
+/** Δ column: text only — green ▲, #B42318 ▼, grey for 0%. No cell fills. */
 function paintDelta(cell: GoogleAppsScript.Spreadsheet.Range, delta: number): void {
+  const up = delta > 0;
+  const down = delta < 0;
+  const text = up
+    ? `▲ ${(delta * 100).toFixed(1)}%`
+    : down
+      ? `▼ ${(Math.abs(delta) * 100).toFixed(1)}%`
+      : "– 0.0%";
   cell
-    .setValue(delta)
-    .setNumberFormat("+0.0%;-0.0%;0.0%")
+    .setValue(text)
     .setFontFamily(FONTS.mono)
     .setFontSize(9)
-    .setHorizontalAlignment("right");
-  if (delta > 0) cell.setBackground(COLORS.signalTint).setFontColor(COLORS.signal);
-  else if (delta < 0) cell.setBackground(COLORS.dangerTint).setFontColor(COLORS.danger);
-  else cell.setBackground(COLORS.bg).setFontColor(COLORS.inkMuted);
+    .setHorizontalAlignment("right")
+    .setBackground(COLORS.bg)
+    .setFontColor(up ? COLORS.signal : down ? COLORS.danger : COLORS.inkMuted);
+}
+
+/** Synced = green ● + ink label, no fill. */
+function paintSyncedStatus(cell: GoogleAppsScript.Spreadsheet.Range, status: string): void {
+  cell.setFontFamily(FONTS.sans).setFontSize(9).setBackground(COLORS.bg);
+  if (!status.includes("Synced")) {
+    cell.setFontColor(COLORS.inkMuted).setValue(status);
+    return;
+  }
+  try {
+    const rich = SpreadsheetApp.newRichTextValue()
+      .setText(status)
+      .setTextStyle(0, 1, SpreadsheetApp.newTextStyle().setForegroundColor(COLORS.signal).build())
+      .setTextStyle(1, status.length, SpreadsheetApp.newTextStyle().setForegroundColor(COLORS.ink).build())
+      .build();
+    cell.setRichTextValue(rich);
+  } catch {
+    cell.setFontColor(COLORS.ink).setValue(status);
+  }
 }
 
 function writeMrrMonthlySheet(

@@ -14,9 +14,7 @@
       --hairline: #e6e6e6;
       --surface2: #f2f2f2;
       --signal: #0a7a55;
-      --signalTint: #e7f3ee;
       --danger: #b42318;
-      --dangerTint: #fbeae8;
     }
     * { box-sizing: border-box; }
     body {
@@ -67,11 +65,12 @@
       align-items: center;
       background: var(--surface2);
       font: 400 8px/1 "JetBrains Mono", monospace;
-      color: var(--muted);
+      color: var(--ink);
       padding: 0 4px;
       margin: 0 -4px;
     }
     .status .dot { color: var(--signal); }
+    .status .right { color: var(--muted); }
     .kpis {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -83,8 +82,9 @@
       border-top: 2px solid var(--ink);
       padding: 10px 12px 12px;
       min-height: 84px;
+      background: #fff;
     }
-    .kpi.danger { border-top-color: var(--danger); }
+    .kpi.danger-top { border-top-color: var(--danger); }
     .kpi .label {
       font: 400 8px/1 "JetBrains Mono", monospace;
       color: var(--muted);
@@ -97,16 +97,21 @@
       letter-spacing: -0.03em;
       margin-bottom: 8px;
     }
+    .kpi .value.neg { color: var(--danger); }
+    /* Δ text only — no cell fills */
     .kpi .delta {
       display: inline-block;
-      font: 400 8px/1 "JetBrains Mono", monospace;
-      padding: 3px 6px;
-      background: var(--signalTint);
+      font: 600 8px/1 "JetBrains Mono", monospace;
+      padding: 0;
+      background: transparent;
       color: var(--signal);
     }
     .kpi .delta.neg {
-      background: var(--dangerTint);
+      background: transparent;
       color: var(--danger);
+    }
+    .kpi .delta.zero {
+      color: var(--muted);
     }
     .meta-line {
       margin-top: 14px;
@@ -135,6 +140,18 @@
       align-items: flex-end;
       gap: 8px;
       height: 160px;
+      padding-left: 36px;
+    }
+    .y-axis {
+      position: absolute;
+      left: 8px;
+      top: 36px;
+      bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font: 400 8px/1 "JetBrains Mono", monospace;
+      color: var(--muted);
     }
     .bar-col {
       flex: 1;
@@ -160,6 +177,7 @@
       font: 400 9px/1 "Inter Tight", sans-serif;
       color: var(--muted);
       margin-bottom: 8px;
+      padding-left: 36px;
     }
     .legend i {
       display: inline-block;
@@ -170,6 +188,7 @@
     .line-chart {
       height: 160px;
       position: relative;
+      padding-left: 36px;
     }
     .line-chart svg { width: 100%; height: 100%; }
     .tables {
@@ -196,25 +215,34 @@
       border-bottom: 1px solid var(--hairline);
       padding: 7px 6px;
       font-family: "JetBrains Mono", monospace;
+      background: #fff;
     }
     td.name { font-family: "Inter Tight", sans-serif; }
-    .pos { background: var(--signalTint); color: var(--signal); }
+    .delta-pos { color: var(--signal); background: transparent; }
+    .delta-neg { color: var(--danger); background: transparent; }
+    .delta-zero { color: var(--muted); background: transparent; }
+    .synced-dot { color: var(--signal); }
+    .synced-label { color: var(--ink); }
     .goal {
       margin-top: 16px;
       font: 400 8px/1 "JetBrains Mono", monospace;
       color: var(--muted);
     }
-    .goal-bar {
-      display: flex;
-      gap: 2px;
+    /* Single ink bar on grey track */
+    .goal-track {
       margin-top: 8px;
-    }
-    .goal-bar span {
-      width: 28px;
       height: 10px;
+      width: 100%;
+      max-width: 720px;
       background: var(--surface2);
+      position: relative;
+      overflow: hidden;
     }
-    .goal-bar span.on { background: var(--ink); }
+    .goal-fill {
+      height: 100%;
+      background: var(--ink);
+      width: 78.1%;
+    }
     .growth {
       margin-top: 28px;
       padding-top: 8px;
@@ -222,9 +250,17 @@
     }
     .growth .kpis { margin-top: 12px; }
     .cohort th, .cohort td { text-align: center; }
-    .cohort td:first-child, .cohort th:first-child { text-align: left; }
-    .hi { background: var(--signalTint); color: var(--signal); }
-    .lo { background: var(--dangerTint); color: var(--danger); }
+    .cohort td:first-child, .cohort th:first-child,
+    .cohort td:nth-child(2), .cohort th:nth-child(2) { text-align: left; }
+    /* Greyscale heat ramp — no green */
+    .heat-100 { background: #0d0d0d; color: #fff; }
+    .heat-93 { background: #3a3a3a; color: #fff; }
+    .heat-88 { background: #4a4a4a; color: #fff; }
+    .heat-86 { background: #555555; color: #fff; }
+    .heat-81 { background: #6e6e6e; color: #fff; }
+    .heat-96 { background: #2e2e2e; color: #fff; }
+    .heat-94 { background: #363636; color: #fff; }
+    .empty { background: #fff; color: var(--muted); }
     .foot {
       margin-top: 18px;
       font: 400 8px/1.4 "JetBrains Mono", monospace;
@@ -234,7 +270,7 @@
       display: inline-block;
       margin-left: 8px;
       padding: 2px 6px;
-      background: var(--dangerTint);
+      background: #fbeae8;
       color: var(--danger);
       font: 500 8px/1 "JetBrains Mono", monospace;
     }
@@ -248,8 +284,8 @@
       <div class="meta">Example studio · USD</div>
     </div>
     <div class="status">
-      <span><span class="dot">●</span> Synced 2026-10-09 10:02 · Lemon Squeezy, Polar, Gumroad, Stripe · Hourly</span>
-      <span>Growth template · Example data</span>
+      <span><span class="dot">●</span> SYNCED 2026-10-09 10:02 · LEMON SQUEEZY, POLAR, GUMROAD · HOURLY</span>
+      <span class="right">Growth template · Example data</span>
     </div>
 
     <div class="kpis">
@@ -268,7 +304,7 @@
         <div class="value">342</div>
         <span class="delta">▲ 24 net new</span>
       </div>
-      <div class="kpi danger">
+      <div class="kpi danger-top">
         <div class="label">Churn · 30d</div>
         <div class="value">1.9%</div>
         <span class="delta neg">▼ 0.3 pts</span>
@@ -279,6 +315,7 @@
     <div class="section">MRR by source · last 12 months</div>
     <div class="charts">
       <div class="chart">
+        <div class="y-axis"><span>$12k</span><span>$8k</span><span>$4k</span><span>$0</span></div>
         <div class="legend">
           <span><i style="background:#0d0d0d"></i>Polar</span>
           <span><i style="background:#5c5c5c"></i>Lemon Squeezy</span>
@@ -294,11 +331,21 @@
         </div>
       </div>
       <div class="chart">
+        <div class="y-axis"><span>4.0%</span><span>2.0%</span><span>0%</span></div>
         <div class="legend"><span>Monthly churn</span></div>
         <div class="line-chart">
           <svg viewBox="0 0 200 120" preserveAspectRatio="none">
+            <line x1="0" y1="0" x2="200" y2="0" stroke="#e6e6e6" stroke-width="1" />
+            <line x1="0" y1="60" x2="200" y2="60" stroke="#e6e6e6" stroke-width="1" />
+            <line x1="0" y1="120" x2="200" y2="120" stroke="#e6e6e6" stroke-width="1" />
             <polyline fill="none" stroke="#0d0d0d" stroke-width="2"
               points="10,70 48,62 86,78 124,55 162,48 190,40" />
+            <circle cx="10" cy="70" r="2.5" fill="#0d0d0d" />
+            <circle cx="48" cy="62" r="2.5" fill="#0d0d0d" />
+            <circle cx="86" cy="78" r="2.5" fill="#0d0d0d" />
+            <circle cx="124" cy="55" r="2.5" fill="#0d0d0d" />
+            <circle cx="162" cy="48" r="2.5" fill="#0d0d0d" />
+            <circle cx="190" cy="40" r="2.5" fill="#0d0d0d" />
           </svg>
         </div>
       </div>
@@ -312,37 +359,33 @@
       <table>
         <thead><tr><th>Product</th><th>Revenue</th><th>Share</th><th>Δ</th></tr></thead>
         <tbody>
-          <tr><td class="name">Demo SaaS · Team</td><td>$1,343</td><td>39.0%</td><td class="pos">▲ 8%</td></tr>
-          <tr><td class="name">Example Course Bundle</td><td>$1,127</td><td>32.7%</td><td class="pos">▲ 3%</td></tr>
-          <tr><td class="name">Demo SaaS · Pro</td><td>$319</td><td>9.3%</td><td class="pos">▲ 1%</td></tr>
-          <tr><td class="name">Template Kit (example)</td><td>$247</td><td>7.2%</td><td>▲ 0%</td></tr>
-          <tr><td class="name">Sample E-book</td><td>$207</td><td>6.0%</td><td class="pos">▲ 2%</td></tr>
+          <tr><td class="name">Demo SaaS · Team</td><td>$1,343</td><td>39.0%</td><td class="delta-pos">▲ 8.0%</td></tr>
+          <tr><td class="name">Example Course Bundle</td><td>$1,127</td><td>32.7%</td><td class="delta-pos">▲ 3.0%</td></tr>
+          <tr><td class="name">Demo SaaS · Pro</td><td>$319</td><td>9.3%</td><td class="delta-pos">▲ 1.0%</td></tr>
+          <tr><td class="name">Template Kit (example)</td><td>$247</td><td>7.2%</td><td class="delta-zero">– 0.0%</td></tr>
+          <tr><td class="name">Sample E-book</td><td>$207</td><td>6.0%</td><td class="delta-pos">▲ 2.0%</td></tr>
         </tbody>
       </table>
       <table>
         <thead><tr><th>Source</th><th>Revenue</th><th>Share</th><th>Status</th></tr></thead>
         <tbody>
-          <tr><td class="name">Polar</td><td>$1,642</td><td>45%</td><td class="pos">● Synced</td></tr>
-          <tr><td class="name">Lemon Squeezy</td><td>$1,210</td><td>33%</td><td class="pos">● Synced</td></tr>
-          <tr><td class="name">Gumroad</td><td>$772</td><td>22%</td><td class="pos">● Synced</td></tr>
+          <tr><td class="name">Polar</td><td>$1,642</td><td>45%</td><td><span class="synced-dot">●</span> <span class="synced-label">Synced</span></td></tr>
+          <tr><td class="name">Lemon Squeezy</td><td>$1,210</td><td>33%</td><td><span class="synced-dot">●</span> <span class="synced-label">Synced</span></td></tr>
+          <tr><td class="name">Gumroad</td><td>$772</td><td>22%</td><td><span class="synced-dot">●</span> <span class="synced-label">Synced</span></td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="goal">MRR GOAL  $11,709 / $15,000 · 78.1%</div>
-    <div class="goal-bar">
-      <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span>
-      <span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span>
-      <span class="on"></span><span class="on"></span><span></span><span></span>
-    </div>
+    <div class="goal-track"><div class="goal-fill"></div></div>
 
     <div class="growth">
       <div class="section">Growth metrics</div>
       <div class="kpis">
         <div class="kpi"><div class="label">ARR</div><div class="value">$140.5k</div></div>
         <div class="kpi"><div class="label">LTV (est.)</div><div class="value">$1,783</div></div>
-        <div class="kpi danger"><div class="label">Refunds · 30d</div><div class="value">$157</div></div>
-        <div class="kpi danger"><div class="label">Refund rate</div><div class="value">4.2%</div></div>
+        <div class="kpi"><div class="label">Refunds · 30d</div><div class="value">$157</div></div>
+        <div class="kpi"><div class="label">Refund rate</div><div class="value">4.2%</div></div>
       </div>
 
       <div class="section" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;">
@@ -372,10 +415,10 @@
       <table class="cohort" style="margin-top:8px;max-width:520px;">
         <thead><tr><th>Cohort</th><th>N</th><th>M0</th><th>M1</th><th>M2</th><th>M3</th></tr></thead>
         <tbody>
-          <tr><td>2026-07</td><td>42</td><td class="hi">100%</td><td class="hi">93%</td><td>86%</td><td>81%</td></tr>
-          <tr><td>2026-08</td><td>48</td><td class="hi">100%</td><td class="hi">94%</td><td>88%</td><td>—</td></tr>
-          <tr><td>2026-09</td><td>51</td><td class="hi">100%</td><td class="hi">96%</td><td>—</td><td>—</td></tr>
-          <tr><td>2026-10</td><td>30</td><td class="hi">100%</td><td>—</td><td>—</td><td>—</td></tr>
+          <tr><td>2026-07</td><td>42</td><td class="heat-100">100%</td><td class="heat-93">93%</td><td class="heat-86">86%</td><td class="heat-81">81%</td></tr>
+          <tr><td>2026-08</td><td>48</td><td class="heat-100">100%</td><td class="heat-94">94%</td><td class="heat-88">88%</td><td class="empty">—</td></tr>
+          <tr><td>2026-09</td><td>51</td><td class="heat-100">100%</td><td class="heat-96">96%</td><td class="empty">—</td><td class="empty">—</td></tr>
+          <tr><td>2026-10</td><td>30</td><td class="heat-100">100%</td><td class="empty">—</td><td class="empty">—</td><td class="empty">—</td></tr>
         </tbody>
       </table>
     </div>
