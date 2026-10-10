@@ -192,7 +192,8 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Early-access / launch-invite emails:</strong> stored (deduped) in Upstash Redis
-            (or a local file in development) until you ask us to delete them.
+            (or a local file in development) until you unsubscribe via the one-click link in any
+            launch email, or ask us to delete them.
           </li>
           <li>
             <strong>Vercel HTTP logs:</strong> retained under Vercel’s platform defaults for hosting
@@ -212,8 +213,9 @@ export default function PrivacyPage() {
           <li>Remove source API keys from the add-on sidebar / script properties</li>
           <li>Uninstall the add-on from the Google Workspace Marketplace / Extensions menu</li>
           <li>
-            Request deletion of license records, support messages, or launch-invite emails we store
-            via <Link href="/support">Support</Link>
+            Unsubscribe from the launch list via the one-click link in any launch email, or request
+            deletion of license records, support messages, or launch-invite emails via{" "}
+            <Link href="/support">Support</Link>
             {privacy ? (
               <>
                 {" "}

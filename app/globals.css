@@ -362,20 +362,31 @@ a.chip[aria-current="page"] {
   background: var(--c-signal);
 }
 
+/* Visible by default. html.motion (head script) gates entrance motion. */
 .reveal {
-  opacity: 0;
-  transform: translateY(var(--reveal-distance));
+  opacity: 1;
+  transform: none;
   transition:
     opacity var(--dur-reveal) var(--ease-out),
     transform var(--dur-reveal) var(--ease-out);
 }
 
-.reveal.is-visible {
+.motion .reveal:not(.is-visible) {
+  opacity: 0;
+  transform: translateY(var(--reveal-distance));
+}
+
+.motion .reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
 .hero-reveal {
+  opacity: 1;
+  transform: none;
+}
+
+.motion .hero-reveal {
   opacity: 0;
   transform: translateY(var(--reveal-distance));
   animation: hero-rv var(--dur-reveal) var(--ease-out) forwards;
@@ -390,10 +401,14 @@ a.chip[aria-current="page"] {
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
-  .hero-reveal {
+  .motion .reveal:not(.is-visible),
+  .motion .reveal.is-visible,
+  .hero-reveal,
+  .motion .hero-reveal {
     opacity: 1;
     transform: none;
     animation: none;
+    transition: none;
   }
 }
 
@@ -509,6 +524,13 @@ a.chip[aria-current="page"] {
 
   .mobile-nav {
     display: flex;
+  }
+}
+
+/* Phone: hamburger right edge at the 24px gutter. */
+@media (max-width: 768px) {
+  .site-header .container.nav-inner {
+    width: min(1200px, calc(100% - var(--space-6) * 2));
   }
 }
 
@@ -647,7 +669,7 @@ a.chip[aria-current="page"] {
 .hero-stores {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .hero-stores-foot {
@@ -872,19 +894,20 @@ a.chip[aria-current="page"] {
   pointer-events: none;
 }
 
-/* Last 140ms of 900ms ≈ 84.4%: opacity 1→0 and scale 1→0.9 as the row slides in. */
+/* Last 160ms of 900ms ≈ 82.2%: opacity 1→0 and scale 1→0.9 (ease-out) as the row inserts. */
 @keyframes hero-fly {
   0% {
     opacity: 0;
     offset-distance: 0%;
     transform: scale(1);
   }
-  12% {
+  10% {
     opacity: 1;
     transform: scale(1);
   }
-  84.4% {
+  82.2% {
     opacity: 1;
+    offset-distance: 100%;
     transform: scale(1);
   }
   100% {
@@ -937,17 +960,18 @@ a.chip[aria-current="page"] {
   }
 
   .hero-stores {
-    flex-direction: row;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     padding: 0;
     gap: var(--space-2);
   }
 
   .hero-store {
-    width: auto;
+    width: 100%;
     min-height: 44px;
     border-radius: var(--radius-pill);
     padding: var(--space-2) var(--space-3);
+    justify-content: center;
   }
 
   .hero-store br,
@@ -992,6 +1016,7 @@ a.chip[aria-current="page"] {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-6);
+  align-items: stretch;
 }
 
 .step {
@@ -1012,62 +1037,56 @@ a.chip[aria-current="page"] {
 .step-frame {
   border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
-  background: var(--c-surface-2);
+  background: var(--c-surface);
   overflow: hidden;
-  aspect-ratio: 4 / 3;
   margin-top: auto;
+  padding: var(--space-6);
+  display: grid;
+  place-items: center;
 }
 
-.step-frame .responsive-crop,
+.step-frame .responsive-crop {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  margin-inline: auto;
+}
+
+.step-frame img {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  display: block;
+  background: var(--c-surface);
+}
+
 .lands-frame .responsive-crop {
   display: block;
   width: 100%;
-  height: 100%;
 }
 
-.step-frame img,
 .lands-frame img {
   width: 100%;
-  height: 100%;
-  /* Fill the frame; crops bake 16px margin inside the UI card, not the grey stage. */
-  object-fit: cover;
-  object-position: center center;
-  background: var(--c-surface-2);
+  height: auto;
+  display: block;
+  background: var(--c-surface);
 }
 
 .responsive-crop-phone {
   display: none;
 }
 
-/* Desktop backfill crop is a card on a wide grey stage; zoom to the card. */
-.step-frame-backfill .responsive-crop-desktop {
-  transform: scale(1.55);
-  transform-origin: center center;
-}
-
 @media (max-width: 600px) {
-  .step-frame-backfill .responsive-crop-phone {
-    transform: scale(1.12);
-    transform-origin: center top;
-  }
-}
-
-/* Phone crops are 3:4 with baked-in 16px margins (MARKETING-CROPS.md). */
-@media (max-width: 600px) {
-  .step-frame {
-    aspect-ratio: 3 / 4;
-  }
-
-  .step-frame img,
-  .lands-frame img {
-    object-position: center top;
-  }
-
   .responsive-crop-desktop {
     display: none;
   }
 
   .responsive-crop-phone {
+    display: block;
+  }
+
+  /* Steps 01/02 use a single image (no phone swap). */
+  .step-frame .responsive-crop-desktop.responsive-crop-only {
     display: block;
   }
 }
@@ -1093,7 +1112,7 @@ a.chip[aria-current="page"] {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
   gap: var(--space-10);
-  align-items: stretch;
+  align-items: start;
 }
 
 .lands-tabs {
@@ -1131,15 +1150,9 @@ a.chip[aria-current="page"] {
   border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--c-surface-2);
-  align-self: stretch;
-  display: flex;
-}
-
-@media (max-width: 600px) {
-  .lands-frame {
-    aspect-ratio: 3 / 4;
-  }
+  background: var(--c-surface);
+  margin-top: 0;
+  padding: var(--space-4);
 }
 
 @media (max-width: 900px) {
@@ -1334,7 +1347,7 @@ a.chip[aria-current="page"] {
   flex-direction: column;
   gap: var(--space-2);
   align-items: stretch;
-  margin-top: auto;
+  margin-top: var(--space-8); /* list → button 32px */
 }
 
 .price-cta-stack .btn {
@@ -1347,20 +1360,30 @@ a.chip[aria-current="page"] {
   gap: var(--space-4);
 }
 
+.pricing-grid-caption {
+  margin: var(--space-4) 0 0;
+  text-align: center;
+  font-size: var(--t-mono-size);
+}
+
 .price-card {
   border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-6); /* N6: 24px from price block to features */
+  gap: 0;
   background: var(--c-surface);
 }
 
 .price-card-top {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-4); /* eyebrow → price 16px */
+}
+
+.price-card .price-features {
+  margin-top: var(--space-6); /* price → list 24px */
 }
 
 .price-card.is-featured {
@@ -1370,6 +1393,14 @@ a.chip[aria-current="page"] {
 .pricing-ann {
   margin-top: var(--space-2);
   font-size: var(--t-mono-size);
+}
+
+.pricing-page-head .pricing-ann {
+  margin-top: 0; /* H1 → lede 16px via h1 margin-bottom */
+}
+
+.pricing-page-head + .billing-toggle {
+  margin-top: var(--space-8); /* lede → toggle 32px */
 }
 
 .price-cta-caption {
@@ -1584,6 +1615,14 @@ a.chip[aria-current="page"] {
   color: var(--c-ink);
 }
 
+.footer-note {
+  margin: var(--space-2) 0 0;
+  max-width: 28ch;
+  font-size: var(--t-caption-size);
+  line-height: var(--t-caption-lh);
+  color: var(--c-ink-muted);
+}
+
 .footer-bottom {
   margin-top: var(--space-10);
   display: flex;
@@ -1596,6 +1635,24 @@ a.chip[aria-current="page"] {
 @media (max-width: 900px) {
   .footer-grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Phone footer: brand full-width row, then 2×2 link columns (Legal under Sources). */
+@media (max-width: 640px) {
+  .site-footer .container {
+    width: min(1200px, calc(100% - var(--space-6) * 2));
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    column-gap: var(--space-6);
+    row-gap: var(--space-10);
+  }
+
+  .footer-grid > .footer-col:first-child {
+    grid-column: 1 / -1;
+    margin-bottom: var(--space-10);
   }
 }
 
@@ -2138,6 +2195,32 @@ a.tag-pill:hover {
 .docs-main .prose :not(pre) > code,
 .blog-post .prose :not(pre) > code {
   overflow-wrap: anywhere;
+  font-size: 0.875em;
+  /* stylelint-disable-next-line color-no-hex -- design-exception: token-color inline code fill */
+  background: #f5f5f5;
+  padding: var(--space-px) var(--space-1-5);
+  border-radius: 4px; /* design-exception: token-color inline code radius (no 4px token) */
+}
+
+.legal .prose a,
+.seo-page .prose a,
+.docs-page .prose a,
+.docs-main .prose a,
+.blog-post .prose a {
+  color: var(--c-ink-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--c-border);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+.legal .prose a:hover,
+.seo-page .prose a:hover,
+.docs-page .prose a:hover,
+.docs-main .prose a:hover,
+.blog-post .prose a:hover {
+  color: var(--c-ink);
 }
 
 .legal .prose table,
@@ -2556,7 +2639,9 @@ a.tag-pill:hover {
   font: 400 var(--t-mono-size) var(--font-mono);
   color: var(--c-ink-muted);
   margin: var(--space-2) 0 0;
+  /* Align with input text (form padding-left --space-5). */
   padding-left: var(--space-5);
+  text-align: left;
 }
 
 .launch-invite-hint.is-error {

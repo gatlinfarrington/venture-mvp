@@ -21,6 +21,7 @@ export function Pricing({ variant = "section" }: Props) {
   const listing = marketplaceUrlClient();
   const paidCheckoutReady = checkoutEnabled;
   const launchHref = variant === "page" ? "#launch" : "/#launch";
+  const showLaunchCaption = !listing && !paidCheckoutReady;
 
   async function startCheckout(tier: "pro" | "business", billing: BillingInterval) {
     if (!checkoutEnabled) return;
@@ -58,7 +59,7 @@ export function Pricing({ variant = "section" }: Props) {
             <p className="eyebrow">Pricing</p>
             <h1>Free to start. Paid plans open at launch.</h1>
             <p className="mono muted pricing-ann">
-              Prices are estimates until launch. Annual billing is two months free.
+              Annual billing is two months free.
             </p>
           </header>
         ) : (
@@ -66,7 +67,7 @@ export function Pricing({ variant = "section" }: Props) {
             <p className="eyebrow">Pricing</p>
             <h2 className="h2">Free to start. Paid plans open at launch.</h2>
             <p className="mono muted pricing-ann">
-              Prices are estimates until launch. Annual billing is two months free.
+              Annual billing is two months free.
             </p>
           </Reveal>
         )}
@@ -99,12 +100,10 @@ export function Pricing({ variant = "section" }: Props) {
                   ? plan.monthly
                   : Math.round(plan.annual / 12);
             const featured = plan.tier === "pro";
-            return (
-              <Reveal
-                key={plan.tier}
-                className={`price-card${featured ? " is-featured" : ""}`}
-                delay={Math.min(i, 4) * 60}
-              >
+            const btnClass = featured ? "btn btn-primary" : "btn btn-secondary";
+            const cardClass = `price-card${featured ? " is-featured" : ""}`;
+            const body = (
+              <>
                 <div className="price-card-top">
                   <p className="eyebrow">{plan.name}</p>
                   <p className="price-amount">
@@ -129,21 +128,18 @@ export function Pricing({ variant = "section" }: Props) {
                 {plan.tier === "free" ? (
                   <div className="price-cta-stack">
                     <InstallCta
-                      className="btn btn-primary"
+                      className={btnClass}
                       source="pricing-free"
                       launchHref={launchHref}
                     >
                       {listing ? "Install free" : "Join the launch list"}
                     </InstallCta>
-                    {!listing ? (
-                      <p className="price-cta-caption mono">Opens with the Marketplace listing</p>
-                    ) : null}
                   </div>
                 ) : paidCheckoutReady ? (
                   <div className="price-cta-stack">
                     <button
                       type="button"
-                      className={featured ? "btn btn-primary" : "btn btn-secondary"}
+                      className={btnClass}
                       disabled={pendingTier === plan.tier}
                       onClick={() => startCheckout(plan.tier, interval)}
                     >
@@ -154,19 +150,40 @@ export function Pricing({ variant = "section" }: Props) {
                 ) : (
                   <div className="price-cta-stack">
                     <InstallCta
-                      className="btn btn-secondary"
+                      className={btnClass}
                       source={`pricing-${plan.tier}`}
                       launchHref={launchHref}
                     >
                       Join the launch list
                     </InstallCta>
-                    <p className="price-cta-caption mono">Opens with the Marketplace listing</p>
                   </div>
                 )}
+              </>
+            );
+            // /pricing is a page-top layout: no Reveal on cards. Home keeps Reveal (below fold).
+            if (variant === "page") {
+              return (
+                <div key={plan.tier} className={cardClass}>
+                  {body}
+                </div>
+              );
+            }
+            return (
+              <Reveal
+                key={plan.tier}
+                className={cardClass}
+                delay={Math.min(i, 4) * 60}
+              >
+                {body}
               </Reveal>
             );
           })}
         </div>
+        {showLaunchCaption ? (
+          <p className="pricing-grid-caption mono muted">
+            Opens with the Marketplace listing
+          </p>
+        ) : null}
         {checkoutMessage ? (
           <p role="status" className="checkout-status">
             {checkoutMessage}

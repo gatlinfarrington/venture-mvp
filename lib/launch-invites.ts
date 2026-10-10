@@ -101,3 +101,19 @@ export async function listLaunchInvites(limit = 200): Promise<LaunchInvite[]> {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, capped);
 }
+
+/** One-click / List-Unsubscribe removal. Idempotent. */
+export async function removeLaunchInvite(emailRaw: string): Promise<boolean> {
+  const email = normalizeEmail(emailRaw);
+  const redis = getRedis();
+  if (redis) {
+    const removed = await redis.srem(REDIS_SET_KEY, email);
+    await redis.del(`${REDIS_META_PREFIX}${email}`);
+    return Number(removed) > 0;
+  }
+  const store = await readFileStore();
+  if (!store[email]) return false;
+  delete store[email];
+  await writeFileStore(store);
+  return true;
+}

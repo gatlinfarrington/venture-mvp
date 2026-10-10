@@ -69,8 +69,8 @@ export function CompareMarketingPage({ page }: { page: ComparePage }) {
             </li>
           ))}
           <li>
-            {brand.name} pricing: <Link href="/pricing">published on /pricing</Link> (not
-            estimated).
+            {brand.name} pricing: Free $0, Pro $9/mo, Business $19/mo (annual = 2 months free). See{" "}
+            <Link href="/pricing">/pricing</Link>.
           </li>
         </ul>
         <p className="mono muted">Sources checked {page.checkedOn}.</p>

@@ -142,7 +142,7 @@ export const comparePages: ComparePage[] = [
     path: "/vs/zapier",
     competitor: "Zapier",
     title: "vs Zapier",
-    description: `How ${brand.name} compares to Zapier→Google Sheets automations: history backfill and an MRR dashboard vs append-only Zaps. Fair table with linked public sources.`,
+    description: `How ${brand.name} compares to Zapier to Google Sheets automations: history backfill and an MRR dashboard vs append-only Zaps. Fair table with linked public sources.`,
     h1: "Zapier append vs a sheet built for revenue",
     lede: `Zapier is excellent at moving new events into Google Sheets. It is not a revenue importer: Zaps typically append rows going forward, burn tasks per action, and leave MRR math to you. ${brand.name} walks source history APIs once, keeps tabs updated, and builds the dashboard tab.`,
     ogEyebrow: "Compare · Zapier",
@@ -168,7 +168,7 @@ export const comparePages: ComparePage[] = [
       {
         h2: "When Zapier fits better",
         paragraphs: [
-          "You need cross-app workflows (Slack alerts, CRM updates, form → sheet) beyond revenue sync, or you only care about appending brand-new events and will maintain formulas yourself.",
+          "You need cross-app workflows (Slack alerts, CRM updates, form to sheet) beyond revenue sync, or you only care about appending brand-new events and will maintain formulas yourself.",
         ],
       },
       {

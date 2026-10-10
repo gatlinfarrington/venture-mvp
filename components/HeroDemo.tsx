@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad"] as const;
+const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"] as const;
 const PRODUCTS = [
   "Demo SaaS · Pro",
   "Example Course",
@@ -30,7 +30,7 @@ type Row = {
 };
 
 type OrderSpec = {
-  source: 0 | 1 | 2;
+  source: 0 | 1 | 2 | 3;
   product: (typeof PRODUCTS)[number];
   amount: number;
 };
@@ -40,11 +40,11 @@ const SEED_SPECS: OrderSpec[] = [
   { source: 0, product: "Demo SaaS · Pro", amount: 29 },
   { source: 1, product: "Example Course", amount: 49 },
   { source: 2, product: "Sample Icon Pack", amount: 12 },
-  { source: 0, product: "Demo SaaS · Team", amount: 19 },
+  { source: 3, product: "Demo SaaS · Team", amount: 19 },
   { source: 1, product: "Template Kit", amount: 9 },
   { source: 2, product: "Demo SaaS · Pro", amount: 29 },
   { source: 0, product: "Sample Icon Pack", amount: 12 },
-  { source: 1, product: "Example Course", amount: 19 },
+  { source: 3, product: "Example Course", amount: 19 },
   { source: 2, product: "Demo SaaS · Team", amount: 9 },
 ];
 
@@ -53,15 +53,15 @@ const LANDING_SPECS: OrderSpec[] = [
   { source: 0, product: "Demo SaaS · Pro", amount: 29 },
   { source: 1, product: "Example Course", amount: 19 },
   { source: 2, product: "Sample Icon Pack", amount: 12 },
-  { source: 0, product: "Demo SaaS · Team", amount: 9 },
+  { source: 3, product: "Demo SaaS · Team", amount: 9 },
   { source: 1, product: "Template Kit", amount: 29 },
   { source: 2, product: "Demo SaaS · Pro", amount: 19 },
   { source: 0, product: "Sample Icon Pack", amount: 12 },
-  { source: 1, product: "Example Course", amount: 9 },
+  { source: 3, product: "Example Course", amount: 9 },
   { source: 2, product: "Demo SaaS · Team", amount: 29 },
   { source: 0, product: "Template Kit", amount: 19 },
   { source: 1, product: "Sample Icon Pack", amount: 12 },
-  { source: 2, product: "Demo SaaS · Pro", amount: 9 },
+  { source: 3, product: "Demo SaaS · Pro", amount: 9 },
   { source: 0, product: "Example Course", amount: 29 },
   { source: 1, product: "Demo SaaS · Team", amount: 15 },
 ];
@@ -135,15 +135,16 @@ export function HeroDemo() {
   const mrrRef = useRef(START_MRR);
   const nextId = useRef(10450);
   const [mrr, setMrr] = useState(START_MRR);
-  const [delta, setDelta] = useState(deltaLabel(START_MRR));
+  const [delta, setDelta] = useState<string | null>(null);
   const [rows, setRows] = useState<Row[]>(SEED_ROWS);
-  const [activeStores, setActiveStores] = useState([false, false, false]);
+  const [activeStores, setActiveStores] = useState([false, false, false, false]);
   const [barHeights, setBarHeights] = useState(
     () => BASE_BARS.map((h) => (h - 40) * 2),
   );
   const [packets, setPackets] = useState<
     Array<{ id: string; amount: number; path: string }>
   >([]);
+  const packetBusy = useRef(false);
 
   function packetPath(storeIndex: number): string {
     const stage = stageRef.current;
@@ -152,23 +153,23 @@ export function HeroDemo() {
     }
     const stageRect = stage.getBoundingClientRect();
     const store = stage.querySelectorAll<HTMLElement>(".hero-store")[storeIndex];
-    const st = store?.querySelector<HTMLElement>(".st");
     const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
-    if (!st || !sheet) {
+    if (!store || !sheet) {
       return "M 150 138 C 230 138, 250 160, 330 175";
     }
-    const stRect = st.getBoundingClientRect();
+    const storeRect = store.getBoundingClientRect();
     const sheetRect = sheet.getBoundingClientRect();
-    const startX = stRect.left + stRect.width / 2 - stageRect.left;
-    const startY = stRect.top + stRect.height / 2 - stageRect.top;
-    // End at incoming row left padding (sheet x + 16) and row center y.
+    // Spawn at the card's right edge +8px (never over the status dot).
+    const startX = storeRect.right - stageRect.left + 8;
+    const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
+    // End at sheet.left + 16, center of the new first body row.
     const endX = sheetRect.left - stageRect.left + 16;
     const firstRow = sheet.querySelector<HTMLElement>("tbody tr");
     const rowRect = firstRow?.getBoundingClientRect();
     const endY = rowRect
       ? rowRect.top + rowRect.height / 2 - stageRect.top
       : sheetRect.top - stageRect.top + sheetRect.height * 0.45;
-    const midX = startX + (endX - startX) * 0.5;
+    const midX = startX + (endX - startX) * 0.55;
     return `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
   }
 
@@ -225,19 +226,22 @@ export function HeroDemo() {
         return next;
       });
 
-      // Packet flight 900ms; last 140ms fades while the row slides in.
+      // One packet in flight; fade/scale over the last 160ms as the row inserts.
       const flyMs = 900;
-      const fadeTailMs = 140;
+      const fadeTailMs = 160;
       const rowAt = flyMs - fadeTailMs;
 
-      if (packetsAllowed()) {
+      const spawnPacket = packetsAllowed() && !packetBusy.current;
+      if (spawnPacket) {
+        packetBusy.current = true;
         const pid = `p-${index}-${Date.now()}`;
         const path = packetPath(s);
-        setPackets((p) => [...p, { id: pid, amount, path }]);
+        setPackets([{ id: pid, amount, path }]);
         timers.current.push(
           window.setTimeout(() => {
-            setPackets((p) => p.filter((x) => x.id !== pid));
-          }, flyMs + 50),
+            setPackets([]);
+            packetBusy.current = false;
+          }, flyMs + 20),
         );
       }
 
@@ -268,7 +272,7 @@ export function HeroDemo() {
               }, 1200),
             );
           },
-          reduced ? 0 : rowAt,
+          reduced ? 0 : spawnPacket ? rowAt : 0,
         ),
       );
     },
@@ -280,11 +284,12 @@ export function HeroDemo() {
     nextId.current = 10450;
     mrrRef.current = START_MRR;
     setMrr(START_MRR);
-    setDelta(deltaLabel(START_MRR));
+    setDelta(null);
     setRows(SEED_ROWS);
-    setActiveStores([false, false, false]);
+    setActiveStores([false, false, false, false]);
     setBarHeights(BASE_BARS.map((h) => (h - 40) * 2));
     setPackets([]);
+    packetBusy.current = false;
 
     const reduced = prefersReducedMotion();
     if (reduced) {
@@ -293,14 +298,16 @@ export function HeroDemo() {
       setMrr(FINAL_MRR);
       setDelta(deltaLabel(FINAL_MRR));
       setRows(finalRows());
-      setActiveStores([true, true, true]);
+      setActiveStores([true, true, true, true]);
       setBarHeights(BASE_BARS.map((h) => Math.min(98, (h - 40) * 2 + 14)));
       return;
     }
 
+    // Stagger so only one packet is in flight (fly 900ms + small gap).
+    const gapMs = 980;
     for (let i = 0; i < LANDING_SPECS.length; i++) {
       timers.current.push(
-        window.setTimeout(() => landOrder(i), 600 + i * 420),
+        window.setTimeout(() => landOrder(i), 600 + i * gapMs),
       );
     }
   }, [clearTimers, landOrder]);
@@ -367,7 +374,7 @@ export function HeroDemo() {
         ref={stageRef}
         className="hero-stage"
         role="img"
-        aria-label="Animation: three stores sync orders into one spreadsheet while MRR rises (example data)"
+        aria-label="four stores"
       >
         <div className="hero-stores-col" aria-hidden="true">
           <div className="hero-stores">
@@ -375,6 +382,7 @@ export function HeroDemo() {
               { name: "Lemon Squeezy", store: "example-store" },
               { name: "Polar", store: "example-org" },
               { name: "Gumroad", store: "example-seller" },
+              { name: "Stripe", store: "example-acct" },
             ].map((s, i) => (
               <div
                 key={s.name}
@@ -400,7 +408,7 @@ export function HeroDemo() {
               <div className="eyebrow">MRR · all sources</div>
               <div className="hero-mrr">
                 <b>{fmt(mrr)}</b>
-                <span className="hero-delta">{delta}</span>
+                {delta ? <span className="hero-delta">{delta}</span> : null}
               </div>
               <div className="hero-bars">
                 {barHeights.map((h, i) => (

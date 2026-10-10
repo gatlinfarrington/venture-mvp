@@ -9,7 +9,12 @@ type Props = {
   delay?: number;
 };
 
-/** IntersectionObserver reveal per MOTION.md: once, 15% visible. */
+/**
+ * IntersectionObserver reveal per MOTION.md: once, 15% visible.
+ * Content stays visible without JS / without html.motion (crawlers, reduced
+ * motion, full-page captures). Above-the-fold elements get is-visible at mount
+ * with transition:none so they never flash hidden.
+ */
 export function Reveal({
   children,
   className,
@@ -22,8 +27,21 @@ export function Reveal({
     const el = ref.current;
     if (!el) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+      !document.documentElement.classList.contains("motion")
+    ) {
       el.classList.add("is-visible");
+      return;
+    }
+
+    // Above the fold: show immediately with no entrance transition.
+    if (el.getBoundingClientRect().top < window.innerHeight) {
+      el.style.transition = "none";
+      el.classList.add("is-visible");
+      requestAnimationFrame(() => {
+        el.style.transition = "";
+      });
       return;
     }
 

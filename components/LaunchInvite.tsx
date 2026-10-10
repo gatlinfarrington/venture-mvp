@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 const STORAGE_KEY = "rs_invite";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const DEFAULT_HINT = "One email when the Marketplace listing goes live. Nothing else.";
+const DEFAULT_HINT = "One email at launch. Nothing else.";
 
 type Status = "idle" | "submitting" | "success" | "duplicate" | "invalid" | "server";
 
