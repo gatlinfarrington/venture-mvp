@@ -13,6 +13,7 @@
     "lint:design": "stylelint \"app/**/*.css\" \"components/**/*.css\" --allow-empty-input && node scripts/design-check.mjs",
     "validate:content": "node scripts/validate-content.mjs",
     "stripe:sync-prices": "node scripts/stripe-sync-prices.mjs",
+    "verify:prod": "bash scripts/verify-prod.sh",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
