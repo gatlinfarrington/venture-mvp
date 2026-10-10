@@ -196,7 +196,7 @@ img {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #262626;
+  background: var(--c-ink-hover);
 }
 
 .btn-secondary {
@@ -540,6 +540,7 @@ img {
 
 @keyframes hero-pulse {
   to {
+    /* design-exception: A1 pulse ring expands to transparent, not a glow */
     box-shadow: 0 0 0 8px transparent;
   }
 }
@@ -712,7 +713,7 @@ img {
 
   .hero-sheet {
     width: auto;
-    left: 212px;
+    left: var(--layout-hero-sheet-left);
   }
 }
 
@@ -1143,7 +1144,7 @@ img {
 }
 
 .final-cta .btn-primary:hover:not(:disabled) {
-  background: #e4e4e7;
+  background: var(--c-dark-ink-hover);
 }
 
 .site-footer {

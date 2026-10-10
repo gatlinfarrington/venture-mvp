@@ -4,8 +4,10 @@
   --c-surface:#FFFFFF; /* Cards, inputs */
   --c-surface-2:#F2F2F2; /* Subtle fills, chip rest, sheet header band */
   --c-ink:#0D0D0D; /* Primary text, primary buttons, series 1 */
+  --c-ink-hover:#262626; /* Primary button hover (slightly lifted ink) */
   --c-ink-muted:#5C5C5C; /* Secondary text, meta */
   --c-ink-inverse:#FFFFFF; /* Text on ink / signal */
+  --c-dark-ink-hover:#E4E4E7; /* Primary button hover on dark CTA band */
   --c-border:#8C8C8C; /* Interactive borders */
   --c-hairline:#E6E6E6; /* Decorative dividers, gridlines */
   --c-signal:#0A7A55; /* Brand color: icon fill, positive deltas, series 2, 'synced' status */
@@ -44,6 +46,7 @@
   --space-10:40px;
   --space-12:48px;
   --space-16:64px;
+  --layout-hero-sheet-left:212px; /* Mobile hero sheet inset beside store pills */
   --radius-sm:6px;
   --radius-md:12px;
   --radius-lg:22px;
