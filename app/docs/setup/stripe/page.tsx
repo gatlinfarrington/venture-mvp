@@ -30,10 +30,9 @@ export default function StripeSetupPage() {
           </li>
           <li>
             Grant <strong>Read</strong> access for Charges, Customers, Subscriptions, Invoices, and
-            Refunds (or the closest matching resources in your Dashboard). Leave write permissions
-            off.
+            Refunds. Leave write permissions off.
           </li>
-          <li>Copy the key once into a password manager before pasting into the add-on.</li>
+          <li>Save the key in your password manager before you paste it.</li>
         </ol>
         <h2>Connect in {brand.name}</h2>
         <p>

@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"] as const;
 const PRODUCTS = [
@@ -145,6 +151,11 @@ export function HeroDemo() {
     Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
   >([]);
   const packetBusy = useRef(false);
+  const pendingFlip = useRef<{
+    newId: string;
+    tops: Map<string, number>;
+  } | null>(null);
+  const [flipId, setFlipId] = useState<string | null>(null);
 
   function packetPath(storeIndex: number): string {
     const stage = stageRef.current;
@@ -258,9 +269,18 @@ export function HeroDemo() {
             const id = `EX-${nextId.current++}`;
             const stage = stageRef.current;
             const tbody = stage?.querySelector<HTMLElement>(".hero-sheet tbody");
-            const priorCount = tbody
-              ? tbody.querySelectorAll("tr").length
-              : 0;
+
+            // Record each existing row's top by id before insert (FLIP first).
+            if (!reduced && tbody) {
+              const tops = new Map<string, number>();
+              for (const tr of tbody.querySelectorAll<HTMLElement>("tr[data-row-id]")) {
+                const rid = tr.dataset.rowId;
+                if (rid) tops.set(rid, tr.getBoundingClientRect().top);
+              }
+              if (tops.size > 0) {
+                pendingFlip.current = { newId: id, tops };
+              }
+            }
 
             setRows((prev) => {
               const next: Row[] = [
@@ -269,29 +289,8 @@ export function HeroDemo() {
               ].slice(0, 9);
               return next;
             });
-
-            // FLIP: existing rows translateY -36px to 0 (240ms). New row fades via CSS.
-            if (!reduced && tbody && priorCount > 0) {
-              requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  const trs = Array.from(tbody.querySelectorAll<HTMLElement>("tr"));
-                  for (let i = 1; i < trs.length; i++) {
-                    const tr = trs[i]!;
-                    tr.style.transition = "none";
-                    tr.style.transform = "translateY(-36px)";
-                    tr.getBoundingClientRect();
-                    tr.classList.add("hero-flip");
-                    tr.style.transition = "";
-                    tr.style.transform = "translateY(0)";
-                    timers.current.push(
-                      window.setTimeout(() => {
-                        tr.classList.remove("hero-flip");
-                        tr.style.transform = "";
-                      }, 260),
-                    );
-                  }
-                });
-              });
+            if (!reduced && pendingFlip.current?.newId === id) {
+              setFlipId(id);
             }
 
             // Add the order’s real amount (not ×4) so delta stays near +6%.
@@ -317,10 +316,53 @@ export function HeroDemo() {
     [tickMrr],
   );
 
+  // FLIP: after the new row mounts, invert existing rows by measured delta, then play.
+  useLayoutEffect(() => {
+    if (!flipId || prefersReducedMotion()) return;
+    const pending = pendingFlip.current;
+    if (!pending || pending.newId !== flipId) return;
+    const tbody = stageRef.current?.querySelector<HTMLElement>(".hero-sheet tbody");
+    if (!tbody) return;
+
+    const movers: HTMLElement[] = [];
+    for (const tr of tbody.querySelectorAll<HTMLElement>("tr[data-row-id]")) {
+      const rid = tr.dataset.rowId;
+      if (!rid || rid === flipId) continue;
+      const oldTop = pending.tops.get(rid);
+      if (oldTop == null) continue;
+      const newTop = tr.getBoundingClientRect().top;
+      const deltaY = oldTop - newTop;
+      if (Math.abs(deltaY) < 0.5) continue;
+      tr.style.transition = "none";
+      tr.style.transform = `translateY(${deltaY}px)`;
+      tr.getBoundingClientRect();
+      movers.push(tr);
+    }
+
+    requestAnimationFrame(() => {
+      for (const tr of movers) {
+        tr.style.transition = "";
+        tr.classList.add("hero-flip");
+        tr.style.transform = "translateY(0)";
+        timers.current.push(
+          window.setTimeout(() => {
+            tr.classList.remove("hero-flip");
+            tr.style.transform = "";
+          }, 260),
+        );
+      }
+    });
+
+    pendingFlip.current = null;
+    setFlipId(null);
+  }, [flipId]);
+
   const run = useCallback(() => {
     clearTimers();
     nextId.current = 10450;
     mrrRef.current = START_MRR;
+    pendingFlip.current = null;
+    setFlipId(null);
     setMrr(START_MRR);
     setDelta(null);
     setRows(SEED_ROWS);
@@ -469,7 +511,11 @@ export function HeroDemo() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className={r.fresh ? "new" : undefined}>
+                  <tr
+                    key={r.id}
+                    data-row-id={r.id}
+                    className={r.fresh ? "new" : undefined}
+                  >
                     <td className="mono">{r.id}</td>
                     <td>{r.source}</td>
                     <td className="hero-col-product">{r.product}</td>

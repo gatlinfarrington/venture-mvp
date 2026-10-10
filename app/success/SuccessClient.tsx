@@ -18,7 +18,7 @@ import { marketplaceUrlClient } from "@/lib/marketplace-client";
 import { pricing } from "@/lib/site";
 import { supportEmail, supportMailto } from "@/lib/support";
 
-type UiState = "loading" | "ready" | "notfound" | "error";
+type UiState = "loading" | "ready" | "notfound" | "error" | "timeout";
 
 type SessionPayload = {
   status?: string | null;
@@ -83,7 +83,7 @@ function SuccessHeader() {
       <div className="success-top-inner">
         <BrandWordmark />
         <Link className="success-help" href="/support">
-          Need help? Support
+          Help
         </Link>
       </div>
     </header>
@@ -115,10 +115,9 @@ function SuccessInner() {
   const [data, setData] = useState<SessionPayload | null>(null);
   const [httpStatus, setHttpStatus] = useState<number | null>(null);
   const [slow, setSlow] = useState(false);
-  const [timeoutLede, setTimeoutLede] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [copyNote, setCopyNote] = useState<string | null>(null);
+  const [copyFallback, setCopyFallback] = useState(false);
   const [checks, setChecks] = useState<[boolean, boolean, boolean]>(() =>
     readChecks(sessionId),
   );
@@ -137,6 +136,21 @@ function SuccessInner() {
       setChecks((prev) => {
         const next = [...prev] as [boolean, boolean, boolean];
         next[step - 1] = true;
+        return next;
+      });
+    },
+    [sessionId],
+  );
+
+  const toggleCheck = useCallback(
+    (step: 1 | 2 | 3) => {
+      if (!sessionId) return;
+      setChecks((prev) => {
+        const next = [...prev] as [boolean, boolean, boolean];
+        const on = !prev[step - 1];
+        next[step - 1] = on;
+        if (on) localStorage.setItem(storageKey(sessionId, step), "1");
+        else localStorage.removeItem(storageKey(sessionId, step));
         return next;
       });
     },
@@ -166,8 +180,7 @@ function SuccessInner() {
       if (elapsed >= GIVE_UP_MS) {
         settled = true;
         stop();
-        setTimeoutLede(true);
-        setUi("notfound");
+        setUi("timeout");
         return;
       }
       if (!slowArmed && elapsed >= SLOW_MS) {
@@ -230,10 +243,10 @@ function SuccessInner() {
   }, [sessionId, retryNonce]);
 
   useEffect(() => {
-    if (prevUi.current !== ui) {
-      prevUi.current = ui;
+    if (prevUi.current !== null && prevUi.current !== ui) {
       queueMicrotask(() => h1Ref.current?.focus());
     }
+    prevUi.current = ui;
   }, [ui]);
 
   async function copyKey(full: string) {
@@ -249,20 +262,20 @@ function SuccessInner() {
           sel?.removeAllRanges();
           sel?.addRange(range);
         });
-        setCopyNote("Press ⌘C / Ctrl+C");
+        setCopyFallback(true);
         setCopied(false);
         return;
       }
       await navigator.clipboard.writeText(full);
       setCopied(true);
-      setCopyNote("Copied");
+      setCopyFallback(false);
       window.setTimeout(() => {
         setCopied(false);
-        setCopyNote(null);
       }, 2000);
     } catch {
       setRevealed(true);
-      setCopyNote("Press ⌘C / Ctrl+C");
+      setCopyFallback(true);
+      setCopied(false);
     }
   }
 
@@ -329,11 +342,7 @@ function SuccessInner() {
       </>
     ),
     action: (
-      <Link
-        className="btn btn-secondary success-btn"
-        href="/docs/api-keys"
-        onClick={() => markCheck(3)}
-      >
+      <Link className="btn btn-secondary success-btn" href="/docs/api-keys">
         Where to find each API key
       </Link>
     ),
@@ -348,9 +357,7 @@ function SuccessInner() {
             <div className="success-primary">
               <p className="eyebrow">Confirming payment</p>
               <h1 className="success-h1" ref={h1Ref} tabIndex={-1}>
-                Getting your key
-                <br />
-                from Stripe.
+                Your key is on its way.
               </h1>
               <p className="success-lede muted">
                 {slow
@@ -431,7 +438,6 @@ function SuccessInner() {
                     className="btn btn-primary success-btn success-copy-btn"
                     onClick={() => {
                       void copyKey(license.key);
-                      markCheck(3);
                     }}
                   >
                     <span className="success-copy-label">
@@ -441,8 +447,9 @@ function SuccessInner() {
                   </button>
                 </div>
                 <p className="success-key-note muted" role="status">
-                  {copyNote ? (
-                    <span className="mono">{copyNote}</span>
+                  {copied ? <span className="visually-hidden">Copied</span> : null}
+                  {copyFallback ? (
+                    <span className="mono">Press ⌘C / Ctrl+C</span>
                   ) : (
                     <>
                       Treat it like a password: it unlocks {tier} for anyone who has
@@ -473,7 +480,7 @@ function SuccessInner() {
                           type="checkbox"
                           className="visually-hidden"
                           checked={done}
-                          onChange={() => markCheck(step.storageStep)}
+                          onChange={() => toggleCheck(step.storageStep)}
                           aria-label={`Mark step ${num} done`}
                         />
                         <span className="success-check-face" />
@@ -526,6 +533,47 @@ function SuccessInner() {
           </div>
         ) : null}
 
+        {ui === "timeout" ? (
+          <div className="success-grid success-state" key="timeout">
+            <div className="success-primary">
+              <p className="eyebrow">Still confirming</p>
+              <h1 className="success-h1" ref={h1Ref} tabIndex={-1}>
+                Stripe hasn’t confirmed yet.
+              </h1>
+              <p className="success-lede muted">
+                Your payment is safe. Try again in a minute, or email support with
+                your receipt number and we’ll send your key.
+              </p>
+              <div className="success-key-card">
+                <div className="success-key-card-head">
+                  <span>Get your key</span>
+                </div>
+                <div className="success-key-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary success-btn"
+                    onClick={() => {
+                      setSlow(false);
+                      setUi("loading");
+                      setRetryNonce((n) => n + 1);
+                    }}
+                  >
+                    Try again
+                  </button>
+                  <a
+                    className="btn btn-secondary success-btn"
+                    href={
+                      supportMailto(`${brand.name} license key`) || "/support"
+                    }
+                  >
+                    Email support
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {ui === "notfound" ? (
           <div className="success-grid success-state" key="notfound">
             <div className="success-primary">
@@ -536,9 +584,8 @@ function SuccessInner() {
                 that checkout.
               </h1>
               <p className="success-lede muted">
-                {timeoutLede
-                  ? "This is taking longer than usual."
-                  : "This link is missing its session or has expired. If Stripe sent you a receipt, your payment went through and your key exists."}
+                This link is missing its session or has expired. If Stripe sent you
+                a receipt, your payment went through and your key exists.
               </p>
               <div className="success-key-card">
                 <div className="success-key-card-head">
@@ -595,7 +642,6 @@ function SuccessInner() {
                     className="btn btn-primary success-btn"
                     onClick={() => {
                       setSlow(false);
-                      setTimeoutLede(false);
                       setUi("loading");
                       setRetryNonce((n) => n + 1);
                     }}
