@@ -88,6 +88,19 @@ curl -s -H "Authorization: Bearer $STRIPE_ADMIN_TOKEN" https://<domain>/api/admi
 
 5. Flip to **live** keys in Vercel Production, create a **live** webhook with the same path/events, re-run `stripe:sync-prices` with `sk_live_…` (or let first live checkout create prices).
 
+### Automated checks
+
+**Deployed SHA vs `main`** — `GET /api/version` returns `{ sha }` from `VERCEL_GIT_COMMIT_SHA`. After a production deploy:
+
+```bash
+./scripts/verify-prod.sh
+# or: PROD_URL=https://venture-mvp.vercel.app ./scripts/verify-prod.sh
+```
+
+This fetches `origin/main`, compares it to production’s SHA, smoke-checks `/`, `/pricing`, `/success`, and `/terms`, and fails if `/terms` still contains “ten months”.
+
+**Stripe test-mode E2E** — Playwright spec `e2e/stripe-checkout.spec.ts` runs Checkout (Pro monthly) → webhook license issue → `/success` `data-state="ready"` → `POST /api/license/verify`. It **skips cleanly** when `STRIPE_SECRET_KEY` / checkout is not configured on the target (look for `BLOCKED (owner): Stripe test checkout skipped` in the log). Enable it by setting test keys + webhook secret + Upstash Redis on the deployment the E2E job hits (or run locally with `stripe listen` and the same env).
+
 ## 5. Do not
 
 - Commit real keys to git.
