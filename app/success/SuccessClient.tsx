@@ -51,9 +51,7 @@ function tierLabel(tier: string) {
   return tier.charAt(0).toUpperCase() + tier.slice(1);
 }
 
-function intervalLabel(interval: string) {
-  const i = interval.toLowerCase();
-  if (i === "year" || i === "annual") return "annual";
+function intervalLabel(_interval: string) {
   return "monthly";
 }
 
@@ -478,7 +476,7 @@ function SuccessInner() {
                           onChange={() => markCheck(step.storageStep)}
                           aria-label={`Mark step ${num} done`}
                         />
-                        <span className="success-check-face" aria-hidden="true" />
+                        <span className="success-check-face" />
                       </label>
                     </li>
                   );

@@ -258,10 +258,9 @@ export function HeroDemo() {
             const id = `EX-${nextId.current++}`;
             const stage = stageRef.current;
             const tbody = stage?.querySelector<HTMLElement>(".hero-sheet tbody");
-            const existing = tbody
-              ? Array.from(tbody.querySelectorAll<HTMLElement>("tr"))
-              : [];
-            const firstTops = existing.map((tr) => tr.getBoundingClientRect().top);
+            const priorCount = tbody
+              ? tbody.querySelectorAll("tr").length
+              : 0;
 
             setRows((prev) => {
               const next: Row[] = [
@@ -271,20 +270,15 @@ export function HeroDemo() {
               return next;
             });
 
-            // FLIP: new row fades in (CSS); existing rows translate from -rowH → 0.
-            if (!reduced && tbody && firstTops.length) {
+            // FLIP: existing rows translateY -36px to 0 (240ms). New row fades via CSS.
+            if (!reduced && tbody && priorCount > 0) {
               requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                   const trs = Array.from(tbody.querySelectorAll<HTMLElement>("tr"));
                   for (let i = 1; i < trs.length; i++) {
-                    const prevTop = firstTops[i - 1];
-                    if (prevTop == null) continue;
                     const tr = trs[i]!;
-                    const lastTop = tr.getBoundingClientRect().top;
-                    const delta = prevTop - lastTop;
-                    if (Math.abs(delta) < 0.5) continue;
                     tr.style.transition = "none";
-                    tr.style.transform = `translateY(${delta}px)`;
+                    tr.style.transform = "translateY(-36px)";
                     tr.getBoundingClientRect();
                     tr.classList.add("hero-flip");
                     tr.style.transition = "";
@@ -293,7 +287,7 @@ export function HeroDemo() {
                       window.setTimeout(() => {
                         tr.classList.remove("hero-flip");
                         tr.style.transform = "";
-                      }, 240),
+                      }, 260),
                     );
                   }
                 });

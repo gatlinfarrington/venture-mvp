@@ -849,24 +849,28 @@ a.chip[aria-current="page"] {
   font-variant-numeric: tabular-nums;
 }
 
-/* New row fades in; existing rows FLIP via JS (translateY -rowH → 0, 220ms). */
+/* New row: fade + translateY -8px to 0. Existing rows FLIP via JS (-36px to 0). */
+.hero-sheet tr.new {
+  animation: hero-rowin 240ms var(--ease-out);
+}
+
 .hero-sheet tr.new td {
-  animation:
-    hero-cell-fade 160ms var(--ease-out),
-    hero-hl 1.2s var(--ease-standard);
+  animation: hero-hl 1.2s var(--ease-standard);
 }
 
 .hero-sheet tr.hero-flip {
-  transition: transform 220ms var(--ease-out);
+  transition: transform 240ms var(--ease-out);
   will-change: transform;
 }
 
-@keyframes hero-cell-fade {
+@keyframes hero-rowin {
   from {
     opacity: 0;
+    transform: translateY(-8px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -1019,6 +1023,7 @@ a.chip[aria-current="page"] {
     display: none;
   }
 
+  .hero-sheet tr.new,
   .hero-sheet tr.new td,
   .hero-sheet tr.hero-flip,
   .hero-store.on .st {
@@ -1393,7 +1398,7 @@ a.chip[aria-current="page"] {
 .price-card {
   border: 1px solid var(--c-hairline);
   border-radius: var(--radius-md);
-  padding: var(--space-5); /* 20px below 1024 */
+  padding: var(--space-5); /* 20px below 1024px */
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1402,7 +1407,7 @@ a.chip[aria-current="page"] {
 
 @media (min-width: 1024px) {
   .price-card {
-    padding: var(--space-6); /* 24px from 1024px up */
+    padding: var(--space-6);
   }
 }
 
@@ -1460,7 +1465,7 @@ a.chip[aria-current="page"] {
 }
 
 .price-annual {
-  margin-top: var(--space-2); /* 8px; kept when annual prices are shown */
+  margin-top: var(--space-2);
 }
 
 .price-features {
@@ -2010,7 +2015,17 @@ body:has(.success-shell) .admin-stripe-banner {
 }
 
 .success-checklist li.is-done .success-check-title {
-  color: var(--c-ink-muted);
+  color: var(--c-ink-muted); /* #5C5C5C */
+}
+
+.success-checklist li.is-done .success-check-face {
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+}
+
+.success-checklist li.is-done .success-check-face::after {
+  opacity: 1;
+  transform: rotate(45deg) scale(1);
 }
 
 .success-check-copy {
