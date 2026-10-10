@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
+import { REFUND_LINE } from "@/lib/copy";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -20,15 +21,15 @@ const faqs = [
   },
   {
     q: "Can I use more than one storefront?",
-    a: "Free allows one source. Pro unlocks Lemon Squeezy, Polar, and Gumroad together with scheduled refresh. Business adds multiple stores per source.",
+    a: "Free allows one source. Pro includes Lemon Squeezy, Polar, Gumroad, and Stripe together with scheduled refresh. Business adds multiple stores per source.",
   },
   {
     q: "What if Lemon Squeezy moves features toward Stripe?",
-    a: "Keep history in Sheets so platform changes do not erase your analytics trail. See the Stripe comparison page for how a sheet-native workflow fits beside Stripe-powered rails.",
+    a: "Keep history in Sheets so platform changes do not erase your analytics trail. You can also connect Stripe directly: see the Stripe guide for the sheet-native workflow beside Stripe’s payment tools.",
   },
   {
     q: "How do refunds and cancellations work for my license?",
-    a: "First-time charges may be refunded within 14 days via Support. Cancel anytime in Stripe Customer Portal when configured; access continues through the paid period unless a refund is issued.",
+    a: REFUND_LINE,
   },
   {
     q: "Is the marketing dashboard real customer data?",
@@ -45,18 +46,7 @@ export default function DocsFaqPage() {
         {faqs.map((item) => (
           <section key={item.q}>
             <h2>{item.q}</h2>
-            <p>
-              {item.q.startsWith("How do refunds") ? (
-                <>
-                  First-time charges may be refunded within 14 days via{" "}
-                  <Link href="/support">Support</Link>. Cancel anytime in Stripe Customer Portal
-                  when configured; access continues through the paid period unless a refund is
-                  issued.
-                </>
-              ) : (
-                item.a
-              )}
-            </p>
+            <p>{item.a}</p>
           </section>
         ))}
         <p>

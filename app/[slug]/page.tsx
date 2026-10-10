@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { InstallCta } from "@/components/InstallCta";
 import { getSeoPage, seoPages } from "@/lib/seo-pages";
 import { siteConfig } from "@/lib/site";
 
@@ -55,9 +56,9 @@ export default async function SeoMarketingPage({ params }: Props) {
           </section>
         ))}
         <p>
-          <a className="btn btn-primary" href={siteConfig.installUrl}>
-            Install for Google Sheets
-          </a>
+          <InstallCta className="btn btn-primary" source={`seo-${page.slug}`}>
+            Join the launch list
+          </InstallCta>
         </p>
       </div>
     </main>

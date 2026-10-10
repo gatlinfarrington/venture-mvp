@@ -124,3 +124,16 @@ Gatlin rejected dark boxes, so `launch/revenuesheet-dashboard-template.xlsx` shi
 - **Chart series:** Lemon Squeezy `#0D0D0D`, Polar `#5C5C5C`, Gumroad `#8C8C8C`, with 1px white separators between stacks. Green is no longer a series color, because green is reserved for meaning (positive deltas, "Synced").
 - **Tab colors:** Dashboard `#0D0D0D` (was green), the data tabs `#0D0D0D`, Refunds `#B42318`, Settings and MRR monthly `#8C8C8C`.
 - **Chart data:** lives on a visible `MRR monthly` tab (named range `rs_mrr_monthly`). The MRR KPI and the MoM delta are formulas against it.
+
+## Design review follow-up (Growth default, no green fills)
+Takes precedence over Fills / Conditional formatting / Charts above when they conflict:
+- **Template default:** Growth (ARR / LTV / refunds / cohorts / country). Classic remains an opt-in.
+- **No green (or red) cell fills** for Δ or Synced. Δ is text only: green `#0A7A55` ▲ when positive, `#B42318` ▼ when negative, grey `#5C5C5C` for 0%. Synced is a green ● with ink label, no fill.
+- **KPI top rules:** ink `#0D0D0D` by default; red only when the headline value itself is negative (Churn is not red-topped just for being “inverse”).
+- **Refund mini-KPIs:** ink top rule; red text only if the number is negative.
+- **Cohort heat:** greyscale ramp (darker grey = higher retention). White text on dark cells where AA needs it. No green/red heat.
+- **MRR goal:** one contiguous ink bar on a grey track (not segmented blocks). Label uses thousands separators (`$11,709 / $15,000`).
+- **Churn chart:** ink line; y-axis / label treatment matches the MRR chart (`minValue: 0`, no fixed 2–4% window).
+- **Status line:** list only connected sources (Stripe only when connected). Demo sample lists Lemon Squeezy, Polar, Gumroad.
+- **Growth layout:** Growth metrics + tables use the same 4-column KPI grid (B–D / F–H / J–L / N–P).
+- **Copy:** no U+2014 em dash in demo / status strings; use middle dot ` · ` (or a period / comma).

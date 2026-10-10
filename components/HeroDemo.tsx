@@ -35,7 +35,7 @@ type OrderSpec = {
   amount: number;
 };
 
-/** Newest-first seed (EX-10449 … EX-10441) — contiguous with inserts from EX-10450. */
+/** Newest-first seed (EX-10449 … EX-10441): contiguous with inserts from EX-10450. */
 const SEED_SPECS: OrderSpec[] = [
   { source: 0, product: "Demo SaaS · Pro", amount: 29 },
   { source: 1, product: "Example Course", amount: 49 },
@@ -142,8 +142,35 @@ export function HeroDemo() {
     () => BASE_BARS.map((h) => (h - 40) * 2),
   );
   const [packets, setPackets] = useState<
-    Array<{ id: string; amount: number; store: number }>
+    Array<{ id: string; amount: number; path: string }>
   >([]);
+
+  function packetPath(storeIndex: number): string {
+    const stage = stageRef.current;
+    if (!stage) {
+      return "M 150 138 C 230 138, 250 160, 330 175";
+    }
+    const stageRect = stage.getBoundingClientRect();
+    const store = stage.querySelectorAll<HTMLElement>(".hero-store")[storeIndex];
+    const st = store?.querySelector<HTMLElement>(".st");
+    const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
+    if (!st || !sheet) {
+      return "M 150 138 C 230 138, 250 160, 330 175";
+    }
+    const stRect = st.getBoundingClientRect();
+    const sheetRect = sheet.getBoundingClientRect();
+    const startX = stRect.left + stRect.width / 2 - stageRect.left;
+    const startY = stRect.top + stRect.height / 2 - stageRect.top;
+    // End at incoming row left padding (sheet x + 16) and row center y.
+    const endX = sheetRect.left - stageRect.left + 16;
+    const firstRow = sheet.querySelector<HTMLElement>("tbody tr");
+    const rowRect = firstRow?.getBoundingClientRect();
+    const endY = rowRect
+      ? rowRect.top + rowRect.height / 2 - stageRect.top
+      : sheetRect.top - stageRect.top + sheetRect.height * 0.45;
+    const midX = startX + (endX - startX) * 0.5;
+    return `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
+  }
 
   const clearTimers = useCallback(() => {
     timers.current.forEach((id) => window.clearTimeout(id));
@@ -198,13 +225,19 @@ export function HeroDemo() {
         return next;
       });
 
+      // Packet flight 900ms; last 140ms fades while the row slides in.
+      const flyMs = 900;
+      const fadeTailMs = 140;
+      const rowAt = flyMs - fadeTailMs;
+
       if (packetsAllowed()) {
         const pid = `p-${index}-${Date.now()}`;
-        setPackets((p) => [...p, { id: pid, amount, store: s }]);
+        const path = packetPath(s);
+        setPackets((p) => [...p, { id: pid, amount, path }]);
         timers.current.push(
           window.setTimeout(() => {
             setPackets((p) => p.filter((x) => x.id !== pid));
-          }, 950),
+          }, flyMs + 50),
         );
       }
 
@@ -235,7 +268,7 @@ export function HeroDemo() {
               }, 1200),
             );
           },
-          reduced ? 0 : 800,
+          reduced ? 0 : rowAt,
         ),
       );
     },
@@ -255,7 +288,7 @@ export function HeroDemo() {
 
     const reduced = prefersReducedMotion();
     if (reduced) {
-      // MOTION.md: final state immediately — identical numbers on every viewport.
+      // MOTION.md: final state immediately. Identical numbers on every viewport.
       mrrRef.current = FINAL_MRR;
       setMrr(FINAL_MRR);
       setDelta(deltaLabel(FINAL_MRR));
@@ -409,9 +442,7 @@ export function HeroDemo() {
           <div
             key={p.id}
             className="hero-packet"
-            style={{
-              offsetPath: `path("M 150 ${[78, 138, 198][p.store]} C 230 ${[78, 138, 198][p.store]}, 250 160, 330 175")`,
-            }}
+            style={{ offsetPath: `path("${p.path}")` }}
           >
             +${p.amount}
           </div>

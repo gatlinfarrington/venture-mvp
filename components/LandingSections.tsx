@@ -1,11 +1,15 @@
-import Image from "next/image";
 import { HeroDemoLazy } from "@/components/HeroDemoLazy";
+import { InstallCta } from "@/components/InstallCta";
+import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
+import { ResponsiveCrop } from "@/components/ResponsiveCrop";
 import { Reveal } from "@/components/Reveal";
-import { brand } from "@/lib/brand";
-import { siteConfig } from "@/lib/site";
+import { brand, marketplaceUrl } from "@/lib/brand";
+import { REFUND_LINE } from "@/lib/copy";
 
 export function Hero() {
+  const listing = marketplaceUrl();
+
   return (
     <section className="hero">
       <div className="container hero-grid">
@@ -23,21 +27,36 @@ export function Hero() {
           <p className="body-lg muted hero-lede hero-reveal" style={{ animationDelay: "120ms" }}>
             {brand.description}
           </p>
-          <div className="hero-pills hero-reveal" style={{ animationDelay: "180ms" }}>
-            {siteConfig.sources.map((s) => (
-              <span key={s} className="pill">
-                {s}
-              </span>
-            ))}
+          <div className="hero-ctas hero-reveal" style={{ animationDelay: "180ms" }}>
+            {listing ? (
+              <>
+                <InstallCta className="btn btn-primary" source="hero">
+                  Install for Google Sheets
+                </InstallCta>
+                <a className="btn btn-secondary" href="#dashboard">
+                  See the dashboard
+                </a>
+              </>
+            ) : (
+              <LaunchInvite id="launch" source="hero" />
+            )}
           </div>
-          <div className="hero-ctas hero-reveal" style={{ animationDelay: "240ms" }}>
-            <a className="btn btn-primary" href={siteConfig.installUrl}>
-              Install for Google Sheets
-            </a>
-            <a className="btn btn-secondary" href="#dashboard">
-              See the dashboard
-            </a>
-          </div>
+          {!listing ? (
+            <dl className="hero-facts hero-reveal" style={{ animationDelay: "240ms" }}>
+              <div>
+                <dt>Status</dt>
+                <dd>Built and in testing. Not yet on the Marketplace.</dd>
+              </div>
+              <div>
+                <dt>Sources</dt>
+                <dd>Lemon Squeezy, Polar, Gumroad</dd>
+              </div>
+              <div>
+                <dt>Free plan</dt>
+                <dd>1 source, manual refresh</dd>
+              </div>
+            </dl>
+          ) : null}
         </div>
         <div className="hero-frame hero-reveal" style={{ animationDelay: "300ms" }}>
           <HeroDemoLazy />
@@ -52,22 +71,25 @@ export function HowItWorks() {
     {
       n: "01",
       title: "Connect",
-      body: "Paste an API key from Lemon Squeezy, Polar, or Gumroad. No OAuth dance with those stores — the add-on reads what you grant.",
-      img: "/design/how-connect-2x.png",
+      body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe. No OAuth dance with those stores: the add-on reads what you grant.",
+      desktop: "/design/how-connect-2x.png",
+      phone: "/design/how-connect-phone-2x.png",
       alt: "Connect sources panel with example store connections",
     },
     {
       n: "02",
       title: "Backfill",
       body: "We pull full order history into named tabs, not just new rows from today. Then scheduled sync keeps the sheet current.",
-      img: "/design/how-orders-2x.png",
-      alt: "Orders tab filling with product and amount columns",
+      desktop: "/design/how-backfill-2x.png",
+      phone: "/design/how-backfill-phone-2x.png",
+      alt: "Sidebar mid-backfill with ink progress bar and orders writing in",
     },
     {
       n: "03",
       title: "Dashboard",
-      body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data — formulas you can audit and extend.",
-      img: "/design/how-dashboard-2x.png",
+      body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data (formulas you can audit and extend).",
+      desktop: "/design/how-dashboard-2x.png",
+      phone: "/design/how-dashboard-phone-2x.png",
       alt: "MRR dashboard with KPIs and stacked source chart",
     },
   ];
@@ -85,12 +107,13 @@ export function HowItWorks() {
               <span className="step-num">{step.n}</span>
               <h3 className="h3">{step.title}</h3>
               <p className="muted">{step.body}</p>
-              <div className="step-frame">
-                <Image
-                  src={step.img}
+              <div className={`step-frame${step.n === "02" ? " step-frame-backfill" : ""}`}>
+                <ResponsiveCrop
+                  desktop={step.desktop}
+                  phone={step.phone}
                   alt={step.alt}
-                  width={1120}
-                  height={840}
+                  width={2400}
+                  height={1800}
                   sizes="(max-width: 900px) 100vw, 33vw"
                   quality={75}
                 />
@@ -109,7 +132,7 @@ export function WhatLands() {
     { name: "Subscriptions", desc: "Active and canceled subs with renewals and MRR contribution." },
     { name: "Customers", desc: "Buyer email, first seen, and last purchase from each connected source." },
     { name: "Refunds", desc: "Refunds and chargebacks linked back to the original order." },
-    { name: "Dashboard", desc: "MRR, net revenue, churn, and revenue by product — auto-built." },
+    { name: "Dashboard", desc: "MRR, net revenue, churn, and revenue by product (auto-built)." },
   ];
 
   return (
@@ -131,11 +154,12 @@ export function WhatLands() {
             </ul>
           </Reveal>
           <Reveal className="lands-frame" delay={60}>
-            <Image
-              src="/design/lands-orders-2x.png"
+            <ResponsiveCrop
+              desktop="/design/lands-orders-2x.png"
+              phone="/design/lands-orders-phone-2x.png"
               alt="Orders tab with Order ID, created, source, product, email, amount, and status"
               width={2400}
-              height={1000}
+              height={1800}
               sizes="(max-width: 900px) 100vw, 55vw"
               quality={70}
             />
@@ -147,19 +171,10 @@ export function WhatLands() {
 }
 
 export function WhySheet() {
-  const cols = [
-    {
-      title: "You own the data",
-      body: "Rows live in your Google account. Export, share, or delete without asking a vendor dashboard for a CSV.",
-    },
-    {
-      title: "Use your own formulas",
-      body: "Named ranges like rs_orders and rs_mrr_monthly are ready for QUERY, FILTER, and the models you already trust.",
-    },
-    {
-      title: "No new dashboard to learn",
-      body: "If you already live in Sheets for taxes, investor updates, or cohort math, keep that habit — we fill the cells.",
-    },
+  const claims = [
+    "You own the data in your Google account.",
+    "Named ranges ready for QUERY and FILTER.",
+    "No new dashboard to learn.",
   ];
 
   return (
@@ -169,14 +184,40 @@ export function WhySheet() {
           <p className="eyebrow">Why a sheet</p>
           <h2 className="h2">A spreadsheet you control beats another login.</h2>
         </Reveal>
-        <div className="why-grid">
-          {cols.map((c, i) => (
-            <Reveal key={c.title} className="why-col" delay={Math.min(i, 4) * 60}>
-              <h3 className="h3">{c.title}</h3>
-              <p className="muted">{c.body}</p>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal className="why-artifact">
+          <pre className="why-formula" tabIndex={0}>
+            <code>
+              {`=QUERY(rs_orders, "select C, sum(F) where G = 'paid' group by C label sum(F) 'Revenue'")`}
+            </code>
+          </pre>
+          <table className="why-result">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Lifetime deal</td>
+                <td className="num">$4,280</td>
+              </tr>
+              <tr>
+                <td>Pro annual</td>
+                <td className="num">$2,160</td>
+              </tr>
+              <tr>
+                <td>Starter monthly</td>
+                <td className="num">$890</td>
+              </tr>
+            </tbody>
+          </table>
+          <ul className="why-claims">
+            {claims.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+        </Reveal>
       </div>
     </section>
   );
@@ -192,7 +233,7 @@ export function Comparison() {
   ];
 
   return (
-    <section className="section">
+    <section className="section section-compare">
       <div className="container">
         <Reveal className="section-head">
           <p className="eyebrow">Compare</p>
@@ -244,23 +285,23 @@ export function FAQ() {
   const items = [
     {
       q: "Where does my data live?",
-      a: `Synced rows are written into your Google Sheet. ${brand.name} also stores license and sync settings needed to run the add-on. Exact retention and subprocessors will be listed in the privacy policy before paid launch.`,
+      a: `Order and subscription rows land in your Google Sheet. License keys, support messages, and launch invites are stored so we can run the product: on Vercel (hosting), Upstash Redis (licenses and form storage), and Stripe (billing). Details are on the privacy page.`,
     },
     {
       q: "What Google scopes do you need?",
       a: "Only four Apps Script scopes: the current spreadsheet (spreadsheets.currentonly), outbound HTTPS to source and license APIs (script.external_request), time-driven triggers for scheduled refresh (script.scriptapp), and the sidebar/menu UI (script.container.ui). No Google Drive, Gmail, or Contacts access. Confirm on the consent screen at install.",
     },
     {
-      q: "Lemon Squeezy is moving to Stripe — will this still work?",
-      a: "Yes for as long as Lemon Squeezy (or its successor) exposes an orders/subscriptions API. If the API changes, we update the importer. Polar and Gumroad remain independent sources.",
+      q: "Lemon Squeezy is moving to Stripe. Will this still work?",
+      a: "Yes for as long as Lemon Squeezy exposes an orders API, and you can also connect Stripe directly. Polar and Gumroad stay independent sources either way.",
     },
     {
       q: "How do refunds work for paid plans?",
-      a: "Billing runs through Stripe. Refund and cancel terms will be published with paid launch; until then, email support and we will handle requests case by case. Cancel anytime from the Stripe customer portal in your receipt.",
+      a: REFUND_LINE,
     },
     {
       q: "How do I cancel?",
-      a: "Use the Stripe customer portal link in your receipt email. After cancel, the license becomes inactive on the next webhook; Free-tier limits still apply if you keep the add-on installed.",
+      a: "When paid plans are live, open the Stripe customer portal from your receipt email. After cancel, the license becomes inactive on the next webhook; Free-tier limits still apply if you keep the add-on installed.",
     },
   ];
 
@@ -269,7 +310,7 @@ export function FAQ() {
       <div className="container">
         <Reveal className="section-head">
           <p className="eyebrow">FAQ</p>
-          <h2 className="h2">Straight answers before you install.</h2>
+          <h2 className="h2">Data, scopes, billing.</h2>
         </Reveal>
         <Reveal className="faq-list">
           {items.map((item) => (
@@ -285,18 +326,33 @@ export function FAQ() {
 }
 
 export function FinalCTA() {
+  const listing = marketplaceUrl();
+
   return (
     <section className="section">
       <div className="container">
         <Reveal className="final-cta">
-          <h2 className="h2">
-            Your revenue,
-            <br />
-            finally in one place.
-          </h2>
-          <a className="btn btn-primary" href={siteConfig.installUrl}>
-            Install for Google Sheets
-          </a>
+          {listing ? (
+            <>
+              <h2 className="h2">
+                Your revenue,
+                <br />
+                finally in one place.
+              </h2>
+              <InstallCta className="btn btn-primary" source="final-cta">
+                Install for Google Sheets
+              </InstallCta>
+            </>
+          ) : (
+            <>
+              <h2 className="h2 final-cta-title">
+                Be first in when the
+                <br />
+                listing goes live.
+              </h2>
+              <LaunchInvite source="final-cta" />
+            </>
+          )}
         </Reveal>
       </div>
     </section>

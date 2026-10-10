@@ -1,25 +1,29 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { InstallCta } from "@/components/InstallCta";
 import { Reveal } from "@/components/Reveal";
-import { checkoutEnabled, pricing, siteConfig, type BillingInterval } from "@/lib/site";
+import { REFUND_LINE } from "@/lib/copy";
+import { marketplaceUrlClient } from "@/lib/marketplace-client";
+import { checkoutEnabled, pricing, type BillingInterval } from "@/lib/site";
 
-export function Pricing() {
+type Props = {
+  /** Dedicated /pricing page uses inner-page H1; homepage keeps section H2. */
+  variant?: "section" | "page";
+};
+
+export function Pricing({ variant = "section" }: Props) {
   const [interval, setInterval] = useState<BillingInterval>("month");
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [pendingTier, setPendingTier] = useState<string | null>(null);
 
   const plans = [pricing.free, pricing.pro, pricing.business];
+  const listing = marketplaceUrlClient();
+  const paidCheckoutReady = checkoutEnabled;
+  const launchHref = variant === "page" ? "#launch" : "/#launch";
 
-  async function startCheckout(
-    tier: "pro" | "business",
-    billing: BillingInterval,
-  ) {
-    if (!checkoutEnabled) {
-      setCheckoutMessage("Checkout opens at launch — Stripe keys are not configured yet.");
-      return;
-    }
+  async function startCheckout(tier: "pro" | "business", billing: BillingInterval) {
+    if (!checkoutEnabled) return;
     setPendingTier(tier);
     setCheckoutMessage(null);
     try {
@@ -47,20 +51,30 @@ export function Pricing() {
   }
 
   return (
-    <section id="pricing" className="section">
+    <section id="pricing" className={`section${variant === "page" ? " pricing-section-page" : ""}`}>
       <div className="container">
-        <Reveal className="section-head">
-          <p className="eyebrow">Pricing</p>
-          <h2 className="h2">Free to try. Pay when you schedule sync.</h2>
-          <p className="muted body-lg">
-            Free, $9, and $19. Annual billing is ten months of the monthly price —
-            two months free.
-          </p>
-        </Reveal>
+        {variant === "page" ? (
+          <header className="pricing-page-head">
+            <p className="eyebrow">Pricing</p>
+            <h1>Free to start. Paid plans open at launch.</h1>
+            <p className="mono muted pricing-ann">
+              Prices are estimates until launch. Annual billing is two months free.
+            </p>
+          </header>
+        ) : (
+          <Reveal className="section-head">
+            <p className="eyebrow">Pricing</p>
+            <h2 className="h2">Free to start. Paid plans open at launch.</h2>
+            <p className="mono muted pricing-ann">
+              Prices are estimates until launch. Annual billing is two months free.
+            </p>
+          </Reveal>
+        )}
 
         <div className="billing-toggle" role="group" aria-label="Billing interval">
           <button
             type="button"
+            className="chip"
             aria-pressed={interval === "month"}
             onClick={() => setInterval("month")}
           >
@@ -68,6 +82,7 @@ export function Pricing() {
           </button>
           <button
             type="button"
+            className="chip"
             aria-pressed={interval === "year"}
             onClick={() => setInterval("year")}
           >
@@ -85,8 +100,12 @@ export function Pricing() {
                   : Math.round(plan.annual / 12);
             const featured = plan.tier === "pro";
             return (
-              <Reveal key={plan.tier} className={`price-card${featured ? " is-featured" : ""}`} delay={Math.min(i, 4) * 60}>
-                <div>
+              <Reveal
+                key={plan.tier}
+                className={`price-card${featured ? " is-featured" : ""}`}
+                delay={Math.min(i, 4) * 60}
+              >
+                <div className="price-card-top">
                   <p className="eyebrow">{plan.name}</p>
                   <p className="price-amount">
                     ${amount}
@@ -99,9 +118,7 @@ export function Pricing() {
                     </span>
                   </p>
                   {plan.tier !== "free" && interval === "year" ? (
-                    <p className="mono muted price-annual">
-                      ${plan.annual}/yr
-                    </p>
+                    <p className="mono muted price-annual">${plan.annual}/yr</p>
                   ) : null}
                 </div>
                 <ul className="price-features">
@@ -110,10 +127,19 @@ export function Pricing() {
                   ))}
                 </ul>
                 {plan.tier === "free" ? (
-                  <Link className="btn btn-secondary" href={siteConfig.installUrl}>
-                    Start free
-                  </Link>
-                ) : checkoutEnabled ? (
+                  <div className="price-cta-stack">
+                    <InstallCta
+                      className="btn btn-primary"
+                      source="pricing-free"
+                      launchHref={launchHref}
+                    >
+                      {listing ? "Install free" : "Join the launch list"}
+                    </InstallCta>
+                    {!listing ? (
+                      <p className="price-cta-caption mono">Opens with the Marketplace listing</p>
+                    ) : null}
+                  </div>
+                ) : paidCheckoutReady ? (
                   <div className="price-cta-stack">
                     <button
                       type="button"
@@ -123,13 +149,18 @@ export function Pricing() {
                     >
                       {pendingTier === plan.tier ? "Opening…" : `Get ${plan.name}`}
                     </button>
+                    <p className="price-cta-caption mono muted">{REFUND_LINE}</p>
                   </div>
                 ) : (
                   <div className="price-cta-stack">
-                    <a className="btn btn-secondary" href={siteConfig.installUrl}>
-                      Coming soon
-                    </a>
-                    <p className="price-cta-caption mono muted">Checkout opens at launch</p>
+                    <InstallCta
+                      className="btn btn-secondary"
+                      source={`pricing-${plan.tier}`}
+                      launchHref={launchHref}
+                    >
+                      Join the launch list
+                    </InstallCta>
+                    <p className="price-cta-caption mono">Opens with the Marketplace listing</p>
                   </div>
                 )}
               </Reveal>

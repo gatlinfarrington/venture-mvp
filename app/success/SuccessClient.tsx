@@ -46,8 +46,7 @@ function SuccessInner() {
       <p className="eyebrow">Checkout</p>
       <h1 className="h2">You are in.</h1>
       <p className="muted">
-        Paste the license key into the {brand.name} add-on sidebar under Settings. Keep it private
-        — it unlocks your paid tier.
+        Paste the license key into the {brand.name} add-on sidebar under Settings. Keep it private: it unlocks your paid tier.
       </p>
       {data?.error ? <p className="muted">Error: {data.error}</p> : null}
       {data?.message && !data.license ? <p className="muted">{data.message}</p> : null}

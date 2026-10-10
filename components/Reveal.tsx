@@ -9,7 +9,7 @@ type Props = {
   delay?: number;
 };
 
-/** IntersectionObserver reveal per MOTION.md — once, 15% visible. */
+/** IntersectionObserver reveal per MOTION.md: once, 15% visible. */
 export function Reveal({
   children,
   className,

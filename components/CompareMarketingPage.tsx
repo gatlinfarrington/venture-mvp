@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { InstallCta } from "@/components/InstallCta";
 import { brand } from "@/lib/brand";
 import type { CompareCell, ComparePage } from "@/lib/compare-pages";
-import { siteConfig } from "@/lib/site";
 
 function cellClass(value: CompareCell, side: "us" | "them"): string {
   if (value === true) return side === "us" ? "yes" : "yes-ink";
@@ -64,20 +64,20 @@ export function CompareMarketingPage({ page }: { page: ComparePage }) {
               <a href={source.href} rel="noopener noreferrer" target="_blank">
                 {source.label}
               </a>
-              {" — "}
+              {": "}
               {source.note}
             </li>
           ))}
           <li>
-            {brand.name} pricing — <Link href="/pricing">published on /pricing</Link> (not
+            {brand.name} pricing: <Link href="/pricing">published on /pricing</Link> (not
             estimated).
           </li>
         </ul>
-        <p className="mono muted">Competitor prices phrased as “starts at”; checked {page.checkedOn}.</p>
+        <p className="mono muted">Sources checked {page.checkedOn}.</p>
         <p>
-          <a className="btn btn-primary" href={siteConfig.installUrl}>
-            Install for Google Sheets
-          </a>
+          <InstallCta className="btn btn-primary" source={`vs-${page.slug}`}>
+            Join the launch list
+          </InstallCta>
         </p>
       </div>
     </main>

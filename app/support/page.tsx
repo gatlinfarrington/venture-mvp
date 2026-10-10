@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { InstallCta } from "@/components/InstallCta";
+import { SupportForm } from "@/components/SupportForm";
 import { brand } from "@/lib/brand";
+import { REFUND_LINE } from "@/lib/copy";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -14,53 +17,81 @@ export const metadata: Metadata = {
   },
 };
 
+const selfServe = [
+  {
+    href: "/docs",
+    label: "Docs",
+    line: "Setup for Lemon Squeezy, Polar, Gumroad, and Stripe",
+  },
+  {
+    href: "/docs/faq",
+    label: "FAQ",
+    line: "Data storage, scopes, billing",
+  },
+  {
+    href: "/docs/troubleshooting",
+    label: "Troubleshooting",
+    line: "Empty tabs, auth, rate limits, license verify",
+  },
+  {
+    href: "/docs/api-keys",
+    label: "API keys",
+    line: "Where keys live and how to rotate them",
+  },
+  {
+    href: "/security",
+    label: "Security",
+    line: "Scopes, what reaches our servers, subprocessors",
+  },
+] as const;
+
 export default function SupportPage() {
   return (
     <main className="legal container page-shell">
       <p className="eyebrow">Help</p>
       <h1>Support</h1>
       <p className="body-lg muted page-lede">
-        Start with the docs. Most sync and license questions are answered there — without waiting on
-        an inbox.
+        Start with the docs. Most sync and license questions are answered there, without waiting on
+        an inbox. Still stuck? Send a message below.
       </p>
 
       <div className="prose">
         <h2>Self-serve</h2>
-        <ul>
-          <li>
-            <Link href="/docs">Docs</Link> — setup for Lemon Squeezy, Polar, and Gumroad
-          </li>
-          <li>
-            <Link href="/docs/faq">FAQ</Link> — data storage, scopes, billing
-          </li>
-          <li>
-            <Link href="/docs/troubleshooting">Troubleshooting</Link> — empty tabs, auth, rate
-            limits, license verify
-          </li>
-          <li>
-            <Link href="/docs/api-keys">API keys</Link> — where keys live and how to rotate them
-          </li>
-          <li>
-            <Link href="/security">Security</Link> — scopes, what reaches our servers, subprocessors
-          </li>
+        <ul className="support-link-rows">
+          {selfServe.map((item) => (
+            <li key={item.href}>
+              <Link href={item.href} className="support-link-row">
+                <span className="support-link-label">{item.label}</span>
+                <span className="support-link-line muted">{item.line}</span>
+              </Link>
+            </li>
+          ))}
         </ul>
 
         <h2>Billing and licenses</h2>
         <p>
-          Paid plans run through Stripe Checkout. Use the customer portal link on your receipt to
-          update payment methods or cancel. After purchase, the success page shows your license key —
-          paste it in the add-on sidebar.
+          Paid plans run through Stripe Checkout when they open. Use the customer portal link on your
+          receipt to update payment methods or cancel. After purchase, the success page shows your
+          license key: paste it in the add-on sidebar.
         </p>
-        <p>
-          First-time charges may be refunded within 14 days. Open a request from the contact channel
-          on your Stripe receipt and include the checkout session id.
-        </p>
+        <p>{REFUND_LINE}</p>
 
+        <h2>Contact us</h2>
+        <p>
+          Billing, license keys, sync errors, or setup questions: we reply to the email you provide.
+        </p>
+      </div>
+
+      <div className="support-form-wrap">
+        <SupportForm />
+      </div>
+
+      <div className="prose" style={{ marginTop: "var(--space-10)" }}>
         <h2>Install</h2>
         <p>
-          <a className="btn btn-primary" href={siteConfig.installUrl}>
-            Install for Google Sheets
-          </a>
+          <InstallCta className="btn btn-primary" source="support">
+            Join the launch list
+          </InstallCta>
         </p>
       </div>
     </main>

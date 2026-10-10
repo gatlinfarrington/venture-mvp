@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { brand, siteHostname } from "@/lib/brand";
+import { REFUND_LINE } from "@/lib/copy";
 import { siteConfig } from "@/lib/site";
 import { privacyEmail } from "@/lib/support";
 
@@ -24,8 +25,8 @@ export default function TermsPage() {
 
         <h2>The service</h2>
         <p>
-          {brand.name} syncs commerce data from supported sources (currently Lemon Squeezy, Polar,
-          and Gumroad) into Google Sheets and builds an MRR-oriented dashboard tab. Features and
+          {brand.name} syncs commerce data from supported sources (Lemon Squeezy, Polar, Gumroad,
+          and Stripe) into Google Sheets and builds an MRR-oriented dashboard tab. Features and
           source coverage may change. Free, Pro, and Business tiers are described on the{" "}
           <Link href="/pricing">pricing</Link> page.
         </p>
@@ -42,8 +43,8 @@ export default function TermsPage() {
           The add-on accesses Google user data only as described in our{" "}
           <Link href="/privacy">Privacy policy</Link>, including the Google API Services Limited Use
           disclosure. Scopes are limited to the current spreadsheet, outbound HTTPS for sync and
-          license checks, time-driven triggers, and the sidebar/menu UI — not Google Drive, Gmail,
-          or Contacts. You authorize us to read and write that spreadsheet to operate sync and the
+          license checks, time-driven triggers, and the sidebar/menu UI (not Google Drive, Gmail,
+          or Contacts). You authorize us to read and write that spreadsheet to operate sync and the
           dashboard. You must not use the add-on to process data you are not allowed to store in
           Google Sheets.
         </p>
@@ -75,8 +76,7 @@ export default function TermsPage() {
 
         <h2>Refunds</h2>
         <p>
-          First-time charges may be refunded within 14 days on request via{" "}
-          <Link href="/support">Support</Link>. After that, cancellations stop future renewals.
+          {REFUND_LINE} Questions go to <Link href="/support">Support</Link>.
         </p>
 
         <h2>Intellectual property</h2>
@@ -96,7 +96,7 @@ export default function TermsPage() {
         <p>
           To the extent permitted by law, our total liability for claims relating to the service is
           limited to the amounts you paid us in the three months before the claim. We are not liable
-          for lost profits, lost data in your Google account (maintain your own Drive backups), or
+          for lost profits, lost data in your Google account (maintain your own sheet backups), or
           indirect damages.
         </p>
 

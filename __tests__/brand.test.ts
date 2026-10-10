@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { brand, siteHostname, siteUrl } from "@/lib/brand";
+import { brand, installUrl, siteHostname, siteUrl } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
 describe("brand config", () => {
@@ -41,5 +41,23 @@ describe("brand config", () => {
     delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
     expect(siteUrl()).not.toContain("revenuesheet.app");
     expect(siteHostname()).not.toBe("revenuesheet.app");
+  });
+
+  it("returns null install URL when marketplace unset", () => {
+    const prevM = process.env.NEXT_PUBLIC_MARKETPLACE_URL;
+    const prevI = process.env.NEXT_PUBLIC_INSTALL_URL;
+    delete process.env.NEXT_PUBLIC_MARKETPLACE_URL;
+    delete process.env.NEXT_PUBLIC_INSTALL_URL;
+    expect(installUrl()).toBeNull();
+    if (prevM === undefined) delete process.env.NEXT_PUBLIC_MARKETPLACE_URL;
+    else process.env.NEXT_PUBLIC_MARKETPLACE_URL = prevM;
+    if (prevI === undefined) delete process.env.NEXT_PUBLIC_INSTALL_URL;
+    else process.env.NEXT_PUBLIC_INSTALL_URL = prevI;
+  });
+
+  it("keeps pre-launch hero copy without forcing Stripe into the lede", () => {
+    expect(brand.taglineShort).toMatch(/pre-launch/i);
+    expect(brand.description).toMatch(/Lemon Squeezy, Polar and Gumroad/);
+    expect(brand.description).not.toMatch(/Stripe/);
   });
 });

@@ -55,7 +55,7 @@ export function runWeeklyDigest(): DigestResult {
 
     const subject = `${BRAND.name} weekly digest · MRR $${Math.round(mrr.total).toLocaleString("en-US")}`;
     const body = [
-      `${BRAND.name} — weekly digest`,
+      `${BRAND.name} · weekly digest`,
       "",
       `MRR: $${mrr.total.toFixed(2)}`,
       `ARR: $${arr.arr.toFixed(2)}`,

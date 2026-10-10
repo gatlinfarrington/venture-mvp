@@ -26,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/vs/baremetrics",
     "/vs/chartmogul",
     "/vs/zapier",
-    // /success is post-checkout only — kept out of the sitemap and disallowed in robots.ts
+    // /success is post-checkout only: kept out of the sitemap and disallowed in robots.ts
   ].map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),

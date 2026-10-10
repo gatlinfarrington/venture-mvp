@@ -26,7 +26,7 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: `${brand.name} — ${brand.pitch}`,
+    default: `${brand.name} · ${brand.pitch}`,
     template: `%s · ${brand.name}`,
   },
   description: brand.description,
@@ -37,13 +37,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: brand.name,
-    title: `${brand.name} — ${brand.pitch}`,
+    title: `${brand.name} · ${brand.pitch}`,
     description: brand.description,
     url: siteConfig.url,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${brand.name} — ${brand.pitch}`,
+    title: `${brand.name} · ${brand.pitch}`,
     description: brand.description,
   },
   alternates: {
@@ -68,9 +68,14 @@ export default function RootLayout({
         <style>{`:root{--font-sans:var(--font-sans-loaded),'Inter Tight',system-ui,sans-serif;--font-mono:var(--font-mono-loaded),'JetBrains Mono',ui-monospace,monospace}`}</style>
       </head>
       <body>
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
         <StripeAdminBanner />
         <Nav />
-        {children}
+        <div id="main" tabIndex={-1}>
+          {children}
+        </div>
         <Footer />
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 Publish by adding a Markdown/MDX file and merging to `main`. CI validates frontmatter before build.
 
-## Blog — `content/blog/*.mdx`
+## Blog: `content/blog/*.mdx`
 
 Filename becomes the URL slug (`welcome.mdx` → `/blog/welcome`). Use lowercase kebab-case.
 
@@ -20,7 +20,7 @@ Opening paragraph.
 
 ## Subheading
 
-Body copy. Keep it factual — avoid filler marketing words (supercharge, seamless, unlock…).
+Body copy. Keep it factual. Avoid filler marketing words (supercharge, seamless, unlock…).
 
 - Lists are fine
 - Link with `[Docs](/docs)` for internal paths
@@ -37,7 +37,7 @@ Body copy. Keep it factual — avoid filler marketing words (supercharge, seamle
 
 Each post gets: index listing, tag pages, RSS (`/blog/rss.xml`), sitemap entry, Article JSON-LD, and a generated Open Graph image.
 
-## Changelog — `content/changelog/*.mdx`
+## Changelog: `content/changelog/*.mdx`
 
 Filename is for editors only; sort is by `date` then title. Rendered on `/changelog`.
 

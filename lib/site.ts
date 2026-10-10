@@ -7,6 +7,7 @@ export const siteConfig = {
   get url() {
     return siteUrl();
   },
+  /** Marketplace listing when set; otherwise CTAs use launch-invite capture. */
   get installUrl() {
     return installUrl();
   },
@@ -17,7 +18,10 @@ export const siteConfig = {
   },
 };
 
-/** Paid Checkout is off until a real Stripe publishable key is set. */
+/**
+ * Paid Checkout UI is on when a real Stripe publishable key is set.
+ * The Checkout API uses STRIPE_SECRET_KEY and resolves/creates prices server-side.
+ */
 export const checkoutEnabled = Boolean(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
     !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.includes("REPLACE"),
@@ -49,7 +53,7 @@ export const pricing = {
     monthly: 9,
     /** Annual = 10× monthly (2 months free). */
     annual: 90,
-    sources: 3,
+    sources: 4,
     refresh: "Scheduled (hourly)",
     stores: 1,
     features: [
@@ -64,7 +68,7 @@ export const pricing = {
     name: "Business",
     monthly: 19,
     annual: 190,
-    sources: 3,
+    sources: 4,
     refresh: "Scheduled (hourly)",
     stores: "Multiple",
     features: [
@@ -80,13 +84,13 @@ export function tierLimits(tier: Tier) {
   switch (tier) {
     case "business":
       return {
-        maxSources: 3,
+        maxSources: 4,
         maxStores: 20,
         scheduledRefresh: true,
       };
     case "pro":
       return {
-        maxSources: 3,
+        maxSources: 4,
         maxStores: 1,
         scheduledRefresh: true,
       };
