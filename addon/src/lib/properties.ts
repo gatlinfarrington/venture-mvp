@@ -136,8 +136,8 @@ export function setEmailDigestOptIn(on: boolean): void {
 }
 
 export function getDashboardTemplate(): DashboardTemplate {
-  const raw = userProps().getProperty(TEMPLATE_PROP) || "classic";
-  return raw === "growth" ? "growth" : "classic";
+  const raw = userProps().getProperty(TEMPLATE_PROP) || "growth";
+  return raw === "classic" ? "classic" : "growth";
 }
 
 export function setDashboardTemplate(template: DashboardTemplate): void {

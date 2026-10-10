@@ -57,12 +57,12 @@ Declared in `src/appsscript.json`:
 
 ## Features
 
-- **Sidebar** — API keys + license; MRR goal; template picker (classic / growth); schedule cadence; CSV paste; opt-in weekly digest. Keys in **User Properties**.
+- **Sidebar** — API keys + license; MRR goal; template picker (Growth default; Classic alternative); schedule cadence; CSV paste; opt-in weekly digest. Keys in **User Properties**.
 - **Importers** — Lemon Squeezy, Polar, Gumroad, Stripe (restricted read-only key), CSV fallback with column mapping. Resumable chunked backfill (`pageToken` / resource). Gumroad uses `page_key`. Intervals (quarterly / biannual / biennial / yearly / …) → monthly MRR.
 - **Metrics** — MRR (active-only by default), ARR, LTV, churn, cohort retention, refunds, top products, revenue by country, MRR goal progress bar.
 - **Schedule** — hourly / 6h / daily / weekly (paid tier); finishes incomplete backfills.
 - **Weekly digest** — opt-in MailApp email. Needs sensitive scope `script.send_mail` (**not** in default `appsscript.json`); document and re-auth to enable.
-- **Dashboard** — `SHEET-STYLE.md` launch v2 (white header + ink rule, greyscale charts, green only for positive deltas / Synced). Growth template adds ARR/LTV/cohorts/country panels.
+- **Dashboard** — `SHEET-STYLE.md` launch v2 (white header + ink rule, greyscale charts). Δ / Synced are text-only greens (no cell fills); cohort heat is greyscale. Growth (default) adds ARR/LTV/cohorts/country panels.
 - **License** — free = 1 source, manual refresh; unreachable API degrades gracefully to free limits.
 - **Demo mode** — **Load example data** fills SAMPLE rows clearly labeled for screenshots.
 

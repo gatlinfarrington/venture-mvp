@@ -141,8 +141,8 @@
     <input id="mrrGoal" type="number" placeholder="e.g. 10000" min="0" step="1" />
     <label for="template">Dashboard template</label>
     <select id="template" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-bottom:10px;font:400 13px 'JetBrains Mono',monospace;background:#fff;">
+      <option value="growth" selected>Growth (+ ARR, LTV, cohorts, country)</option>
       <option value="classic">Classic (launch v2)</option>
-      <option value="growth">Growth (+ ARR, LTV, cohorts, country)</option>
     </select>
     <label for="cadence">Auto-refresh cadence</label>
     <select id="cadence" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-bottom:10px;font:400 13px 'JetBrains Mono',monospace;background:#fff;">
@@ -189,7 +189,7 @@
             document.getElementById("brandName").textContent = s.brandName || "RevenueSheet";
             document.getElementById("currency").value = s.currency || "USD";
             document.getElementById("mrrGoal").value = s.mrrGoal || "";
-            document.getElementById("template").value = s.template || "classic";
+            document.getElementById("template").value = s.template || "growth";
             document.getElementById("cadence").value = s.scheduleCadence || "hourly";
             document.getElementById("includeTrial").checked = !!s.includeTrialingPastDue;
             document.getElementById("emailDigest").checked = !!s.emailDigest;
