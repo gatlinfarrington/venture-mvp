@@ -30,6 +30,9 @@ export function Footer() {
             <Link href="/polar-analytics">Polar</Link>
             <Link href="/gumroad-analytics-google-sheets">Gumroad</Link>
             <Link href="/stripe-to-google-sheets">Stripe</Link>
+            <p className="muted" style={{ marginTop: "var(--space-2)", maxWidth: "28ch" }}>
+              Plus CSV import for anything else.
+            </p>
           </div>
           <div className="footer-col">
             <h3>Guides</h3>
