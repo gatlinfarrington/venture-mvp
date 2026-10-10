@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+      :root {
+        --ink: #0d0d0d;
+        --muted: #5c5c5c;
+        --hairline: #e6e6e6;
+        --border: #8c8c8c;
+        --surface2: #f2f2f2;
+        --signal: #0a7a55;
+        --danger: #b42318;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Inter Tight", system-ui, sans-serif;
+        color: var(--ink);
+        font-size: 14px;
+        padding: 18px 16px 24px;
+        background: #fff;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 16px;
+        letter-spacing: -0.02em;
+        margin-bottom: 4px;
+      }
+      .brand svg { width: 24px; height: 24px; flex: 0 0 auto; }
+      .pitch { color: var(--muted); font-size: 12px; margin-bottom: 18px; }
+      .eb {
+        font: 500 11px "JetBrains Mono", monospace;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 14px 0 8px;
+      }
+      label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+      input {
+        width: 100%;
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0 12px;
+        font: 400 13px "JetBrains Mono", monospace;
+        margin-bottom: 10px;
+        background: #fff;
+      }
+      input:focus { outline: 2px solid var(--signal); outline-offset: 1px; }
+      .hint { font-size: 11px; color: var(--muted); margin: -6px 0 10px; }
+      .btn {
+        width: 100%;
+        height: 44px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--ink);
+        color: #fff;
+        font: 500 15px "Inter Tight", sans-serif;
+        cursor: pointer;
+        margin-top: 8px;
+      }
+      .btn2 {
+        width: 100%;
+        height: 44px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--ink);
+        font: 500 15px "Inter Tight", sans-serif;
+        cursor: pointer;
+        margin-top: 8px;
+      }
+      .btn:disabled { opacity: 0.5; cursor: wait; }
+      .status {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--surface2);
+        font-size: 12px;
+        color: var(--muted);
+        min-height: 40px;
+      }
+      .status.ok { background: #e7f3ee; color: var(--signal); }
+      .status.err { background: #fbeae8; color: var(--danger); }
+      .src {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+      }
+      .src small { display: block; font: 400 11px "JetBrains Mono", monospace; color: var(--muted); margin-top: 2px; }
+      .dot { color: var(--signal); font-weight: 500; }
+      .dot.off { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="brand">
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <rect x="6" y="6" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
+        <rect x="6" y="16" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
+        <rect x="6" y="26" width="8" height="8" rx="1" fill="#0D0D0D"/>
+        <rect x="16" y="6" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
+        <rect x="16" y="16" width="8" height="8" rx="1" fill="#0D0D0D"/>
+        <rect x="16" y="26" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
+        <rect x="26" y="6" width="8" height="8" rx="1" fill="#0A7A55"/>
+        <rect x="26" y="16" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
+        <rect x="26" y="26" width="8" height="8" rx="1" fill="#0D0D0D" opacity="0.14"/>
+      </svg>
+      <span id="brandName">RevenueSheet</span>
+    </div>
+    <div class="pitch">All your stores, in a sheet you own.</div>
+
+    <div class="eb">Sources</div>
+    <div id="sourceStatus"></div>
+
+    <div class="eb">API keys</div>
+    <label for="ls">Lemon Squeezy</label>
+    <input id="ls" type="password" placeholder="ls_api_… or leave blank to clear" autocomplete="off" />
+    <label for="polar">Polar</label>
+    <input id="polar" type="password" placeholder="polar_oat_…" autocomplete="off" />
+    <label for="gumroad">Gumroad</label>
+    <input id="gumroad" type="password" placeholder="access_token" autocomplete="off" />
+
+    <div class="eb">License</div>
+    <label for="license">License key</label>
+    <input id="license" type="password" placeholder="rs_live_… (optional)" autocomplete="off" />
+    <label for="currency">Display currency</label>
+    <input id="currency" type="text" placeholder="USD" maxlength="3" />
+
+    <button class="btn" id="saveBtn" onclick="save()">Save keys</button>
+    <button class="btn2" id="syncBtn" onclick="syncNow()">Sync now</button>
+    <button class="btn2" onclick="fullBackfill()">Full backfill</button>
+    <button class="btn2" onclick="demo()">Load example data</button>
+    <button class="btn2" onclick="scheduleOn()">Enable hourly refresh</button>
+    <button class="btn2" onclick="scheduleOff()">Disable schedule</button>
+
+    <div class="status" id="status">Keys are stored in your Google account (User Properties), not in the sheet.</div>
+
+    <script>
+      function setStatus(msg, kind) {
+        var el = document.getElementById("status");
+        el.className = "status" + (kind ? " " + kind : "");
+        el.textContent = msg;
+      }
+
+      function load() {
+        google.script.run
+          .withSuccessHandler(function (s) {
+            document.getElementById("brandName").textContent = s.brandName || "RevenueSheet";
+            document.getElementById("currency").value = s.currency || "USD";
+            var html = "";
+            [["Lemon Squeezy", s.lemonSqueezy], ["Polar", s.polar], ["Gumroad", s.gumroad]].forEach(function (pair) {
+              var on = !!pair[1];
+              html +=
+                '<div class="src"><div><b>' +
+                pair[0] +
+                "</b><small>" +
+                (on ? "Key saved" : "Not connected") +
+                '</small></div><span class="dot' +
+                (on ? "" : " off") +
+                '">' +
+                (on ? "● Ready" : "○") +
+                "</span></div>";
+            });
+            document.getElementById("sourceStatus").innerHTML = html;
+            if (s.lastSyncAt) setStatus("Last sync: " + s.lastSyncAt + (s.demoMode ? " (example data)" : ""), "ok");
+          })
+          .withFailureHandler(function (e) {
+            setStatus(String(e), "err");
+          })
+          .sidebarGetSettings();
+      }
+
+      function save() {
+        setStatus("Saving…");
+        google.script.run
+          .withSuccessHandler(function (msg) {
+            setStatus(msg, "ok");
+            load();
+          })
+          .withFailureHandler(function (e) {
+            setStatus(String(e), "err");
+          })
+          .sidebarSaveSettings({
+            lemonSqueezy: document.getElementById("ls").value,
+            polar: document.getElementById("polar").value,
+            gumroad: document.getElementById("gumroad").value,
+            licenseKey: document.getElementById("license").value,
+            currency: document.getElementById("currency").value,
+          });
+      }
+
+      function syncNow() {
+        setStatus("Syncing…");
+        document.getElementById("syncBtn").disabled = true;
+        google.script.run
+          .withSuccessHandler(function (r) {
+            document.getElementById("syncBtn").disabled = false;
+            setStatus(r.message, r.ok ? "ok" : "err");
+          })
+          .withFailureHandler(function (e) {
+            document.getElementById("syncBtn").disabled = false;
+            setStatus(String(e), "err");
+          })
+          .sidebarSync(false);
+      }
+
+      function fullBackfill() {
+        setStatus("Full backfill…");
+        google.script.run
+          .withSuccessHandler(function (r) {
+            setStatus(r.message, r.ok ? "ok" : "err");
+          })
+          .withFailureHandler(function (e) {
+            setStatus(String(e), "err");
+          })
+          .sidebarSync(true);
+      }
+
+      function demo() {
+        setStatus("Loading example data…");
+        google.script.run
+          .withSuccessHandler(function (r) {
+            setStatus(r.message, "ok");
+          })
+          .withFailureHandler(function (e) {
+            setStatus(String(e), "err");
+          })
+          .sidebarDemo();
+      }
+
+      function scheduleOn() {
+        google.script.run
+          .withSuccessHandler(function (msg) {
+            setStatus(msg, "ok");
+          })
+          .withFailureHandler(function (e) {
+            setStatus(String(e), "err");
+          })
+          .sidebarEnableSchedule();
+      }
+
+      function scheduleOff() {
+        google.script.run
+          .withSuccessHandler(function (msg) {
+            setStatus(msg, "ok");
+          })
+          .withFailureHandler(function (e) {
+            setStatus(String(e), "err");
+          })
+          .sidebarDisableSchedule();
+      }
+
+      load();
+    </script>
+  </body>
+</html>
