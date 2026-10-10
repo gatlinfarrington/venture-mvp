@@ -1606,13 +1606,17 @@ h2 {
   margin: 0 0 var(--space-3);
 }
 
-.tag-pills {
+.tag-pills,
+.legal ul.tag-pills,
+.docs-page ul.tag-pills {
   list-style: none;
   margin: var(--space-3) 0 0;
   padding: 0;
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
   gap: var(--space-1-5);
+  align-items: center;
 }
 
 .tag-pill {
