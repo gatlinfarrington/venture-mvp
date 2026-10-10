@@ -111,7 +111,7 @@ export function appendGrowthPanels(
       .setFontFamily(FONTS.mono)
       .setFontSize(8)
       .setFontColor(COLORS.danger)
-      .setValue("EXAMPLE DATA — growth panels use sample cohorts.");
+      .setValue("EXAMPLE DATA · growth panels use sample cohorts.");
   }
 }
 

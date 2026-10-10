@@ -133,10 +133,10 @@ export function buildDashboard(
       ? sourceLabels.map((s) => s.toUpperCase()).join(", ")
       : "NO SOURCES";
   const statusLeft = opts.stale
-    ? `   ● LAST SYNC ${syncTime} — CHECK CONNECTION`
+    ? `   ● LAST SYNC ${syncTime} · CHECK CONNECTION`
     : `   ● SYNCED ${syncTime} · ${connectedLabel} · ${schedule}`;
   const statusRight = opts.sample
-    ? "EXAMPLE DATA — NOT REAL CUSTOMERS  "
+    ? "EXAMPLE DATA · NOT REAL CUSTOMERS  "
     : opts.licenseNote
       ? `${opts.licenseNote}  `
       : "";

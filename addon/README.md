@@ -4,7 +4,7 @@ Clasp-ready Apps Script (TypeScript) that syncs Lemon Squeezy, Polar, and Gumroa
 
 Brand name is swappable from a single constant: [`src/lib/brand.ts`](src/lib/brand.ts) (`BRAND.name`). The placeholder logo is the **Ledger Cell** mark (`design/ledger-cell-mark*.png`, logo-v2 concept 3).
 
-Design target (launch v2): [`design/revenuesheet-dashboard-template-preview.png`](design/revenuesheet-dashboard-template-preview.png) · [`design/revenuesheet-dashboard-template.xlsx`](design/revenuesheet-dashboard-template.xlsx) · [`design/SHEET-STYLE.md`](design/SHEET-STYLE.md). Marketplace listing assets: [`design/marketplace/`](design/marketplace/).
+Design target (launch v2): [`design/revenuesheet-dashboard-template-preview.png`](design/revenuesheet-dashboard-template-preview.png) · [`design/revenuesheet-dashboard-template.xlsx`](design/revenuesheet-dashboard-template.xlsx) · [`design/SHEET-STYLE.md`](design/SHEET-STYLE.md). Marketplace listing assets: [`design/marketplace/`](design/marketplace/) (icons + final 1280×800 screenshots).
 
 ## Prerequisites
 
@@ -80,7 +80,10 @@ These steps need a human with the Google Cloud / Workspace Marketplace publisher
 1. **GCP project** — create/link the Apps Script project; enable Google Sheets API + Apps Script API.
 2. **OAuth consent screen** — External; app name from `BRAND.name`; scopes listed above; add homepage, privacy, and terms URLs from the Next.js site.
 3. **OAuth verification** — because `script.external_request` and Sheets scopes are used in a public add-on; prepare demo video + verified domain.
-4. **Marketplace listing** — listings CDN assets in `design/` (`icon-32.png`, `icon-128.png`, screenshots); category Productivity; publish as Sheets add-on.
+4. **Marketplace listing** — assets in [`design/marketplace/`](design/marketplace/):
+   - Icons / card: `icon-32.png`, `icon-128.png`, `card-banner-220x140.png`
+   - Screenshots (1280×800 finals): `screenshot-1-dashboard`, `screenshot-2-growth`, `screenshot-3-cohorts`, `screenshot-4-connect`, `screenshot-5-schedule`
+   - Category Productivity; publish as Sheets add-on.
 5. **License API** — deploy the web app’s `/api/license/verify` and set `LICENSE_API_BASE` on the script.
 
 ## Project layout

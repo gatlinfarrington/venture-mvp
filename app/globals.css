@@ -934,96 +934,38 @@ h2 {
   margin-top: auto;
 }
 
+.step-frame .responsive-crop,
+.lands-frame .responsive-crop {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .step-frame img,
-.step-frame .backfill-frame {
+.lands-frame img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: top left;
 }
 
-/* Phone: 16px inner margin; crop to whole words (no mid-glyph clip). */
+.responsive-crop-phone {
+  display: none;
+}
+
+/* Phone crops are 3:4 with baked-in 16px margins (MARKETING-CROPS.md). */
 @media (max-width: 600px) {
   .step-frame {
-    padding: var(--space-4);
+    aspect-ratio: 3 / 4;
   }
 
-  .step-frame img {
-    object-fit: contain;
-    object-position: left top;
-    transform: none;
+  .responsive-crop-desktop {
+    display: none;
   }
 
-  .step-frame .backfill-frame {
-    height: auto;
-    min-height: 100%;
+  .responsive-crop-phone {
+    display: block;
   }
-}
-
-.backfill-frame {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  background: var(--c-surface);
-  color: var(--c-ink);
-}
-
-.backfill-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.backfill-title {
-  margin: 0;
-  font-size: var(--t-ui-sm-size);
-  font-weight: 500;
-}
-
-.backfill-meta {
-  margin: 0;
-  font-size: var(--t-caption-size);
-}
-
-.backfill-bar {
-  height: var(--space-2);
-  border-radius: var(--radius-pill);
-  background: var(--c-surface-2);
-  overflow: hidden;
-}
-
-.backfill-bar i {
-  display: block;
-  height: 100%;
-  background: var(--c-ink);
-  border-radius: var(--radius-pill);
-}
-
-.backfill-rows {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  opacity: 0.45;
-}
-
-.backfill-rows li {
-  display: grid;
-  grid-template-columns: 4.5rem 1fr auto;
-  gap: var(--space-2);
-  font-size: var(--t-caption-size);
-  padding: var(--space-1) 0;
-  border-bottom: 1px solid var(--c-hairline);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.backfill-rows .n {
-  font-variant-numeric: tabular-nums;
 }
 
 .section-compare {
@@ -1099,12 +1041,7 @@ h2 {
 
 @media (max-width: 600px) {
   .lands-frame {
-    padding: var(--space-4);
-  }
-
-  .lands-frame img {
-    object-fit: contain;
-    object-position: left top;
+    aspect-ratio: 3 / 4;
   }
 }
 

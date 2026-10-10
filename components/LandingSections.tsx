@@ -1,8 +1,7 @@
-import Image from "next/image";
-import { BackfillFrame } from "@/components/BackfillFrame";
 import { HeroDemoLazy } from "@/components/HeroDemoLazy";
 import { InstallCta } from "@/components/InstallCta";
 import { Pricing } from "@/components/Pricing";
+import { ResponsiveCrop } from "@/components/ResponsiveCrop";
 import { Reveal } from "@/components/Reveal";
 import { brand } from "@/lib/brand";
 import { REFUND_LINE } from "@/lib/copy";
@@ -56,24 +55,25 @@ export function HowItWorks() {
       n: "01",
       title: "Connect",
       body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe. No OAuth dance with those stores: the add-on reads what you grant.",
-      img: "/design/how-connect-2x.png",
+      desktop: "/design/how-connect-2x.png",
+      phone: "/design/how-connect-phone-2x.png",
       alt: "Connect sources panel with example store connections",
-      frame: "image" as const,
     },
     {
       n: "02",
       title: "Backfill",
       body: "We pull full order history into named tabs, not just new rows from today. Then scheduled sync keeps the sheet current.",
-      alt: "Backfill progress for Lemon Squeezy orders with a progress bar and recent rows",
-      frame: "backfill" as const,
+      desktop: "/design/how-backfill-2x.png",
+      phone: "/design/how-backfill-phone-2x.png",
+      alt: "Sidebar mid-backfill with ink progress bar and orders writing in",
     },
     {
       n: "03",
       title: "Dashboard",
       body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data (formulas you can audit and extend).",
-      img: "/design/how-dashboard-2x.png",
+      desktop: "/design/how-dashboard-2x.png",
+      phone: "/design/how-dashboard-phone-2x.png",
       alt: "MRR dashboard with KPIs and stacked source chart",
-      frame: "image" as const,
     },
   ];
 
@@ -91,18 +91,15 @@ export function HowItWorks() {
               <h3 className="h3">{step.title}</h3>
               <p className="muted">{step.body}</p>
               <div className="step-frame">
-                {step.frame === "backfill" ? (
-                  <BackfillFrame />
-                ) : (
-                  <Image
-                    src={step.img!}
-                    alt={step.alt}
-                    width={1120}
-                    height={840}
-                    sizes="(max-width: 900px) 100vw, 33vw"
-                    quality={75}
-                  />
-                )}
+                <ResponsiveCrop
+                  desktop={step.desktop}
+                  phone={step.phone}
+                  alt={step.alt}
+                  width={2400}
+                  height={1800}
+                  sizes="(max-width: 900px) 100vw, 33vw"
+                  quality={75}
+                />
               </div>
             </Reveal>
           ))}
@@ -140,11 +137,12 @@ export function WhatLands() {
             </ul>
           </Reveal>
           <Reveal className="lands-frame" delay={60}>
-            <Image
-              src="/design/lands-orders-2x.png"
+            <ResponsiveCrop
+              desktop="/design/lands-orders-2x.png"
+              phone="/design/lands-orders-phone-2x.png"
               alt="Orders tab with Order ID, created, source, product, email, amount, and status"
               width={2400}
-              height={1000}
+              height={1800}
               sizes="(max-width: 900px) 100vw, 55vw"
               quality={70}
             />
