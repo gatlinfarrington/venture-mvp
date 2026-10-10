@@ -21,7 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/changelog",
     "/privacy",
     "/terms",
-    "/success",
+    // /success is post-checkout only — kept out of the sitemap and disallowed in robots.ts
   ].map((path) => ({
     url: `${base}${path}`,
     lastModified: new Date(),
