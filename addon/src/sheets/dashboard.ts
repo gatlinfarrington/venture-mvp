@@ -122,7 +122,7 @@ export function buildDashboard(
     .setBorder(false, false, true, false, false, false, COLORS.ink, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
 
   // —— Row 2: status band ——
-  const syncTime = opts.lastSyncAt || (opts.sample ? "2026-10-09 10:02" : "—");
+  const syncTime = opts.lastSyncAt || (opts.sample ? "2026-10-09 10:02" : "·");
   const schedule = opts.scheduleLabel || (opts.sample ? "HOURLY" : "MANUAL");
   sheet.getRange(2, 1, 1, 12).merge();
   sheet.getRange(2, 13, 1, 5).merge();
@@ -133,10 +133,10 @@ export function buildDashboard(
       ? sourceLabels.map((s) => s.toUpperCase()).join(", ")
       : "NO SOURCES";
   const statusLeft = opts.stale
-    ? `   ● LAST SYNC ${syncTime} — CHECK CONNECTION`
+    ? `   ● LAST SYNC ${syncTime} · CHECK CONNECTION`
     : `   ● SYNCED ${syncTime} · ${connectedLabel} · ${schedule}`;
   const statusRight = opts.sample
-    ? "EXAMPLE DATA — NOT REAL CUSTOMERS  "
+    ? "EXAMPLE DATA · NOT REAL CUSTOMERS  "
     : opts.licenseNote
       ? `${opts.licenseNote}  `
       : "";

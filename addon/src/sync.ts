@@ -188,7 +188,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
     message: errors.length
       ? `Synced with errors: ${errors.join("; ")}`
       : incomplete
-        ? `Synced ${labels.join(", ") || "no sources"} (backfill in progress — will resume on next sync).`
+        ? `Synced ${labels.join(", ") || "no sources"} (backfill in progress · will resume on next sync).`
         : `Synced ${labels.join(", ") || "no sources"}.`,
     sources: limited.allowed as SourceId[],
   };
@@ -273,16 +273,16 @@ function ensureSettingsSheet(
   sheet.setTabColor(COLORS.settingsTab);
   const rows: unknown[][] = [
     ["Setting", "Value"],
-    ["Last sync", getLastSyncAt() || "—"],
+    ["Last sync", getLastSyncAt() || "·"],
     ["License tier", license.tier],
     ["License status", license.message],
     ["Schedule allowed", license.allowSchedule ? "yes" : "no"],
     ["Schedule cadence", getScheduleCadence()],
     ["Dashboard template", getDashboardTemplate()],
-    ["MRR goal", getMrrGoal() || "—"],
+    ["MRR goal", getMrrGoal() || "·"],
     ["Currency", getDisplayCurrency()],
     ["MRR includes trial/past_due", getIncludeTrialingPastDue() ? "yes" : "no (default)"],
-    ["Connected sources", getConnectedSources().join(", ") || "—"],
+    ["Connected sources", getConnectedSources().join(", ") || "·"],
     ["License API", "Script property LICENSE_API_BASE (optional override)"],
     ["Brand", BRAND.name],
   ];

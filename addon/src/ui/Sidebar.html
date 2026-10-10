@@ -159,7 +159,7 @@
       <input id="emailDigest" type="checkbox" style="width:auto;margin:0;" />
       Weekly email digest (opt-in)
     </label>
-    <div class="hint" id="digestHint">Digest needs sensitive scope script.send_mail — not in the default manifest.</div>
+    <div class="hint" id="digestHint">Digest needs sensitive scope script.send_mail (not in the default manifest).</div>
 
     <div class="eb">CSV fallback</div>
     <label for="csvText">Paste CSV</label>
@@ -195,7 +195,7 @@
             document.getElementById("emailDigest").checked = !!s.emailDigest;
             if (s.emailDigestScope) {
               document.getElementById("digestHint").textContent =
-                "Digest needs sensitive scope " + s.emailDigestScope + " — not in the default manifest.";
+                "Digest needs sensitive scope " + s.emailDigestScope + " (not in the default manifest).";
             }
             var html = "";
             [
