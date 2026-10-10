@@ -15,6 +15,9 @@ export interface DashboardBuildOptions {
   currency?: string;
   licenseNote?: string;
   stale?: boolean;
+  /** When true, trial + past_due count toward headline MRR. Default false. */
+  includeTrialingPastDue?: boolean;
+  backfillIncomplete?: boolean;
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -151,10 +154,11 @@ export function buildDashboard(
     .setValue(statusRight);
 
   // —— Metrics ——
-  const mrr = computeMrr(subscriptions);
+  const mrrOpts = { includeTrialingPastDue: !!opts.includeTrialingPastDue };
+  const mrr = computeMrr(subscriptions, mrrOpts);
   const churn = computeChurn(subscriptions, 30);
   const revenue = computeRevenuePeriods(orders);
-  const trend = computeMrrTrend(subscriptions, 12);
+  const trend = computeMrrTrend(subscriptions, 12, new Date(), mrrOpts);
   const monthlyChurn = computeMonthlyChurnRates(subscriptions, 12);
 
   const prevMrr = trend.length >= 2 ? trend[trend.length - 2].mrr : mrr.total;
@@ -210,6 +214,23 @@ export function buildDashboard(
     },
   ];
   for (const kpi of kpiDefs) paintKpiCard(sheet, kpi);
+
+  // Separate trial / past-due KPIs (excluded from headline MRR by default)
+  const trialLine = `Trialing ${mrr.trialingCount} · $${Math.round(mrr.trialingMrr).toLocaleString("en-US")}`;
+  const pastDueLine = `Past due ${mrr.pastDueCount} · $${Math.round(mrr.pastDueMrr).toLocaleString("en-US")}`;
+  const mrrPolicy = opts.includeTrialingPastDue
+    ? "MRR includes trial + past due"
+    : "MRR = active only (trial/past due excluded)";
+  sheet.getRange(7, 2, 1, 15).merge();
+  sheet
+    .getRange(7, 2)
+    .setFontFamily(FONTS.mono)
+    .setFontSize(8)
+    .setFontColor(COLORS.inkMuted)
+    .setVerticalAlignment("middle")
+    .setValue(
+      `${trialLine}   ·   ${pastDueLine}   ·   ${mrrPolicy}${opts.backfillIncomplete ? "   ·   BACKFILL RESUMING" : ""}`,
+    );
 
   // Section titles
   sheet.getRange(8, 2, 1, 11).merge();

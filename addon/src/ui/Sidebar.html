@@ -135,6 +135,10 @@
     <input id="license" type="password" placeholder="rs_live_… (optional)" autocomplete="off" />
     <label for="currency">Display currency</label>
     <input id="currency" type="text" placeholder="USD" maxlength="3" />
+    <label for="includeTrial" style="display:flex;gap:8px;align-items:center;margin:8px 0 12px;font-weight:500;">
+      <input id="includeTrial" type="checkbox" style="width:auto;margin:0;" />
+      Include trialing + past due in MRR
+    </label>
 
     <button class="btn" id="saveBtn" onclick="save()">Save keys</button>
     <button class="btn2" id="syncBtn" onclick="syncNow()">Sync now</button>
@@ -157,6 +161,7 @@
           .withSuccessHandler(function (s) {
             document.getElementById("brandName").textContent = s.brandName || "RevenueSheet";
             document.getElementById("currency").value = s.currency || "USD";
+            document.getElementById("includeTrial").checked = !!s.includeTrialingPastDue;
             var html = "";
             [["Lemon Squeezy", s.lemonSqueezy], ["Polar", s.polar], ["Gumroad", s.gumroad]].forEach(function (pair) {
               var on = !!pair[1];
@@ -196,6 +201,7 @@
             gumroad: document.getElementById("gumroad").value,
             licenseKey: document.getElementById("license").value,
             currency: document.getElementById("currency").value,
+            includeTrialingPastDue: document.getElementById("includeTrial").checked,
           });
       }
 

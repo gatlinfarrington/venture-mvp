@@ -57,10 +57,11 @@ Declared in `src/appsscript.json`:
 
 ## Features
 
-- **Sidebar** — enter API keys + license key; stored in **User Properties** (per Google account, not in the sheet).
-- **Importers** — Lemon Squeezy, Polar, Gumroad: orders, subscriptions, customers, refunds. Full backfill + incremental cursor, pagination, 429 backoff.
-- **Schedule** — hourly time-driven trigger (paid tier).
-- **Dashboard** — matches `SHEET-STYLE.md` (header band + Ledger Cell mark, KPI cards, stacked MRR chart, churn line, banded tables, conditional formatting).
+- **Sidebar** — enter API keys + license key; stored in **User Properties** (per Google account, not in the sheet). Optional: include trialing + past due in headline MRR.
+- **Importers** — Lemon Squeezy, Polar, Gumroad: orders, subscriptions, customers, refunds. Resumable chunked backfill (persists `pageToken` / resource per source; continues on next sync when Apps Script time budget hits). Gumroad sales use `page_key` (not deprecated `page=`). Intervals (quarterly / biannual / yearly / …) normalize to monthly MRR.
+- **MRR** — headline MRR is **active only** by default; trialing and past due are shown as separate KPIs (opt-in to include them).
+- **Schedule** — hourly time-driven trigger (paid tier); also finishes incomplete backfills.
+- **Dashboard** — matches `SHEET-STYLE.md` launch v2 (white header + ink rule, greyscale charts, green for meaning only).
 - **License** — free = 1 source, manual refresh; unreachable API degrades gracefully to free limits.
 - **Demo mode** — **Load example data** fills SAMPLE rows clearly labeled for screenshots.
 

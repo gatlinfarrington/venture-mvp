@@ -10,7 +10,12 @@ export const CONFIG = {
   SYNC_TRIGGER_HANDLER: "runScheduledSync",
   DEFAULT_CURRENCY: "USD",
   PAGE_SIZE: 100,
-  MAX_PAGES: 500,
+  MAX_PAGES: 500 as number,
+  /**
+   * Pages fetched per Apps Script execution. Large backfills persist a cursor
+   * and continue on the next sync / scheduled trigger (~6 min GAS limit).
+   */
+  MAX_PAGES_PER_RUN: 40 as number,
   RATE_LIMIT_RETRIES: 5,
   RATE_LIMIT_BASE_MS: 1000,
 } as const;

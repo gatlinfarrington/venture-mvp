@@ -27,10 +27,14 @@ describe("toMonthlyAmount", () => {
   it("leaves monthly alone", () => {
     assert.equal(toMonthlyAmount(29, "month"), 29);
   });
+  it("converts quarterly and biannual", () => {
+    assert.equal(toMonthlyAmount(90, "quarter"), 30);
+    assert.equal(toMonthlyAmount(60, "biannual"), 10);
+  });
 });
 
 describe("computeMrr", () => {
-  it("sums active subscription MRR", () => {
+  it("sums active subscription MRR only by default", () => {
     const result = computeMrr([
       sub({ mrr: 29, status: "active" }),
       sub({ id: "2", mrr: 79, status: "active", source: "lemon_squeezy" }),
@@ -42,10 +46,33 @@ describe("computeMrr", () => {
     assert.equal(result.bySource.lemon_squeezy, 79);
   });
 
-  it("includes past_due in active MRR", () => {
-    const result = computeMrr([sub({ mrr: 50, status: "past_due" })]);
-    assert.equal(result.total, 50);
+  it("excludes past_due and trialing from headline MRR by default", () => {
+    const result = computeMrr([
+      sub({ mrr: 50, status: "past_due" }),
+      sub({ id: "t", mrr: 29, status: "trialing" }),
+      sub({ id: "a", mrr: 10, status: "active" }),
+    ]);
+    assert.equal(result.total, 10);
     assert.equal(result.activeCount, 1);
+    assert.equal(result.pastDueCount, 1);
+    assert.equal(result.pastDueMrr, 50);
+    assert.equal(result.trialingCount, 1);
+    assert.equal(result.trialingMrr, 29);
+  });
+
+  it("includes trial + past_due when opted in", () => {
+    const result = computeMrr(
+      [
+        sub({ mrr: 50, status: "past_due" }),
+        sub({ id: "t", mrr: 29, status: "trialing" }),
+        sub({ id: "a", mrr: 10, status: "active" }),
+      ],
+      { includeTrialingPastDue: true },
+    );
+    assert.equal(result.total, 89);
+    assert.equal(result.activeCount, 3);
+    assert.equal(result.trialingMrr, 29);
+    assert.equal(result.pastDueMrr, 50);
   });
 });
 
@@ -72,7 +99,16 @@ describe("computeMrrTrend", () => {
     assert.equal(oct.mrr, 100);
     const jun = trend.find((t) => t.month === "2026-06");
     assert.ok(jun);
-    // cancelled mid-June → still counted at June end? cancelledAt Jun 15 <= end of June, so excluded
     assert.equal(jun!.mrr, 100);
+  });
+
+  it("excludes trialing from trend by default", () => {
+    const asOf = new Date(Date.UTC(2026, 9, 10));
+    const trend = computeMrrTrend(
+      [sub({ created: "2026-01-01T00:00:00Z", mrr: 40, status: "trialing" })],
+      3,
+      asOf,
+    );
+    assert.equal(trend[trend.length - 1].mrr, 0);
   });
 });
