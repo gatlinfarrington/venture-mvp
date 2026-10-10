@@ -122,7 +122,7 @@ export function buildDashboard(
     .setBorder(false, false, true, false, false, false, COLORS.ink, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
 
   // —— Row 2: status band ——
-  const syncTime = opts.lastSyncAt || (opts.sample ? "2026-10-09 10:02" : "—");
+  const syncTime = opts.lastSyncAt || (opts.sample ? "2026-10-09 10:02" : "·");
   const schedule = opts.scheduleLabel || (opts.sample ? "HOURLY" : "MANUAL");
   sheet.getRange(2, 1, 1, 12).merge();
   sheet.getRange(2, 13, 1, 5).merge();

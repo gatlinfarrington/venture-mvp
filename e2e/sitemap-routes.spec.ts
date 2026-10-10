@@ -67,8 +67,10 @@ test("covers every sitemap route at this viewport", async ({ page, request }, te
       });
 
       // Viewport snapshot (stable in CI). Full-page PNGs are saved as artifacts above.
+      // Use hyphens (not underscores): Playwright sanitizes snapshot names and
+      // existing baselines for nested routes already use hyphens (docs-api-keys, …).
       const snapBase =
-        route === "/" ? "home" : route.slice(1).replace(/\//g, "_");
+        route === "/" ? "home" : route.slice(1).replace(/\//g, "-");
       await expect(page).toHaveScreenshot(`${snapBase}.png`, {
         fullPage: false,
         maxDiffPixelRatio: 0.05,

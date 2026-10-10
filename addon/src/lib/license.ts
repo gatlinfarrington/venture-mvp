@@ -57,7 +57,7 @@ function fromPayload(data: {
 }): LicenseStatus {
   const valid = data.valid === true || data.ok === true;
   if (!valid) {
-    return freeStatus(data.error || data.message || "Invalid license — free tier limits apply.");
+    return freeStatus(data.error || data.message || "Invalid license · free tier limits apply.");
   }
 
   const tier = (data.tier || "free") as LicenseTier;
@@ -106,7 +106,7 @@ function requestHeaders(): Record<string, string> {
 /** Sync license check for Apps Script. Degrades to free limits if unreachable. */
 export function checkLicenseSync(opts: { skipCache?: boolean } = {}): LicenseStatus {
   const key = getLicenseKey();
-  if (!key) return freeStatus("No license key — free tier limits apply.");
+  if (!key) return freeStatus("No license key · free tier limits apply.");
   if (!opts.skipCache) {
     const cached = readCache();
     if (cached) return cached;
@@ -127,7 +127,7 @@ export function checkLicenseSync(opts: { skipCache?: boolean } = {}): LicenseSta
       body: JSON.stringify({ key }),
       sleep: () => undefined,
     });
-    if (status === 401) return degrade("License API unauthorized — check LICENSE_API_SECRET.");
+    if (status === 401) return degrade("License API unauthorized · check LICENSE_API_SECRET.");
     if (status >= 400) return degrade(`License API returned ${status}`);
     const result = fromPayload(data);
     writeCache(result);
@@ -144,7 +144,7 @@ export async function checkLicense(
   if (!opts.fetchImpl) return checkLicenseSync({ skipCache: opts.skipCache });
 
   const key = getLicenseKey();
-  if (!key) return freeStatus("No license key — free tier limits apply.");
+  if (!key) return freeStatus("No license key · free tier limits apply.");
 
   const url = `${getLicenseApiBase()}${CONFIG.LICENSE_PATH}`;
   try {
