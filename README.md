@@ -105,3 +105,4 @@ Connected to Vercel (`venture-mvp`). Push to `main` for production. Set env vars
 The Sheets add-on lives under [`/addon`](addon/). Setup, clasp, OAuth scopes, and Marketplace steps: [`addon/README.md`](addon/README.md).
 
 It calls `POST /api/license/verify` with the user’s license key (script property `LICENSE_API_BASE` overrides the default origin). Free tier = 1 source, manual refresh; paid unlocks schedule + multi-source. Unreachable license API degrades to free limits.
+
