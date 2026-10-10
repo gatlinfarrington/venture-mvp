@@ -135,7 +135,7 @@ export function WhatLands() {
               src="/design/lands-orders-2x.png"
               alt="Orders tab with Order ID, created, source, product, email, amount, and status"
               width={2400}
-              height={1000}
+              height={1800}
               sizes="(max-width: 900px) 100vw, 55vw"
               quality={70}
             />
