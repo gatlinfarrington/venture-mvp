@@ -63,7 +63,11 @@ const faq = [
   },
   {
     q: "How does billing work?",
-    a: "Stripe Checkout; manage or cancel in the Stripe customer portal.",
+    a: "Monthly through Stripe Checkout. Update or cancel from the link in your receipt.",
+  },
+  {
+    q: "Does Free include backfill?",
+    a: "Yes. Full history on one source.",
   },
   {
     q: "What about refunds?",

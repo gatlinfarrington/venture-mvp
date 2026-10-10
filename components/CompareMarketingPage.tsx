@@ -69,7 +69,7 @@ export function CompareMarketingPage({ page }: { page: ComparePage }) {
             </li>
           ))}
           <li>
-            {brand.name} pricing: Free $0, Pro $9/mo, Business $19/mo (annual = 2 months free). See{" "}
+            {brand.name} pricing: Free $0, Pro $9/mo, Business $19/mo, billed monthly. See{" "}
             <Link href="/pricing">/pricing</Link>.
           </li>
         </ul>

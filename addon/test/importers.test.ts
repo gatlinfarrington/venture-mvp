@@ -41,22 +41,42 @@ describe("Lemon Squeezy mappers", () => {
     assert.equal(order.source, "lemon_squeezy");
   });
 
-  it("maps yearly subscription to monthly MRR", () => {
-    const sub = mapLemonSubscription({
-      id: "7",
-      type: "subscriptions",
-      attributes: {
-        created_at: "2026-01-01T00:00:00Z",
-        product_name: "Pro",
-        user_email: "a@example.com",
-        recurring_price: 12000,
-        billing_interval: "year",
-        currency: "USD",
-        status: "active",
+  it("maps yearly subscription to monthly MRR via related variant", () => {
+    const sub = mapLemonSubscription(
+      {
+        id: "7",
+        type: "subscriptions",
+        attributes: {
+          created_at: "2026-01-01T00:00:00Z",
+          product_name: "Pro",
+          user_email: "a@example.com",
+          variant_id: 3,
+          status: "active",
+        },
       },
-    });
+      { variant: { interval: "year", interval_count: 1, price: 12000 } },
+    );
     assert.equal(sub.mrr, 10);
     assert.equal(sub.interval, "year");
+  });
+
+  it("maps quarterly (month × 3) subscription to monthly MRR", () => {
+    const sub = mapLemonSubscription(
+      {
+        id: "8",
+        type: "subscriptions",
+        attributes: {
+          created_at: "2026-01-01T00:00:00Z",
+          product_name: "Pro Quarterly",
+          user_email: "a@example.com",
+          variant_id: 4,
+          status: "active",
+        },
+      },
+      { variant: { interval: "month", interval_count: 3, price: 9000 } },
+    );
+    assert.equal(sub.interval, "quarter");
+    assert.equal(sub.mrr, 30);
   });
 
   it("maps customer and refund", () => {
@@ -217,6 +237,66 @@ describe("importer pagination with mocked fetch", () => {
     assert.equal(bundle.orders[0].amount, 10);
     assert.equal(bundle.orders[1].amount, 20);
     assert.ok(calls >= 2);
+  });
+
+  it("normalizes LS yearly/quarterly MRR from included variant", async () => {
+    const fetchImpl: typeof fetch = async (input) => {
+      const url = String(input);
+      if (url.includes("/subscriptions")) {
+        assert.ok(url.includes("include=variant"), "subscriptions request must include=variant");
+        return new Response(
+          JSON.stringify({
+            data: [
+              {
+                id: "s-year",
+                type: "subscriptions",
+                attributes: {
+                  created_at: "2026-01-01T00:00:00Z",
+                  product_name: "Pro Yearly",
+                  user_email: "y@x.com",
+                  variant_id: 101,
+                  status: "active",
+                },
+              },
+              {
+                id: "s-q",
+                type: "subscriptions",
+                attributes: {
+                  created_at: "2026-01-01T00:00:00Z",
+                  product_name: "Pro Quarterly",
+                  user_email: "q@x.com",
+                  variant_id: 102,
+                  status: "active",
+                },
+              },
+            ],
+            included: [
+              {
+                id: "101",
+                type: "variants",
+                attributes: { interval: "year", interval_count: 1, price: 12000 },
+              },
+              {
+                id: "102",
+                type: "variants",
+                attributes: { interval: "month", interval_count: 3, price: 9000 },
+              },
+            ],
+            links: {},
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response(JSON.stringify({ data: [], links: {} }), { status: 200 });
+    };
+    const bundle = await fetchLemonSqueezy("test-key", undefined, fetchImpl);
+    assert.equal(bundle.subscriptions.length, 2);
+    const yearly = bundle.subscriptions.find((s) => s.rawId === "s-year")!;
+    const quarterly = bundle.subscriptions.find((s) => s.rawId === "s-q")!;
+    assert.equal(yearly.interval, "year");
+    assert.equal(yearly.mrr, 10);
+    assert.equal(quarterly.interval, "quarter");
+    assert.equal(quarterly.mrr, 30);
   });
 
   it("pages Polar orders", async () => {

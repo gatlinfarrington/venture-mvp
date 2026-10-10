@@ -1865,14 +1865,9 @@ body:has(.success-shell) .admin-stripe-banner {
   outline: none;
 }
 
-.success-h1:focus {
-  outline: none;
-}
-
+.success-h1:focus,
 .success-h1:focus-visible {
-  /* design-exception: A8 success-onboarding 2px focus ring */
-  outline: 2px solid var(--c-ink); /* stylelint-disable-line declaration-property-value-disallowed-list */
-  outline-offset: 2px; /* stylelint-disable-line declaration-property-value-disallowed-list */
+  outline: none;
 }
 
 .success-lede {
@@ -2145,14 +2140,17 @@ body:has(.success-shell) .admin-stripe-banner {
 }
 
 .success-support a {
-  color: var(--c-ink-muted);
+  color: var(--c-ink);
   text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color 140ms var(--ease-standard);
+  text-decoration-color: var(--c-border);
+  text-underline-offset: 3px;
+  transition:
+    color 140ms var(--ease-standard),
+    text-decoration-color 140ms var(--ease-standard);
 }
 
 .success-support a:hover {
-  color: var(--c-ink);
+  text-decoration-color: var(--c-ink);
 }
 
 @media (max-width: 900px) {

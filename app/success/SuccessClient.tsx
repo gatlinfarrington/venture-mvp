@@ -436,13 +436,18 @@ function SuccessInner() {
                   <button
                     type="button"
                     className="btn btn-primary success-btn success-copy-btn"
+                    aria-label={copied ? "Copied" : "Copy key"}
                     onClick={() => {
                       void copyKey(license.key);
                     }}
                   >
                     <span className="success-copy-label">
-                      <span className={copied ? undefined : "is-on"}>Copy key</span>
-                      <span className={copied ? "is-on" : undefined}>Copied</span>
+                      <span className={copied ? undefined : "is-on"} aria-hidden="true">
+                        Copy key
+                      </span>
+                      <span className={copied ? "is-on" : undefined} aria-hidden="true">
+                        Copied
+                      </span>
                     </span>
                   </button>
                 </div>
@@ -511,7 +516,7 @@ function SuccessInner() {
                   </p>
                 </div>
                 <div>
-                  <h2 className="success-next-title">Receipt and refunds</h2>
+                  <h2 className="success-next-title">Receipt and billing</h2>
                   <p className="muted">{REFUND_LINE_ASIDE}</p>
                 </div>
               </div>

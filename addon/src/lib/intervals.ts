@@ -62,6 +62,70 @@ export function normalizeBillingInterval(raw: string | null | undefined): Billin
 }
 
 /**
+ * Map Lemon Squeezy / Stripe-style `(unit, count)` to a canonical interval.
+ * LS Variant: `interval` + `interval_count` (e.g. month + 3 → quarter).
+ * LS Price: `renewal_interval_unit` + `renewal_interval_quantity`.
+ */
+export function intervalFromUnitAndCount(
+  unit: string | null | undefined,
+  count: number | null | undefined,
+): BillingInterval {
+  const c = Number(count);
+  const n = Number.isFinite(c) && c > 0 ? c : 1;
+  const u = String(unit || "month")
+    .toLowerCase()
+    .replace(/[_-]/g, " ")
+    .trim();
+
+  if (u.startsWith("day")) return n === 1 ? "day" : "unknown";
+  if (u.startsWith("week")) return n === 1 ? "week" : "unknown";
+  if (u.startsWith("year") || u === "annual") {
+    if (n === 1) return "year";
+    if (n === 2) return "biennial";
+    return "unknown";
+  }
+  // month (default)
+  if (n === 1) return "month";
+  if (n === 3) return "quarter";
+  if (n === 6) return "biannual";
+  if (n === 12) return "year";
+  if (n === 24) return "biennial";
+  return "unknown";
+}
+
+/** Length of one billing period in months (for MRR = amount / period). */
+export function periodLengthInMonths(
+  unit: string | null | undefined,
+  count: number | null | undefined,
+): number {
+  const c = Number(count);
+  const n = Number.isFinite(c) && c > 0 ? c : 1;
+  const u = String(unit || "month")
+    .toLowerCase()
+    .replace(/[_-]/g, " ")
+    .trim();
+  if (u.startsWith("day")) return (n * 12) / 365;
+  if (u.startsWith("week")) return (n * 12) / 52;
+  if (u.startsWith("year") || u === "annual") return n * 12;
+  return n; // months
+}
+
+/**
+ * MRR from a billed amount using vendor unit + count
+ * (e.g. $90 every `month`×3 → $30 MRR).
+ */
+export function toMonthlyFromUnitCount(
+  amount: number,
+  unit: string | null | undefined,
+  count: number | null | undefined = 1,
+): number {
+  const n = Number(amount) || 0;
+  const months = periodLengthInMonths(unit, count);
+  if (!(months > 0)) return n;
+  return n / months;
+}
+
+/**
  * Convert a billed amount for `interval` into monthly recurring revenue.
  * quarterly → /3, biannual → /6, yearly → /12, biennial → /24,
  * weekly → *52/12, daily → *365/12.
