@@ -20,12 +20,17 @@ export const CONFIG = {
   RATE_LIMIT_BASE_MS: 1000,
 } as const;
 
-export type SourceId = "lemon_squeezy" | "polar" | "gumroad";
+export type SourceId = "lemon_squeezy" | "polar" | "gumroad" | "stripe" | "csv";
+
+export type ScheduleCadence = "hourly" | "every_6h" | "daily" | "weekly";
+
+export type DashboardTemplate = "classic" | "growth";
 
 export const SOURCES: { id: SourceId; label: string; keyProp: string }[] = [
   { id: "lemon_squeezy", label: "Lemon Squeezy", keyProp: "API_KEY_LEMON_SQUEEZY" },
   { id: "polar", label: "Polar", keyProp: "API_KEY_POLAR" },
   { id: "gumroad", label: "Gumroad", keyProp: "API_KEY_GUMROAD" },
+  { id: "stripe", label: "Stripe", keyProp: "API_KEY_STRIPE" },
 ];
 
 export const SHEET_NAMES = {
@@ -37,7 +42,13 @@ export const SHEET_NAMES = {
   settings: "Settings",
   /** Visible chart-data tab (launch v2); named range rs_mrr_monthly. */
   mrrMonthly: "MRR monthly",
+  cohorts: "Cohorts",
 } as const;
+
+/** Optional sensitive scope for weekly digest — NOT in default manifest. */
+export const EMAIL_DIGEST_SCOPE = "https://www.googleapis.com/auth/script.send_mail";
+
+export const DIGEST_HANDLER = "runWeeklyDigest";
 
 export function getLicenseApiBase(): string {
   try {

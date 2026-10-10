@@ -1,10 +1,12 @@
 import { BRAND, managedByFooter } from "../lib/brand";
-import { SHEET_NAMES } from "../lib/config";
+import { SHEET_NAMES, type DashboardTemplate } from "../lib/config";
 import { COLORS, FONTS, CHART_SERIES } from "../lib/tokens";
 import type { NormalizedOrder, NormalizedRefund, NormalizedSubscription } from "../importers/types";
 import { computeRevenuePeriods } from "../metrics/arpu";
 import { computeChurn } from "../metrics/churn";
+import { computeGoalProgress, progressBarSlots } from "../metrics/goals";
 import { computeMrr, computeMrrTrend } from "../metrics/mrr";
+import { appendGrowthPanels } from "./growthPanels";
 
 export interface DashboardBuildOptions {
   sample?: boolean;
@@ -18,12 +20,16 @@ export interface DashboardBuildOptions {
   /** When true, trial + past_due count toward headline MRR. Default false. */
   includeTrialingPastDue?: boolean;
   backfillIncomplete?: boolean;
+  template?: DashboardTemplate;
+  mrrGoal?: number;
 }
 
 const SOURCE_LABEL: Record<string, string> = {
   lemon_squeezy: "Lemon Squeezy",
   polar: "Polar",
   gumroad: "Gumroad",
+  stripe: "Stripe",
+  csv: "CSV",
 };
 
 /**
@@ -328,6 +334,24 @@ export function buildDashboard(
   writeProductTable(sheet, 25, productRows, revenue.deltaPct);
   writeSourceTable(sheet, 25, sourceRows);
 
+  const goal = computeGoalProgress(mrr.total, opts.mrrGoal || 0);
+  if (goal.goal > 0) {
+    sheet.setRowHeight(34, 24);
+    const slots = 12;
+    const filled = progressBarSlots(goal.pct, slots);
+    sheet
+      .getRange(34, 2)
+      .setFontFamily(FONTS.mono)
+      .setFontSize(8)
+      .setFontColor(COLORS.inkMuted)
+      .setValue(`MRR GOAL  $${Math.round(goal.current)} / $${Math.round(goal.goal)}`);
+    for (let i = 0; i < slots; i++) {
+      sheet
+        .getRange(34, 5 + i)
+        .setBackground(i < filled ? (goal.met ? COLORS.signal : COLORS.ink) : COLORS.surface2);
+    }
+  }
+
   sheet.getRange(35, 2, 1, 15).merge();
   sheet
     .getRange(35, 2)
@@ -335,6 +359,14 @@ export function buildDashboard(
     .setFontSize(8)
     .setFontColor(COLORS.inkMuted)
     .setValue(managedByFooter(opts.sample ? "example data" : "live sync"));
+
+  if ((opts.template || "classic") === "growth") {
+    appendGrowthPanels(ss, sheet, orders, subscriptions, refunds, {
+      mrrGoal: opts.mrrGoal,
+      sample: opts.sample,
+      includeTrialingPastDue: opts.includeTrialingPastDue,
+    });
+  }
 }
 
 interface KpiDef {
@@ -736,14 +768,13 @@ function revenueBySource30d(
   }
 
   const total = Object.values(cur).reduce((a, b) => a + b, 0) || 1;
-  return (["lemon_squeezy", "polar", "gumroad"] as const)
-    .filter((s) => cur[s] || prev[s])
+  return Object.keys({ ...cur, ...prev })
     .map((s) => {
       const revenue = cur[s] || 0;
       const p = prev[s] || 0;
       const delta = p > 0 ? (revenue - p) / p : revenue > 0 ? 1 : 0;
       return {
-        source: SOURCE_LABEL[s],
+        source: SOURCE_LABEL[s] || s,
         revenue: Math.round(revenue * 100) / 100,
         share: revenue / total,
         delta: Math.round(delta * 1000) / 1000,

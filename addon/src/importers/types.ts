@@ -10,6 +10,8 @@ export interface NormalizedOrder {
   currency: string;
   status: string;
   rawId: string;
+  /** ISO 3166-1 alpha-2 when known */
+  country?: string;
 }
 
 export interface NormalizedSubscription {
@@ -33,6 +35,7 @@ export interface NormalizedSubscription {
     | "biennial"
     | "unknown";
   rawId: string;
+  country?: string;
 }
 
 export interface NormalizedCustomer {
@@ -42,6 +45,7 @@ export interface NormalizedCustomer {
   name: string;
   created: string;
   rawId: string;
+  country?: string;
 }
 
 export interface NormalizedRefund {
@@ -53,6 +57,21 @@ export interface NormalizedRefund {
   currency: string;
   status: string;
   rawId: string;
+  country?: string;
+}
+
+export interface CsvColumnMap {
+  id?: string;
+  created?: string;
+  product?: string;
+  email?: string;
+  amount?: string;
+  currency?: string;
+  status?: string;
+  country?: string;
+  source?: string;
+  kind?: string;
+  mrr?: string;
 }
 
 export interface ImportBundle {
