@@ -322,10 +322,6 @@ export function FAQ() {
       a: "Only four Apps Script scopes: the current spreadsheet (spreadsheets.currentonly), outbound HTTPS to source and license APIs (script.external_request), time-driven triggers for scheduled refresh (script.scriptapp), and the sidebar/menu UI (script.container.ui). No Google Drive, Gmail, or Contacts access. Confirm on the consent screen at install.",
     },
     {
-      q: "Lemon Squeezy is moving to Stripe. Will this still work?",
-      a: "Yes for as long as Lemon Squeezy exposes an orders API, and you can also connect Stripe directly. Polar and Gumroad stay independent sources either way.",
-    },
-    {
       q: "How do refunds work for paid plans?",
       a: REFUND_LINE,
     },

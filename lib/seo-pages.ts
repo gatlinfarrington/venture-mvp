@@ -110,7 +110,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "Why not the Polar dashboard alone?",
         paragraphs: [
-          "Polar is excellent for one organization. When you also sell on Lemon Squeezy or Gumroad, or you want QUERY against every invoice, a sheet with scheduled refresh beats exporting CSVs before every board update.",
+          "Polar is excellent for one organization. When you also sell on Lemon Squeezy or Gumroad, or you want QUERY against every invoice, a sheet with scheduled refresh beats copying numbers out by hand before every board update.",
         ],
       },
       {

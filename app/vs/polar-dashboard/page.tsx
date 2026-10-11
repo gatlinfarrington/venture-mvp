@@ -40,12 +40,6 @@ const rows: Array<{ feature: string; us: Cell; polar: Cell; lemon: Cell }> = [
     lemon: "Lemon Squeezy only",
   },
   {
-    feature: "Full history backfill into Sheets",
-    us: true,
-    polar: false,
-    lemon: false,
-  },
-  {
     feature: "Your own QUERY / formulas on raw rows",
     us: true,
     polar: "Their Analytics UI / Metrics API",
@@ -70,55 +64,58 @@ export default function PolarDashboardComparePage() {
 
   return (
     <main className="seo-page container page-shell vs-polar-page">
-      <p className="eyebrow">RevenueSheet vs Polar’s dashboard</p>
-      <h1 className="vs-polar-h1">
-        Polar’s MRR is great.
-        <br />
-        Until you also sell on Gumroad.
-      </h1>
-      <p className="body-lg muted page-lede vs-polar-lede">
-        Polar shows Polar. Lemon Squeezy shows Lemon Squeezy. RevenueSheet adds them up in a sheet
-        you own, with the formulas left open.
-      </p>
+      <div className="vs-polar-hero">
+        <div className="vs-polar-hero-copy">
+          <p className="eyebrow">RevenueSheet vs Polar’s dashboard</p>
+          <h1 className="vs-polar-h1">
+            Polar’s MRR is great.
+            <br />
+            Until you also sell on Gumroad.
+          </h1>
+          <p className="body-lg muted page-lede vs-polar-lede">
+            Polar shows Polar. Lemon Squeezy shows Lemon Squeezy. RevenueSheet adds them up in a
+            sheet you own, with the formulas left open.
+          </p>
+          <div className="vs-polar-ctas">
+            {listing ? (
+              <InstallCta className="btn btn-primary" source="vs-polar-dashboard">
+                Install for Google Sheets
+              </InstallCta>
+            ) : (
+              <LaunchInvite id="launch" source="vs-polar-dashboard" />
+            )}
+            <Link className="vs-polar-ghost" href="/docs/mrr-and-churn">
+              How we calculate MRR →
+            </Link>
+          </div>
+        </div>
 
-      <figure className="vs-combined-table" aria-label="Example combined MRR by store">
-        <table>
-          <tbody>
-            <tr>
-              <td className="mono">Polar</td>
-              <td className="mono n">$1,640</td>
-            </tr>
-            <tr>
-              <td className="mono">Lemon Squeezy</td>
-              <td className="mono n">$1,210</td>
-            </tr>
-            <tr>
-              <td className="mono">Gumroad</td>
-              <td className="mono n">$770</td>
-            </tr>
-            <tr className="vs-combined-total">
-              <td>
-                <span className="vs-combined-dot" aria-hidden="true" />
-                Combined MRR
-              </td>
-              <td className="mono n">$3,620</td>
-            </tr>
-          </tbody>
-        </table>
-        <figcaption className="mono muted">Example data</figcaption>
-      </figure>
-
-      <div className="vs-polar-ctas">
-        {listing ? (
-          <InstallCta className="btn btn-primary" source="vs-polar-dashboard">
-            Install for Google Sheets
-          </InstallCta>
-        ) : (
-          <LaunchInvite id="launch" source="vs-polar-dashboard" />
-        )}
-        <Link className="vs-polar-ghost" href="/docs/mrr-and-churn">
-          How we calculate MRR →
-        </Link>
+        <figure className="vs-combined-table" aria-label="Example combined MRR by store">
+          <table>
+            <tbody>
+              <tr>
+                <td className="mono">Polar</td>
+                <td className="mono n">$1,640</td>
+              </tr>
+              <tr>
+                <td className="mono">Lemon Squeezy</td>
+                <td className="mono n">$1,210</td>
+              </tr>
+              <tr>
+                <td className="mono">Gumroad</td>
+                <td className="mono n">$770</td>
+              </tr>
+              <tr className="vs-combined-total">
+                <td>
+                  <span className="vs-combined-dot" aria-hidden="true" />
+                  Combined MRR
+                </td>
+                <td className="mono n">$3,620</td>
+              </tr>
+            </tbody>
+          </table>
+          <figcaption className="mono muted">Example data</figcaption>
+        </figure>
       </div>
 
       <div className="compare-wrap vs-polar-compare">

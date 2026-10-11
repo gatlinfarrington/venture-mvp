@@ -485,12 +485,11 @@ export function HeroDemo() {
         <div className="hero-sheet-wrap">
           <div className="hero-sheet" aria-hidden="true">
             <div className="hero-sheet-top">
-              <div className="eyebrow">MRR · all sources</div>
+              <div className="eyebrow">MRR · all sources · example</div>
               <div className="hero-mrr">
                 <b>{fmt(mrr)}</b>
                 {delta ? <span className="hero-delta">{delta}</span> : null}
               </div>
-              <p className="hero-mrr-caption mono muted">Example data</p>
               <div className="hero-bars">
                 {barHeights.map((h, i) => (
                   <i

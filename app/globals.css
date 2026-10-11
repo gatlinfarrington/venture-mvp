@@ -793,12 +793,6 @@ a.chip[aria-current="page"] {
   font-variant-numeric: tabular-nums;
 }
 
-.hero-mrr-caption {
-  margin: var(--space-2) 0 0;
-  font-size: var(--t-mono-size);
-  color: var(--c-ink-muted);
-}
-
 .hero-delta {
   font: 500 var(--t-mono-size) var(--font-mono);
   color: var(--c-signal);
@@ -1609,9 +1603,12 @@ a.chip[aria-current="page"] {
   display: none;
 }
 
-/* N4: summary stays ink; only the + icon muted → ink on hover (no signal green). */
+/* N4: summary stays ink; + rotates 90deg on hover with surface-2 wash. */
 .faq-item summary:hover {
   color: var(--c-ink);
+  background: var(--c-surface-2);
+  margin-inline: calc(-1 * var(--space-4));
+  padding-inline: var(--space-4);
 }
 
 .faq-item summary::after {
@@ -1624,14 +1621,19 @@ a.chip[aria-current="page"] {
     transform var(--dur-base) var(--ease-out);
 }
 
-.faq-item summary:hover::after,
-.faq-item[open] summary::after {
+.faq-item summary:hover::after {
   color: var(--c-ink);
+  transform: rotate(90deg);
 }
 
 .faq-item[open] summary::after {
   content: "−";
-  transform: rotate(180deg);
+  color: var(--c-ink);
+  transform: none;
+}
+
+.faq-item[open] summary:hover::after {
+  transform: none;
 }
 
 .faq-item p {
@@ -3373,6 +3375,16 @@ a.tag-pill:hover {
 }
 
 /* /vs/polar-dashboard */
+.vs-polar-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.vs-polar-hero-copy > .eyebrow {
+  margin-bottom: 0;
+}
+
 .vs-polar-h1 {
   text-wrap: balance;
 }
@@ -3381,9 +3393,27 @@ a.tag-pill:hover {
   max-width: 56ch;
 }
 
+.vs-polar-hero .vs-polar-ctas {
+  margin-top: var(--space-6);
+}
+
 .vs-combined-table {
-  margin: var(--space-10) 0 0;
+  margin: 0;
   max-width: 28rem;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .vs-polar-hero {
+    display: grid;
+    grid-template-columns: 1fr 440px;
+    column-gap: var(--space-8);
+    align-items: end;
+  }
+
+  .vs-combined-table {
+    max-width: none;
+  }
 }
 
 .vs-combined-table table {

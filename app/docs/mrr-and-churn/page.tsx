@@ -28,27 +28,49 @@ export default function MrrAndChurnDocsPage() {
           <code>toMonthlyFromUnitCount</code>:
         </p>
         <ul>
-          <li>Monthly → as billed</li>
-          <li>Quarterly → amount ÷ 3</li>
-          <li>Biannual (twice a year) → amount ÷ 6</li>
-          <li>Yearly / annual → amount ÷ 12</li>
-          <li>Biennial (every two years) → amount ÷ 24</li>
-          <li>Weekly → amount × 52 ÷ 12</li>
-          <li>Daily → amount × 365 ÷ 12</li>
+          <li>Monthly: as billed</li>
+          <li>Quarterly: amount divided by 3</li>
+          <li>Biannual (twice a year): amount divided by 6</li>
+          <li>Yearly / annual: amount divided by 12</li>
+          <li>Biennial (every two years): amount divided by 24</li>
+          <li>Weekly: amount times 52, divided by 12</li>
+          <li>Daily: amount times 365, divided by 12</li>
         </ul>
         <p>
           Vendor strings are normalized first (<code>normalizeBillingInterval</code>,{" "}
           <code>intervalFromUnitAndCount</code>) so Lemon Squeezy{" "}
-          <code>interval</code> + <code>interval_count</code> (for example month × 3) and Gumroad
-          quarterly / yearly labels map to the same periods.
+          <code>interval</code> + <code>interval_count</code> (for example month times 3) and
+          Gumroad quarterly / yearly labels map to the same periods.
         </p>
         <p>
           By default only subscriptions with status <code>active</code> count toward total MRR.
-          Trialing and past-due can be included when that option is turned on in the sidebar (
-          <code>includeTrialingPastDue</code>). Paused subscriptions are not included in the total.
+          Paused subscriptions are not included.
         </p>
 
-        <h2>Refunds and chargebacks</h2>
+        <h2>Why your MRR may differ from Polar’s</h2>
+        <p>
+          Polar’s public Analytics docs define MRR as the sum of every ongoing subscription’s net
+          amount, normalized monthly (yearly plans divided by 12). Trialing subscriptions are
+          excluded. Paused and past-due subscriptions are included until the subscription actually
+          ends (
+          <a
+            href="https://polar.sh/docs/features/analytics"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Polar Analytics
+          </a>
+          , checked 2026-10-11).
+        </p>
+        <p>
+          {brand.name} defaults the other way: only <code>active</code> counts toward total MRR.
+          Paused is out. Past-due and trialing stay out unless you turn on the sidebar toggle{" "}
+          <code>includeTrialingPastDue</code>, which adds those statuses into the total. We also
+          combine Polar with other stores in one sheet, so a combined figure will not match Polar’s
+          Polar-only dashboard even when eligibility rules align.
+        </p>
+
+        <h2>Refunds</h2>
         <p>
           Refund summary math lives in <code>computeRefundSummary</code> (
           <code>addon/src/metrics/refunds.ts</code>). Over a trailing window (default 30 days):
@@ -63,7 +85,7 @@ export default function MrrAndChurnDocsPage() {
             status <code>failed</code>.
           </li>
           <li>
-            Refund rate is <code>refundAmount ÷ orderRevenue</code> (0 when order revenue is 0).
+            Refund rate is refund amount divided by order revenue (0 when order revenue is 0).
           </li>
         </ul>
         <p>
@@ -80,34 +102,10 @@ export default function MrrAndChurnDocsPage() {
           the next sync.
         </p>
 
-        <h2>Why the number may differ from Polar’s</h2>
-        <p>
-          Polar’s public Analytics docs define MRR as the sum of every ongoing subscription’s net
-          amount, normalized monthly (yearly ÷ 12). Trialing subscriptions are excluded. Paused and
-          past-due subscriptions are included until the subscription actually ends (
-          <a
-            href="https://polar.sh/docs/features/analytics"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Polar Analytics
-          </a>
-          , checked 2026-10-11).
-        </p>
-        <p>
-          {brand.name} defaults the other way on eligibility: only <code>active</code> counts toward
-          total MRR; paused is out; past-due and trialing stay out unless you turn on{" "}
-          <code>includeTrialingPastDue</code>. We also combine Polar with other stores in one sheet,
-          so a combined figure will not match Polar’s Polar-only dashboard even when eligibility
-          rules align.
-        </p>
-
         <h2>Churn</h2>
+        <p>Logo churn over a trailing window (default 30 days) ending at “now”:</p>
         <p>
-          Logo churn over a trailing window (default 30 days) ending at “now”:
-        </p>
-        <p>
-          <code>rate = cancelled_in_window ÷ active_at_window_start</code>
+          <code>rate = cancelled_in_window / active_at_window_start</code>
         </p>
         <p>
           A subscription counts as active at the window start if it was created before the window

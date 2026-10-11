@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
@@ -8,11 +9,13 @@ import { pricing, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: `Free, Pro, and Business plans for ${brand.name}. Manual (one click) free; hourly, every 6 hours, daily or weekly from $${pricing.pro.monthly}/mo.`,
+  description:
+    "Free for one source. Pro $9/mo, Business $19/mo, billed monthly. Refresh hourly, every 6 hours, daily or weekly.",
   alternates: { canonical: `${siteConfig.url}/pricing` },
   openGraph: {
     title: `Pricing · ${brand.name}`,
-    description: `Free, Pro, and Business plans for ${brand.name}. Manual (one click) free; hourly, every 6 hours, daily or weekly from $${pricing.pro.monthly}/mo.`,
+    description:
+      "Free for one source. Pro $9/mo, Business $19/mo, billed monthly. Refresh hourly, every 6 hours, daily or weekly.",
     url: `${siteConfig.url}/pricing`,
   },
 };
@@ -57,7 +60,7 @@ const compareRows = [
   },
 ];
 
-const faq = [
+const faq: Array<{ q: string; a: ReactNode }> = [
   {
     q: "When do paid plans open?",
     a: "With the Marketplace listing. Until then, join the launch list from any Join the launch list button.",
@@ -69,6 +72,16 @@ const faq = [
   {
     q: "Does Free include backfill?",
     a: "Yes. Full history on one source.",
+  },
+  {
+    q: "How does this compare to Polar’s dashboard?",
+    a: (
+      <>
+        Polar’s Analytics covers Polar. RevenueSheet combines Polar with Lemon Squeezy, Gumroad, and
+        Stripe in a sheet you own. See{" "}
+        <Link href="/vs/polar-dashboard">RevenueSheet vs Polar’s dashboard</Link>.
+      </>
+    ),
   },
   {
     q: "What about refunds?",
