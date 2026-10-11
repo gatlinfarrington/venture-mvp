@@ -65,6 +65,7 @@ export const pricing = {
     lead: "One MRR number across every store, refreshed while you sleep.",
     features: [
       "All four sources plus CSV import",
+      "Hourly, every 6 hours, daily or weekly",
       "Revenue by product and source",
       "Full history backfill",
       "MRR, churn, revenue by product",
@@ -80,6 +81,7 @@ export const pricing = {
     /** Same allowSchedule / cadence options as Pro (hourly, 6h, daily, weekly). */
     refresh: "Hourly, every 6 hours, daily or weekly",
     stores: 20,
+    lead: "For sellers running several stores on one platform.",
     features: [
       "Everything in Pro",
       "Up to 20 stores per source, one combined MRR",

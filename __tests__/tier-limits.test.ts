@@ -46,4 +46,11 @@ describe("pricing", () => {
     expect(tierLimits("pro").scheduledRefresh).toBe(true);
     expect(tierLimits("business").scheduledRefresh).toBe(true);
   });
+
+  it("Pro lists the real refresh cadence; Business has a factual lead", () => {
+    expect(pricing.pro.features).toContain(pricing.pro.refresh);
+    expect(pricing.business.lead).toBe(
+      "For sellers running several stores on one platform.",
+    );
+  });
 });
