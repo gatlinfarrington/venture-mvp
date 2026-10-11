@@ -108,6 +108,21 @@ function authHeader(apiKey: string): Record<string, string> {
   };
 }
 
+/** Restricted-key permission (Dashboard label) each list endpoint needs. */
+export const STRIPE_PERMISSION: Record<string, string> = {
+  "/charges": "Charges and Refunds: Read",
+  "/refunds": "Charges and Refunds: Read",
+  "/customers": "Customers: Read",
+  "/subscriptions": "Subscriptions: Read",
+};
+
+export class StripePermissionError extends Error {}
+
+function stripeErrorMessage(data: unknown): string {
+  const err = (data as { error?: { message?: string } })?.error;
+  return err?.message ? String(err.message) : "";
+}
+
 function pathFor(resource: SyncResource): string {
   switch (resource) {
     case "subscriptions":
@@ -171,16 +186,16 @@ function paginateBudgetSync(
     }
     const url = `${BASE}${path}?${params.toString()}`;
     const { status, data } = fetchJsonSync<StripeList>(url, { headers: authHeader(apiKey) });
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       throw new Error(
-        "Stripe API key rejected (use a restricted read-only key with charges/subscriptions/customers/refunds read)",
+        `Stripe rejected the API key (401)${stripeErrorMessage(data) ? `: ${stripeErrorMessage(data)}` : ""}. Paste a valid restricted key (rk_live_...).`,
       );
     }
+    if (status === 403) {
+      throw new StripePermissionError(STRIPE_PERMISSION[path] || path);
+    }
     if (status >= 400) {
-      if (path === "/refunds") {
-        return { items: out, next: undefined, pagesUsed: pages, incomplete: false };
-      }
-      throw new Error(`Stripe error ${status}`);
+      throw new Error(`Stripe error ${status} on ${path}${stripeErrorMessage(data) ? `: ${stripeErrorMessage(data)}` : ""}`);
     }
     const items = data.data || [];
     for (const item of items) out.push(mapFn(item));
@@ -202,17 +217,33 @@ export function fetchStripeResultSync(
   let resource: SyncResource | "done" = (cursor?.resource as SyncResource) || "orders";
   if (resource === "sales" || resource === "done") resource = "orders";
   let pageToken = cursor?.pageToken;
+  const missing: string[] = [];
+  const warn = () =>
+    missing.length
+      ? [`your restricted key is missing ${missing.join(", ")} (Stripe Dashboard → Developers → API keys → edit key)`]
+      : undefined;
 
   while (pagesLeft > 0 && resource !== "done") {
     const path = pathFor(resource);
-    const page = paginateBudgetSync(
-      path,
-      apiKey,
-      mapFor(resource),
-      pageToken,
-      pageToken ? undefined : cursor,
-      pagesLeft,
-    );
+    let page: ReturnType<typeof paginateBudgetSync>;
+    try {
+      page = paginateBudgetSync(
+        path,
+        apiKey,
+        mapFor(resource),
+        pageToken,
+        pageToken ? undefined : cursor,
+        pagesLeft,
+      );
+    } catch (err) {
+      if (!(err instanceof StripePermissionError)) throw err;
+      // One missing permission must not abort the whole store: skip this resource.
+      if (!missing.includes(err.message)) missing.push(err.message);
+      pagesLeft -= 1;
+      pageToken = undefined;
+      resource = nextResource(resource);
+      continue;
+    }
     assignResource(bundle, resource, page.items);
     pagesLeft -= page.pagesUsed;
     if (page.incomplete) {
@@ -220,6 +251,7 @@ export function fetchStripeResultSync(
         bundle,
         cursor: { pageToken: page.next, resource, backfillComplete: false },
         incomplete: true,
+        warnings: warn(),
       };
     }
     pageToken = undefined;
@@ -231,9 +263,10 @@ export function fetchStripeResultSync(
       bundle,
       cursor: { pageToken: undefined, resource, backfillComplete: false },
       incomplete: true,
+      warnings: warn(),
     };
   }
-  return { bundle, cursor: completedCursor(new Date().toISOString()), incomplete: false };
+  return { bundle, cursor: completedCursor(new Date().toISOString()), incomplete: false, warnings: warn() };
 }
 
 export function fetchStripeSync(apiKey: string, cursor?: SyncCursor): ImportBundle {

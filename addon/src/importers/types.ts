@@ -122,6 +122,8 @@ export interface ImportResult {
   incomplete: boolean;
   /** Absolute total when the API reports one (powers "~N" in the syncing status band). */
   totalCount?: number;
+  /** Non-fatal problems (e.g. one Stripe resource not permitted); sync continues. */
+  warnings?: string[];
 }
 
 export interface Importer {

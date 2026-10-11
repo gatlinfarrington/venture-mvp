@@ -182,6 +182,10 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
       const tagged = tagBundleWithStore(result.bundle, store);
       bundle = mergeBundles(bundle, tagged);
       setSyncCursor(source, result.cursor, store.id);
+      for (const w of result.warnings || []) {
+        console.warn(`${source}/${store.label}: ${w}`);
+        errors.push(`${SOURCES.find((s) => s.id === source)?.label || source} (${store.label}): ${w}`);
+      }
       if (result.totalCount != null && result.totalCount > 0) {
         totalKnownBySource[source] = (totalKnownBySource[source] || 0) + result.totalCount;
       }
@@ -193,7 +197,8 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
       syncedStoreLabels.push(`${SOURCES.find((s) => s.id === source)?.label || source} · ${store.label}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      errors.push(`${source}/${store.label}: ${msg}`);
+      console.error(`sync ${source}/${store.label} failed: ${msg}`);
+      errors.push(`${SOURCES.find((s) => s.id === source)?.label || source} (${store.label}): ${msg}`);
     }
   }
 
