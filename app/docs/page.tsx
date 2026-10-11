@@ -39,7 +39,7 @@ const setup = [
   {
     href: "/docs/setup/lemon-squeezy",
     title: "Lemon Squeezy setup",
-    body: "API key, store scope, first backfill, and dashboard tiles.",
+    body: "API key, first backfill, and dashboard tiles.",
   },
   {
     href: "/docs/setup/polar",
