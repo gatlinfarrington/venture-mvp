@@ -111,15 +111,14 @@ export default function MrrAndChurnDocsPage() {
         <details className="docs-footnote">
           <summary>For the curious</summary>
           <p>
-            Interval conversion lives in <code>toMonthlyAmount</code> /{" "}
-            <code>toMonthlyFromUnitCount</code> (
-            <code>addon/src/lib/intervals.ts</code>), with vendor strings normalized by{" "}
-            <code>normalizeBillingInterval</code> and <code>intervalFromUnitAndCount</code>.
+            Interval conversion: <code>toMonthlyAmount</code> /{" "}
+            <code>toMonthlyFromUnitCount</code> in <code>addon/src/lib/intervals.ts</code>, with
+            vendor strings via <code>normalizeBillingInterval</code> and{" "}
+            <code>intervalFromUnitAndCount</code>.
           </p>
           <p>
-            MRR eligibility defaults and the sidebar flag <code>includeTrialingPastDue</code> (label:{" "}
-            <strong>Include trialing + past due in MRR</strong>) are in{" "}
-            <code>addon/src/metrics/mrr.ts</code>.
+            Sidebar toggle <strong>Include trialing + past due in MRR</strong> maps to{" "}
+            <code>includeTrialingPastDue</code> in <code>addon/src/metrics/mrr.ts</code>.
           </p>
           <p>
             Refund summary: <code>computeRefundSummary</code> in{" "}
@@ -127,8 +126,8 @@ export default function MrrAndChurnDocsPage() {
             <code>sumNetRevenue30d</code> in <code>addon/src/sync.ts</code>.
           </p>
           <p>
-            Logo churn: <code>rate = cancelled_in_window / active_at_window_start</code> in{" "}
-            <code>addon/src/metrics/churn.ts</code> (<code>deltaPts</code>, <code>newSubs</code>).
+            Logo churn: <code>cancelled_in_window / active_at_window_start</code> in{" "}
+            <code>addon/src/metrics/churn.ts</code>.
           </p>
         </details>
 

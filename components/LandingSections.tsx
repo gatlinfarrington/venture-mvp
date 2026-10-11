@@ -100,7 +100,7 @@ export function HowItWorks() {
       src: "/design/how-backfill-2x.png",
       w: 600,
       h: 600,
-      alt: "Sidebar mid-backfill with ink progress bar and orders writing in",
+      alt: "Sidebar mid-backfill with a dark progress bar and orders writing in",
     },
     {
       n: "03",
