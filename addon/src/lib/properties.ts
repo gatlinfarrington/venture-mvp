@@ -4,10 +4,21 @@ import {
   type ScheduleCadence,
   type SourceId,
 } from "./config";
+import {
+  DEFAULT_STORE_ID,
+  DEFAULT_STORE_LABEL,
+  migrateLegacyKeys,
+  parseStoresJson,
+  storesForSidebar,
+  upsertStoresForSource,
+  type StoreCredential,
+  type StoresBySource,
+} from "./stores";
 
 const LICENSE_KEY_PROP = "LICENSE_KEY";
 const CURRENCY_PROP = "DISPLAY_CURRENCY";
 const CURSOR_PREFIX = "SYNC_CURSOR_";
+const STORES_PROP = "STORES_BY_SOURCE";
 const LAST_SYNC_PROP = "LAST_SYNC_AT";
 const DEMO_MODE_PROP = "DEMO_MODE";
 const INCLUDE_TRIAL_PAST_DUE_PROP = "MRR_INCLUDE_TRIAL_PAST_DUE";
@@ -21,24 +32,77 @@ function userProps(): GoogleAppsScript.Properties.Properties {
   return PropertiesService.getUserProperties();
 }
 
+function readLegacyKeys(): Partial<Record<SourceId, string>> {
+  const out: Partial<Record<SourceId, string>> = {};
+  for (const meta of SOURCES) {
+    const key = userProps().getProperty(meta.keyProp) || "";
+    if (key) out[meta.id] = key;
+  }
+  return out;
+}
+
+function persistStores(stores: StoresBySource): void {
+  userProps().setProperty(STORES_PROP, JSON.stringify(stores));
+  // Keep legacy single-key props in sync with the first store (compat + migration).
+  for (const meta of SOURCES) {
+    const first = (stores[meta.id] || []).find((s) => s.apiKey);
+    if (first?.apiKey) userProps().setProperty(meta.keyProp, first.apiKey);
+    else userProps().deleteProperty(meta.keyProp);
+  }
+}
+
+/** All stores per source (migrates legacy API_KEY_* on read). */
+export function getStoresBySource(): StoresBySource {
+  const parsed = parseStoresJson(userProps().getProperty(STORES_PROP));
+  const migrated = migrateLegacyKeys(readLegacyKeys(), parsed);
+  // Persist migration once so cursors/labels stick.
+  if (JSON.stringify(parsed) !== JSON.stringify(migrated)) {
+    persistStores(migrated);
+  }
+  return migrated;
+}
+
+export function setStoresForSource(source: SourceId, stores: StoreCredential[]): void {
+  const all = getStoresBySource();
+  all[source] = stores.filter((s) => s.apiKey && s.apiKey.trim());
+  if (!all[source]!.length) delete all[source];
+  persistStores(all);
+}
+
+export function replaceStoresBySource(stores: StoresBySource): void {
+  persistStores(stores);
+}
+
+/** First connected store key for a source (legacy single-key API). */
 export function getApiKey(source: SourceId): string {
+  const stores = getStoresBySource()[source] || [];
+  const hit = stores.find((s) => s.apiKey);
+  if (hit) return hit.apiKey;
   const meta = SOURCES.find((s) => s.id === source);
   if (!meta) return "";
   return userProps().getProperty(meta.keyProp) || "";
 }
 
+/** Set/replace the Default store key (keeps other stores intact). */
 export function setApiKey(source: SourceId, key: string): void {
   const meta = SOURCES.find((s) => s.id === source);
   if (!meta) throw new Error(`Unknown source: ${source}`);
+  const all = getStoresBySource();
+  const current = all[source] || [];
   if (!key || !key.trim()) {
-    userProps().deleteProperty(meta.keyProp);
+    all[source] = current.filter((s) => s.id !== DEFAULT_STORE_ID);
+    if (!all[source]!.length) delete all[source];
   } else {
-    userProps().setProperty(meta.keyProp, key.trim());
+    all[source] = upsertStoresForSource(current, [
+      { id: DEFAULT_STORE_ID, label: DEFAULT_STORE_LABEL, apiKey: key.trim() },
+    ]);
   }
+  persistStores(all);
 }
 
 export function getConnectedSources(): SourceId[] {
-  return SOURCES.filter((s) => !!getApiKey(s.id)).map((s) => s.id);
+  const stores = getStoresBySource();
+  return SOURCES.filter((s) => (stores[s.id] || []).some((x) => x.apiKey)).map((s) => s.id);
 }
 
 export function getLicenseKey(): string {
@@ -58,8 +122,19 @@ export function setDisplayCurrency(code: string): void {
   userProps().setProperty(CURRENCY_PROP, (code || "USD").toUpperCase());
 }
 
-export function getSyncCursor(source: SourceId): import("../importers/types").SyncCursor {
-  const raw = userProps().getProperty(CURSOR_PREFIX + source);
+function cursorPropKey(source: SourceId, storeId?: string): string {
+  const sid = storeId && storeId !== DEFAULT_STORE_ID ? storeId : "";
+  return sid ? `${CURSOR_PREFIX}${source}__${sid}` : CURSOR_PREFIX + source;
+}
+
+export function getSyncCursor(
+  source: SourceId,
+  storeId: string = DEFAULT_STORE_ID,
+): import("../importers/types").SyncCursor {
+  const raw =
+    userProps().getProperty(cursorPropKey(source, storeId)) ||
+    // Legacy single-key cursor lives on the source prop — use for Default store.
+    (storeId === DEFAULT_STORE_ID ? userProps().getProperty(CURSOR_PREFIX + source) : null);
   if (!raw) return {};
   try {
     return JSON.parse(raw) as import("../importers/types").SyncCursor;
@@ -71,8 +146,13 @@ export function getSyncCursor(source: SourceId): import("../importers/types").Sy
 export function setSyncCursor(
   source: SourceId,
   cursor: import("../importers/types").SyncCursor,
+  storeId: string = DEFAULT_STORE_ID,
 ): void {
-  userProps().setProperty(CURSOR_PREFIX + source, JSON.stringify(cursor));
+  userProps().setProperty(cursorPropKey(source, storeId), JSON.stringify(cursor));
+  // Keep legacy prop mirrored for Default so older builds can resume.
+  if (!storeId || storeId === DEFAULT_STORE_ID) {
+    userProps().setProperty(CURSOR_PREFIX + source, JSON.stringify(cursor));
+  }
 }
 
 export function getIncludeTrialingPastDue(): boolean {
@@ -84,8 +164,11 @@ export function setIncludeTrialingPastDue(on: boolean): void {
   else userProps().deleteProperty(INCLUDE_TRIAL_PAST_DUE_PROP);
 }
 
-export function clearSyncCursor(source: SourceId): void {
-  userProps().deleteProperty(CURSOR_PREFIX + source);
+export function clearSyncCursor(source: SourceId, storeId: string = DEFAULT_STORE_ID): void {
+  userProps().deleteProperty(cursorPropKey(source, storeId));
+  if (!storeId || storeId === DEFAULT_STORE_ID) {
+    userProps().deleteProperty(CURSOR_PREFIX + source);
+  }
 }
 
 export function getLastSyncAt(): string {
@@ -172,11 +255,13 @@ export function setCsvColumnMap(map: Record<string, string>): void {
 }
 
 export function getAllSettingsForSidebar(): Record<string, unknown> {
+  const stores = getStoresBySource();
   return {
     lemonSqueezy: getApiKey("lemon_squeezy") ? "••••••••" : "",
     polar: getApiKey("polar") ? "••••••••" : "",
     gumroad: getApiKey("gumroad") ? "••••••••" : "",
     stripe: getApiKey("stripe") ? "••••••••" : "",
+    stores: storesForSidebar(stores),
     licenseKey: getLicenseKey() ? "••••••••" : "",
     currency: getDisplayCurrency(),
     lastSyncAt: getLastSyncAt(),

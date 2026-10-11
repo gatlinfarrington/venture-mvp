@@ -123,14 +123,21 @@
     <div id="sourceStatus"></div>
 
     <div class="eb">API keys</div>
-    <label for="ls">Lemon Squeezy</label>
-    <input id="ls" type="password" placeholder="ls_api_… or leave blank to clear" autocomplete="off" />
-    <label for="polar">Polar</label>
-    <input id="polar" type="password" placeholder="polar_oat_…" autocomplete="off" />
-    <label for="gumroad">Gumroad</label>
-    <input id="gumroad" type="password" placeholder="access_token" autocomplete="off" />
-    <label for="stripe">Stripe (restricted read-only key)</label>
-    <input id="stripe" type="password" placeholder="rk_live_… or rk_test_…" autocomplete="off" />
+    <div id="singleKeys">
+      <label for="ls">Lemon Squeezy</label>
+      <input id="ls" type="password" placeholder="ls_api_… or leave blank to clear" autocomplete="off" />
+      <label for="polar">Polar</label>
+      <input id="polar" type="password" placeholder="polar_oat_…" autocomplete="off" />
+      <label for="gumroad">Gumroad</label>
+      <input id="gumroad" type="password" placeholder="access_token" autocomplete="off" />
+      <label for="stripe">Stripe (restricted read-only key)</label>
+      <input id="stripe" type="password" placeholder="rk_live_… or rk_test_…" autocomplete="off" />
+    </div>
+    <div id="multiStores" style="display:none;">
+      <div class="hint" id="storesHint">Business plan: add up to 20 stores. Combined MRR across all of them.</div>
+      <div id="storesEditor"></div>
+      <button type="button" class="btn2" id="addStoreBtn" onclick="addStoreRow()" style="margin-top:4px;">Add store</button>
+    </div>
 
     <div class="eb">License & display</div>
     <label for="license">License key</label>
@@ -177,10 +184,120 @@
     <div class="status" id="status">Keys are stored in your Google account (User Properties), not in the sheet.</div>
 
     <script>
+      var SOURCE_OPTS = [
+        { id: "lemon_squeezy", label: "Lemon Squeezy" },
+        { id: "polar", label: "Polar" },
+        { id: "gumroad", label: "Gumroad" },
+        { id: "stripe", label: "Stripe" },
+      ];
+      var maxStores = 1;
+      var storeRows = [];
+
       function setStatus(msg, kind) {
         var el = document.getElementById("status");
         el.className = "status" + (kind ? " " + kind : "");
         el.textContent = msg;
+      }
+
+      function slugId(label) {
+        var s = String(label || "store")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .slice(0, 32);
+        return s || "store";
+      }
+
+      function renderStoresEditor() {
+        var root = document.getElementById("storesEditor");
+        var html = "";
+        storeRows.forEach(function (row, idx) {
+          html +=
+            '<div class="src" style="display:block;padding:10px 12px;" data-idx="' +
+            idx +
+            '">' +
+            '<label>Source</label>' +
+            '<select class="store-source" style="width:100%;height:36px;margin-bottom:8px;border:1px solid var(--border);border-radius:8px;font:400 12px JetBrains Mono,monospace;">' +
+            SOURCE_OPTS.map(function (o) {
+              return (
+                '<option value="' +
+                o.id +
+                '"' +
+                (row.source === o.id ? " selected" : "") +
+                ">" +
+                o.label +
+                "</option>"
+              );
+            }).join("") +
+            "</select>" +
+            '<label>Store label</label>' +
+            '<input class="store-label" type="text" value="' +
+            (row.label || "").replace(/"/g, "&quot;") +
+            '" placeholder="e.g. US store" />' +
+            '<label>API key</label>' +
+            '<input class="store-key" type="password" value="" placeholder="' +
+            (row.hasKey ? "•••••••• (saved · leave blank to keep)" : "Paste key") +
+            '" autocomplete="off" />' +
+            '<button type="button" class="btn2" style="margin-top:4px;height:36px;font-size:13px;" onclick="removeStoreRow(' +
+            idx +
+            ')">Remove store</button>' +
+            "</div>";
+        });
+        root.innerHTML = html || '<div class="hint">No stores yet. Click Add store.</div>';
+      }
+
+      function addStoreRow() {
+        if (storeRows.length >= maxStores) {
+          setStatus("Your plan allows " + maxStores + " store(s).", "err");
+          return;
+        }
+        storeRows.push({
+          id: "store-" + Date.now().toString(36),
+          source: "lemon_squeezy",
+          label: "Store " + (storeRows.length + 1),
+          hasKey: false,
+        });
+        renderStoresEditor();
+      }
+
+      function removeStoreRow(idx) {
+        storeRows.splice(idx, 1);
+        renderStoresEditor();
+      }
+
+      function collectStoresBySource() {
+        var nodes = document.querySelectorAll("#storesEditor > .src");
+        var bySource = {};
+        nodes.forEach(function (node, i) {
+          var source = node.querySelector(".store-source").value;
+          var label = node.querySelector(".store-label").value || "Store";
+          var key = node.querySelector(".store-key").value;
+          var prev = storeRows[i] || {};
+          var id = prev.id || slugId(label);
+          if (!bySource[source]) bySource[source] = [];
+          bySource[source].push({
+            id: id,
+            label: label,
+            apiKey: key && key.indexOf("••") === 0 ? "" : key,
+            clear: false,
+          });
+        });
+        // Mark removed prior stores for each source
+        SOURCE_OPTS.forEach(function (o) {
+          var kept = {};
+          (bySource[o.id] || []).forEach(function (s) {
+            kept[s.id] = true;
+          });
+          (window.__prevStores && window.__prevStores[o.id] ? window.__prevStores[o.id] : []).forEach(
+            function (s) {
+              if (!kept[s.id]) {
+                if (!bySource[o.id]) bySource[o.id] = [];
+                bySource[o.id].push({ id: s.id, label: s.label, clear: true });
+              }
+            },
+          );
+        });
+        return bySource;
       }
 
       function load() {
@@ -197,19 +314,56 @@
               document.getElementById("digestHint").textContent =
                 "Digest needs sensitive scope " + s.emailDigestScope + " (not in the default manifest).";
             }
+            maxStores = Number(s.maxStores) || 1;
+            var multi = maxStores > 1;
+            document.getElementById("singleKeys").style.display = multi ? "none" : "block";
+            document.getElementById("multiStores").style.display = multi ? "block" : "none";
+            document.getElementById("storesHint").textContent =
+              "Up to " +
+              maxStores +
+              " stores on your plan (" +
+              (s.licenseTier || "free") +
+              "). Combined MRR across all of them.";
+
+            storeRows = [];
+            window.__prevStores = s.stores || {};
+            if (multi) {
+              SOURCE_OPTS.forEach(function (o) {
+                var list = (s.stores && s.stores[o.id]) || [];
+                list.forEach(function (st) {
+                  storeRows.push({
+                    id: st.id,
+                    source: o.id,
+                    label: st.label,
+                    hasKey: !!st.hasKey,
+                  });
+                });
+              });
+              if (!storeRows.length) {
+                storeRows.push({
+                  id: "default",
+                  source: "lemon_squeezy",
+                  label: "Default",
+                  hasKey: false,
+                });
+              }
+              renderStoresEditor();
+            }
+
             var html = "";
-            [
-              ["Lemon Squeezy", s.lemonSqueezy],
-              ["Polar", s.polar],
-              ["Gumroad", s.gumroad],
-              ["Stripe", s.stripe],
-            ].forEach(function (pair) {
-              var on = !!pair[1];
+            SOURCE_OPTS.forEach(function (o) {
+              var list = (s.stores && s.stores[o.id]) || [];
+              var on = list.some(function (x) {
+                return x.hasKey;
+              });
+              var detail = on
+                ? list.length + " store" + (list.length === 1 ? "" : "s")
+                : "Not connected";
               html +=
                 '<div class="src"><div><b>' +
-                pair[0] +
+                o.label +
                 "</b><small>" +
-                (on ? "Key saved" : "Not connected") +
+                detail +
                 '</small></div><span class="dot' +
                 (on ? "" : " off") +
                 '">' +
@@ -227,6 +381,23 @@
 
       function save() {
         setStatus("Saving…");
+        var payload = {
+          licenseKey: document.getElementById("license").value,
+          currency: document.getElementById("currency").value,
+          mrrGoal: document.getElementById("mrrGoal").value,
+          template: document.getElementById("template").value,
+          scheduleCadence: document.getElementById("cadence").value,
+          includeTrialingPastDue: document.getElementById("includeTrial").checked,
+          emailDigest: document.getElementById("emailDigest").checked,
+        };
+        if (maxStores > 1) {
+          payload.storesBySource = collectStoresBySource();
+        } else {
+          payload.lemonSqueezy = document.getElementById("ls").value;
+          payload.polar = document.getElementById("polar").value;
+          payload.gumroad = document.getElementById("gumroad").value;
+          payload.stripe = document.getElementById("stripe").value;
+        }
         google.script.run
           .withSuccessHandler(function (msg) {
             setStatus(msg, "ok");
@@ -235,19 +406,7 @@
           .withFailureHandler(function (e) {
             setStatus(String(e), "err");
           })
-          .sidebarSaveSettings({
-            lemonSqueezy: document.getElementById("ls").value,
-            polar: document.getElementById("polar").value,
-            gumroad: document.getElementById("gumroad").value,
-            stripe: document.getElementById("stripe").value,
-            licenseKey: document.getElementById("license").value,
-            currency: document.getElementById("currency").value,
-            mrrGoal: document.getElementById("mrrGoal").value,
-            template: document.getElementById("template").value,
-            scheduleCadence: document.getElementById("cadence").value,
-            includeTrialingPastDue: document.getElementById("includeTrial").checked,
-            emailDigest: document.getElementById("emailDigest").checked,
-          });
+          .sidebarSaveSettings(payload);
       }
 
       function syncNow() {
