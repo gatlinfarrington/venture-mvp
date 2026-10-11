@@ -6,6 +6,9 @@ import { siteConfig } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
+/** Only known SEO guides; unknown single segments use root not-found (not this OG image). */
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return seoPages.map((p) => ({ slug: p.slug }));
 }

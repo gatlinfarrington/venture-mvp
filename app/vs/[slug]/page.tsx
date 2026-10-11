@@ -6,6 +6,8 @@ import { siteConfig } from "@/lib/site";
 
 type Props = { params: Promise<{ slug: string }> };
 
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return comparePages.map((p) => ({ slug: p.slug }));
 }
