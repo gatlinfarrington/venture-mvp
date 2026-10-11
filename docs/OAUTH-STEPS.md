@@ -124,17 +124,19 @@ Use these on the OAuth verification form. Match [`app/privacy/page.tsx`](../app/
 
 ---
 
-## Demo video shot list
+## Demo video
 
-Record in English. Show the **OAuth consent screen with all four scopes visible in English** early. Total ~2–3 minutes.
+**Full speakable script (clicks + exact lines):** [`docs/DEMO-VIDEO-SCRIPT.md`](./DEMO-VIDEO-SCRIPT.md).
 
-| # | On screen | Scope demonstrated | ~sec |
+Shot summary (~2–3 min, English consent scopes, pause on OAuth `client_id` in the URL bar):
+
+| # | On screen | Scope | ~sec |
 |---|---|---|---|
-| 1 | Fresh Google Sheet → install / open RevenueSheet → **Google consent screen** listing the four scopes in English (See/edit current spreadsheet; Display sidebars; Connect to external service; Run when you are not present) → Allow | All four (consent) | 25 |
-| 2 | Sheet with **RevenueSheet** menu + sidebar open (keys / Save settings / Sync now) | `script.container.ui` | 15 |
-| 3 | Paste a test source key (or **Load example data**) → Dashboard + data tabs fill in the **same** spreadsheet only | `spreadsheets.currentonly` | 30 |
-| 4 | Sync / status showing outbound fetch; briefly note keys stay in User Properties; mention license check to revenuesheet.app | `script.external_request` | 25 |
-| 5 | Enable **Scheduled refresh** (paid/demo) → show trigger installed or cadence saved; say sync can run when the sheet is closed | `script.scriptapp` | 20 |
-| 6 | Optional end card: homepage https://www.revenuesheet.app · privacy · terms · “no Drive / Gmail / send_mail scopes” | — | 10 |
+| 1 | Consent screen with four scopes → Allow | All four | 30 |
+| 2 | **Extensions → RevenueSheet → Open sidebar** | `script.container.ui` | 20 |
+| 3 | **Load example data** (menu) — EXAMPLE DATA only | `spreadsheets.currentonly` | 35 |
+| 4 | License key → **Save settings** / **Sync now** (no live store key) | `script.external_request` | 35 |
+| 5 | **Enable scheduled refresh** (or sidebar **Scheduled refresh** + **Save settings**) | `script.scriptapp` | 25 |
+| 6 | End: revenuesheet.app /privacy /terms | — | 15 |
 
-Tips: use example/demo data if you don’t want real customer emails on camera; keep the consent screen readable (full-screen, not cropped); do not demo `send_mail`.
+Do **not** demo `send_mail`.

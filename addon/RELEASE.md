@@ -15,8 +15,11 @@ Clasp-ready release notes for pushing `addon/dist` to an Apps Script project and
 | Authorized domain | `revenuesheet.app` (verified in Search Console) |
 | Add-on logo (manifest) | https://www.revenuesheet.app/brand/logo-128.png |
 | Small logo | https://www.revenuesheet.app/brand/logo-32.png |
+| Script ID | `1t3VNkcbwEaTEya4TrQ5yKuKHX_aO_C9lcACW9PDq2TRsRJvFBVQNTVKr` |
+| Marketplace deployment ID | `AKfycbywW5Q-hUKTfVPSiGWZG9vlHWcJ2euNxU4mmATREEMh1urw5vSlmmqpjepRCUibg89GCA` |
+| Deployment version | `2` |
 
-Link the Apps Script project to GCP project `revenuesheet-511320` before creating a versioned Marketplace deployment (steps in `docs/OAUTH-STEPS.md`).
+Link the Apps Script project to GCP project `revenuesheet-511320` before creating a versioned Marketplace deployment (steps in [`docs/OAUTH-STEPS.md`](../docs/OAUTH-STEPS.md)). Speakable OAuth demo script: [`docs/DEMO-VIDEO-SCRIPT.md`](../docs/DEMO-VIDEO-SCRIPT.md).
 
 ## Preflight (must be green)
 
@@ -62,6 +65,20 @@ Declared in [`src/appsscript.json`](./src/appsscript.json). Only what the shippe
 | `https://www.googleapis.com/auth/script.scriptapp` | Install/remove time-driven triggers for scheduled refresh (`ScriptApp.newTrigger`). |
 
 **Not declared:** `script.send_mail` (weekly digest is opt-in / not in default build). Paste-ready justifications for Google’s forms: [`docs/OAUTH-STEPS.md`](../docs/OAUTH-STEPS.md#scope-justifications-paste-ready).
+
+### `urlFetchWhitelist` (required by Marketplace / OAuth review)
+
+Declared after the `addOns` block in [`src/appsscript.json`](./src/appsscript.json). Every `UrlFetchApp` host in `addon/src` must match a prefix (enforced by `addon/test/url-fetch-whitelist.test.ts`):
+
+| Prefix | Used for |
+|---|---|
+| `https://www.revenuesheet.app/` | License verify (`LICENSE_API_BASE`) |
+| `https://api.stripe.com/` | Stripe importer |
+| `https://api.polar.sh/` | Polar importer |
+| `https://api.lemonsqueezy.com/` | Lemon Squeezy importer |
+| `https://api.gumroad.com/` | Gumroad importer |
+
+No sandbox hosts (e.g. `sandbox-api.polar.sh`) appear in the code today — do not add them unless an importer starts calling them.
 
 ---
 
