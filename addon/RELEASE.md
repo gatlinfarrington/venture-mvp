@@ -1,6 +1,22 @@
 # RevenueSheet add-on — release & test install
 
-Clasp-ready release notes for pushing `addon/dist` to an Apps Script project and installing it for internal testing (unverified OAuth / test deployment). This is **not** the Workspace Marketplace publish checklist (see [README.md](./README.md#marketplace-publish-checklist-owner)).
+Clasp-ready release notes for pushing `addon/dist` to an Apps Script project and installing it for internal testing. For **OAuth verification + Workspace Marketplace publish**, follow the click list in [`docs/OAUTH-STEPS.md`](../docs/OAUTH-STEPS.md).
+
+## GCP / consent (production)
+
+| Item | Value |
+|---|---|
+| GCP project ID | `revenuesheet-511320` |
+| OAuth consent | External |
+| App name | RevenueSheet |
+| Homepage | https://www.revenuesheet.app |
+| Privacy | https://www.revenuesheet.app/privacy |
+| Terms | https://www.revenuesheet.app/terms |
+| Authorized domain | `revenuesheet.app` (verified in Search Console) |
+| Add-on logo (manifest) | https://www.revenuesheet.app/brand/logo-128.png |
+| Small logo | https://www.revenuesheet.app/brand/logo-32.png |
+
+Link the Apps Script project to GCP project `revenuesheet-511320` before creating a versioned Marketplace deployment (steps in `docs/OAUTH-STEPS.md`).
 
 ## Preflight (must be green)
 
@@ -28,9 +44,24 @@ Expected:
 |---|---|
 | `Code.js` | Bundled Apps Script entry (`src/main.ts` via esbuild IIFE) |
 | `Sidebar.html` | Sidebar UI (brand name injected from `src/lib/brand.ts`) |
-| `appsscript.json` | Manifest (scopes + Sheets add-on triggers) |
+| `appsscript.json` | Manifest (scopes + Sheets add-on triggers + logo) |
 
 `dist/` is gitignored — always build before push. Do not edit files under `dist/` by hand.
+
+---
+
+## OAuth scopes (default manifest — no `send_mail`)
+
+Declared in [`src/appsscript.json`](./src/appsscript.json). Only what the shipped code uses:
+
+| Scope | Why |
+|---|---|
+| `https://www.googleapis.com/auth/spreadsheets.currentonly` | Read/write **only** the spreadsheet the add-on is opened from (dashboard tabs, synced rows). Prefer this over full Drive/Sheets. |
+| `https://www.googleapis.com/auth/script.container.ui` | Custom menu + sidebar (`SpreadsheetApp.getUi()`, `showSidebar`). |
+| `https://www.googleapis.com/auth/script.external_request` | `UrlFetchApp` HTTPS to Lemon Squeezy, Polar, Gumroad, Stripe, and `LICENSE_API_BASE` license verify. |
+| `https://www.googleapis.com/auth/script.scriptapp` | Install/remove time-driven triggers for scheduled refresh (`ScriptApp.newTrigger`). |
+
+**Not declared:** `script.send_mail` (weekly digest is opt-in / not in default build). Paste-ready justifications for Google’s forms: [`docs/OAUTH-STEPS.md`](../docs/OAUTH-STEPS.md#scope-justifications-paste-ready).
 
 ---
 
@@ -113,7 +144,7 @@ In the Apps Script editor → **Project Settings → Script properties**:
 
 | Property | Value |
 |---|---|
-| `LICENSE_API_BASE` | Web app origin, e.g. `https://venture-mvp.vercel.app` (no trailing slash) |
+| `LICENSE_API_BASE` | `https://www.revenuesheet.app` (no trailing slash; also the code default) |
 | `LICENSE_API_SECRET` | Optional; must match the site’s `LICENSE_API_SECRET` if set |
 
 The add-on calls `POST {LICENSE_API_BASE}/api/license/verify` with `{ "key": "…" }`.
@@ -129,7 +160,7 @@ clasp version "release candidate"
 clasp deploy --description "RevenueSheet RC"
 ```
 
-For day-to-day testing, **Test deployments** (below) can run against Head without a numbered deploy.
+For day-to-day testing, **Test deployments** (below) can run against Head without a numbered deploy. Marketplace submission needs a **versioned** deployment ID (see `docs/OAUTH-STEPS.md`).
 
 ---
 
@@ -155,11 +186,11 @@ On first use (Open sidebar / Sync / etc.):
 
 1. Google shows **Google hasn’t verified this app**.
 2. Click **Advanced** → **Go to RevenueSheet (unsafe)** (wording may vary slightly).
-3. Review scopes and **Allow**:
-   - See and edit spreadsheets you have opened (`spreadsheets.currentonly`)
-   - Connect to external services (`script.external_request`)
-   - Run triggers (`script.scriptapp`)
-   - Display sidebar/menu UI (`script.container.ui`)
+3. Review scopes and **Allow** (English consent labels):
+   - See, edit, create, and delete only the specific Google Sheets spreadsheets you use with this app (`spreadsheets.currentonly`)
+   - Display and run third-party web content in prompts and sidebars inside Google applications (`script.container.ui`)
+   - Connect to an external service (`script.external_request`)
+   - Allow this application to run when you are not present (`script.scriptapp`)
 
 Do **not** add `script.send_mail` unless you are intentionally testing the weekly digest (sensitive scope; not in the default manifest).
 
@@ -170,20 +201,15 @@ Do **not** add `script.send_mail` unless you are intentionally testing the weekl
 3. Confirm tabs/order: Dashboard, Cohorts, Orders, Subscriptions, Customers, Refunds, MRR monthly, Settings.
 4. Clear keys / don’t connect a source on a fresh sheet → empty onboarding state (status **NOT CONNECTED**, step cards).
 5. Paste a test source key (or CSV) → **Save settings** → **Sync now** / **Full backfill**.
-6. Paid schedule: paste a valid license key under **License & display**, then **Enable scheduled refresh**. Without a key you should see:  
-   `Paste your license key in the sidebar (License & display).`
+6. Paid schedule: paste a valid license key under **License & display**, enable scheduled refresh in the sidebar. Without a paid key you should see an upgrade CTA pointing at `/pricing`.
 
 ### D. Sharing the test install with other accounts
 
 - **Test deployments** are limited to accounts you add as test users (and the project owner).
 - For a small dogfood group: add each account under the GCP OAuth consent screen → **Test users** (External + Testing), and have them install via the same Test deployment / script owner share.
-- Or publish a **private** Workspace Marketplace listing to your domain (owner-only GCP steps; see README Marketplace checklist).
+- Or publish a **private** Workspace Marketplace listing to your domain (owner-only GCP steps; see [`docs/OAUTH-STEPS.md`](../docs/OAUTH-STEPS.md)).
 
 ---
-
-## Release branch note
-
-This file is maintained on `cursor/addon-release-9efa` for the website build to fold into a single merge. Do not treat a push of this branch alone as a production Marketplace publish.
 
 ## Quick command card
 

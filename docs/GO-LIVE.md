@@ -105,7 +105,7 @@ curl -s https://your.domain/robots.txt
 curl -s https://your.domain/api/version
 ```
 
-**Add-on note (separate from the marketing site):** the Apps Script project’s `LICENSE_API_BASE` (see `addon/RELEASE.md`) must also point at the new origin so license verify hits the same deployment. That is not read from `NEXT_PUBLIC_SITE_URL` inside Sheets.
+**Add-on note (separate from the marketing site):** the Apps Script default and Script Property `LICENSE_API_BASE` should be `https://www.revenuesheet.app` (see `addon/RELEASE.md`). That is not read from `NEXT_PUBLIC_SITE_URL` inside Sheets. OAuth / Marketplace publish steps: [`docs/OAUTH-STEPS.md`](./OAUTH-STEPS.md).
 
 ## 4. Verify
 
