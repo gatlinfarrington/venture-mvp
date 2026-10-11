@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { issueLicenseFromCheckoutSession } from "@/lib/issue-license";
 import { getLicenseBySubscription } from "@/lib/licenses";
 import { getStripe } from "@/lib/stripe";
 
@@ -27,7 +28,22 @@ export async function GET(request: Request) {
       });
     }
 
-    const license = await getLicenseBySubscription(subscriptionId);
+    let license = await getLicenseBySubscription(subscriptionId);
+
+    // Webhook may still be pending/failing; issue idempotently from the paid session.
+    if (
+      !license &&
+      session.mode === "subscription" &&
+      (session.payment_status === "paid" ||
+        session.payment_status === "no_payment_required")
+    ) {
+      try {
+        license = await issueLicenseFromCheckoutSession(session);
+      } catch (issueError) {
+        console.error("checkout session license recovery failed", issueError);
+      }
+    }
+
     return NextResponse.json({
       status: session.status,
       email: session.customer_details?.email ?? session.customer_email,
