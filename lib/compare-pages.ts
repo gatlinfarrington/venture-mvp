@@ -174,7 +174,7 @@ export const comparePages: ComparePage[] = [
       {
         h2: `When ${brand.name} fits better`,
         paragraphs: [
-          "You need last year’s orders in the sheet, stable columns, refunds updating by id, and an MRR dashboard, without designing and metering a Zap per storefront event type.",
+          "You need last year’s orders in the sheet, stable columns, refunds that update the original sale, and an MRR dashboard, without designing and metering a Zap per storefront event type.",
         ],
       },
     ],

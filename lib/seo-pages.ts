@@ -29,7 +29,7 @@ export const seoPages: SeoPage[] = [
         ],
         bullets: [
           "Full sales history backfill on first connect",
-          "Refunds update existing rows by id instead of duplicating",
+          "Refunds update the original sale row instead of duplicating",
           "Example marketing data is labeled: your sheet uses your store",
         ],
       },
@@ -70,7 +70,7 @@ export const seoPages: SeoPage[] = [
         bullets: [
           "Charges to Orders tab (amount, email, status, country)",
           "Subscriptions to MRR contribution and interval",
-          "Customers and refunds linked by Stripe ids",
+          "Customers and refunds stay linked to the original charge",
         ],
       },
       {
@@ -108,9 +108,9 @@ export const seoPages: SeoPage[] = [
           "Orders, subscriptions, customers, and refunds map into stable column headers. Amounts keep Polar’s currency; the Dashboard rolls MRR in your reporting currency from Settings.",
         ],
         bullets: [
-          "Orders: id, created, product, email, amount, status",
-          "Subscriptions: status, renewals, MRR contribution",
-          "Refunds linked to the original order id",
+          "Orders: product, email, amount, status, and date",
+          "Subscriptions: status, renewals, and monthly MRR contribution",
+          "Refunds stay linked to the original order",
         ],
       },
       {
@@ -140,12 +140,12 @@ export const seoPages: SeoPage[] = [
       {
         h2: "Importer details",
         paragraphs: [
-          "Connect with a Lemon Squeezy API key. Lemon Squeezy doesn't document read-only or per-store API keys, so name the key RevenueSheet and delete it anytime. The first run backfills historical orders; later syncs are incremental. Refunds and subscription state changes update existing rows by id. The add-on only reads; it never creates, edits, or refunds.",
+          "Connect with a Lemon Squeezy API key. Lemon Squeezy doesn't document read-only or per-store API keys, so name the key RevenueSheet and delete it anytime. The first run backfills historical orders; later syncs are incremental. Refunds and subscription changes update the original rows instead of duplicating. The add-on only reads; it never creates, edits, or refunds.",
         ],
         bullets: [
           "One store on Free/Pro; up to 20 stores on Business, one combined MRR",
-          "Dashboard series color for Lemon Squeezy is ink",
-          "Compatible with Lemon Squeezy API changes as long as the API remains available",
+          "Orders, subscriptions, customers, and refunds in named tabs you own",
+          "Scheduled refresh on Pro and Business so the sheet stays current",
         ],
       },
       {
