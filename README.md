@@ -102,6 +102,6 @@ Connected to Vercel (`venture-mvp`). Push to `main` for production. Set env vars
 
 ## Apps Script add-on
 
-The Sheets add-on lives under [`/addon`](addon/). Setup, clasp, OAuth scopes, and Marketplace steps: [`addon/README.md`](addon/README.md).
+The Sheets add-on lives under [`/addon`](addon/). Setup, clasp, OAuth scopes: [`addon/README.md`](addon/README.md). OAuth verification + Marketplace click list: [`docs/OAUTH-STEPS.md`](docs/OAUTH-STEPS.md).
 
-It calls `POST /api/license/verify` with the user’s license key (script property `LICENSE_API_BASE` overrides the default origin). Free tier = 1 source, manual refresh; paid unlocks schedule + multi-source. Unreachable license API degrades to free limits.
+It calls `POST /api/license/verify` with the user’s license key (default origin `https://www.revenuesheet.app`; Script Property `LICENSE_API_BASE` overrides). Free tier = 1 source, manual refresh; paid unlocks schedule + multi-source. Unreachable license API degrades to free limits.

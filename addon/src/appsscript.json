@@ -5,14 +5,14 @@
   "runtimeVersion": "V8",
   "oauthScopes": [
     "https://www.googleapis.com/auth/spreadsheets.currentonly",
+    "https://www.googleapis.com/auth/script.container.ui",
     "https://www.googleapis.com/auth/script.external_request",
-    "https://www.googleapis.com/auth/script.scriptapp",
-    "https://www.googleapis.com/auth/script.container.ui"
+    "https://www.googleapis.com/auth/script.scriptapp"
   ],
   "addOns": {
     "common": {
       "name": "RevenueSheet",
-      "logoUrl": "https://raw.githubusercontent.com/gatlinfarrington/venture-mvp/main/addon/design/marketplace/icon-128.png",
+      "logoUrl": "https://www.revenuesheet.app/brand/logo-128.png",
       "layoutProperties": {
         "primaryColor": "#0A7A55",
         "secondaryColor": "#0D0D0D"

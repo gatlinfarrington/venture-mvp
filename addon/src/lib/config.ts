@@ -2,9 +2,9 @@
 export const CONFIG = {
   /**
    * Default license verify endpoint (Script Property LICENSE_API_BASE wins).
-   * Uses the Vercel production host until a custom domain is set via Script Properties.
+   * Production origin: https://www.revenuesheet.app
    */
-  DEFAULT_LICENSE_API_BASE: "https://venture-mvp.vercel.app",
+  DEFAULT_LICENSE_API_BASE: "https://www.revenuesheet.app",
   LICENSE_PATH: "/api/license/verify",
   /** Free tier: one connected source, manual refresh only. */
   FREE_MAX_SOURCES: 1,
