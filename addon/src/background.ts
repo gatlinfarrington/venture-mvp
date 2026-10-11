@@ -114,7 +114,13 @@ function runSlice(
 export function startCardSync(full = false): SyncResult & { busy?: boolean } {
   const ss = SpreadsheetApp.getActive();
   props().setProperty(SSID_KEY, ss.getId());
-  return runSlice(ss, CARD_SLICE_MS, full);
+  // Data format changed (UTC timestamps, Stripe fields): rebuild the tabs once.
+  const DATA_VERSION = "2";
+  const key = `RS_DATA_VERSION_${ss.getId()}`;
+  const needsRebuild = props().getProperty(key) !== DATA_VERSION;
+  const r = runSlice(ss, CARD_SLICE_MS, full || needsRebuild);
+  if (needsRebuild && !r.busy) props().setProperty(key, DATA_VERSION);
+  return r;
 }
 
 /** Time-driven continuation handler (no active spreadsheet in trigger context). */
