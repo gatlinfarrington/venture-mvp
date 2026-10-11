@@ -13,6 +13,7 @@ const ORDER_HEADERS = [
   "Order ID",
   "Created",
   "Source",
+  "Store",
   "Product",
   "Customer email",
   "Amount (USD)",
@@ -24,6 +25,7 @@ const SUB_HEADERS = [
   "Subscription ID",
   "Created",
   "Source",
+  "Store",
   "Product",
   "Customer email",
   "MRR (USD)",
@@ -33,11 +35,12 @@ const SUB_HEADERS = [
   "Country",
 ];
 
-const CUST_HEADERS = ["Customer ID", "Created", "Source", "Email", "Name", "Country"];
+const CUST_HEADERS = ["Customer ID", "Created", "Source", "Store", "Email", "Name", "Country"];
 const REFUND_HEADERS = [
   "Refund ID",
   "Created",
   "Source",
+  "Store",
   "Order ID",
   "Amount (USD)",
   "Status",
@@ -93,10 +96,10 @@ export function writeImportBundle(
     opts.merge ? "Refund ID" : undefined,
   );
 
-  styleDataSheet(ss.getSheetByName(SHEET_NAMES.orders)!, [6]);
-  styleDataSheet(ss.getSheetByName(SHEET_NAMES.subscriptions)!, [6]);
+  styleDataSheet(ss.getSheetByName(SHEET_NAMES.orders)!, [7]);
+  styleDataSheet(ss.getSheetByName(SHEET_NAMES.subscriptions)!, [7]);
   styleDataSheet(ss.getSheetByName(SHEET_NAMES.customers)!, []);
-  styleDataSheet(ss.getSheetByName(SHEET_NAMES.refunds)!, [5]);
+  styleDataSheet(ss.getSheetByName(SHEET_NAMES.refunds)!, [6]);
 
   applyOrderStatusRules(ss.getSheetByName(SHEET_NAMES.orders)!);
   applySubStatusRules(ss.getSheetByName(SHEET_NAMES.subscriptions)!);
@@ -119,14 +122,29 @@ export function writeImportBundle(
   }
 }
 
+function storeLabelOf(row: { storeLabel?: string; storeId?: string }): string {
+  return row.storeLabel || row.storeId || "Default";
+}
+
 function orderRow(o: NormalizedOrder): unknown[] {
-  return [o.id, o.created, o.source, o.product, o.customerEmail, o.amount, o.status, o.country || ""];
+  return [
+    o.id,
+    o.created,
+    o.source,
+    storeLabelOf(o),
+    o.product,
+    o.customerEmail,
+    o.amount,
+    o.status,
+    o.country || "",
+  ];
 }
 function subRow(s: NormalizedSubscription): unknown[] {
   return [
     s.id,
     s.created,
     s.source,
+    storeLabelOf(s),
     s.product,
     s.customerEmail,
     s.mrr,
@@ -137,10 +155,19 @@ function subRow(s: NormalizedSubscription): unknown[] {
   ];
 }
 function custRow(c: NormalizedCustomer): unknown[] {
-  return [c.id, c.created, c.source, c.email, c.name, c.country || ""];
+  return [c.id, c.created, c.source, storeLabelOf(c), c.email, c.name, c.country || ""];
 }
 function refundRow(r: NormalizedRefund): unknown[] {
-  return [r.id, r.created, r.source, r.orderId, r.amount, r.status, r.country || ""];
+  return [
+    r.id,
+    r.created,
+    r.source,
+    storeLabelOf(r),
+    r.orderId,
+    r.amount,
+    r.status,
+    r.country || "",
+  ];
 }
 
 function writeTable(
@@ -242,7 +269,8 @@ function styleDataSheet(
 function applyOrderStatusRules(sheet: GoogleAppsScript.Spreadsheet.Sheet): void {
   sheet.clearConditionalFormatRules();
   const lastRow = Math.max(sheet.getLastRow(), 2);
-  const statusRange = sheet.getRange(`G2:G${lastRow}`);
+  // Status is column H after Store was inserted.
+  const statusRange = sheet.getRange(`H2:H${lastRow}`);
   const refunded = SpreadsheetApp.newConditionalFormatRule()
     .whenTextEqualTo("refunded")
     .setBackground(COLORS.dangerTint)
@@ -261,7 +289,8 @@ function applyOrderStatusRules(sheet: GoogleAppsScript.Spreadsheet.Sheet): void 
 function applySubStatusRules(sheet: GoogleAppsScript.Spreadsheet.Sheet): void {
   const rules = sheet.getConditionalFormatRules();
   const lastRow = Math.max(sheet.getLastRow(), 2);
-  const statusRange = sheet.getRange(`G2:G${lastRow}`);
+  // Status is column H after Store was inserted.
+  const statusRange = sheet.getRange(`H2:H${lastRow}`);
   const pastDue = SpreadsheetApp.newConditionalFormatRule()
     .whenTextEqualTo("past_due")
     .setFontColor(COLORS.danger)
@@ -274,21 +303,43 @@ function applySubStatusRules(sheet: GoogleAppsScript.Spreadsheet.Sheet): void {
 export function readOrders(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): NormalizedOrder[] {
   const sheet = ss.getSheetByName(SHEET_NAMES.orders);
   if (!sheet || sheet.getLastRow() < 2) return [];
-  const values = sheet.getDataRange().getValues().slice(1);
+  const values = sheet.getDataRange().getValues();
+  const headers = (values[0] as string[]).map(String);
+  const hasStore = headers.includes("Store");
   return values
+    .slice(1)
     .filter((r) => r[0])
-    .map((r) => ({
-      id: String(r[0]),
-      created: stringifyDate(r[1]),
-      source: String(r[2]) as NormalizedOrder["source"],
-      product: String(r[3]),
-      customerEmail: String(r[4]),
-      amount: Number(r[5]) || 0,
-      currency: "USD",
-      status: String(r[6]),
-      rawId: String(r[0]),
-      country: r[7] ? String(r[7]) : undefined,
-    }));
+    .map((r) => {
+      if (hasStore) {
+        return {
+          id: String(r[0]),
+          created: stringifyDate(r[1]),
+          source: String(r[2]) as NormalizedOrder["source"],
+          storeLabel: String(r[3] || "Default"),
+          product: String(r[4]),
+          customerEmail: String(r[5]),
+          amount: Number(r[6]) || 0,
+          currency: "USD",
+          status: String(r[7]),
+          rawId: String(r[0]),
+          country: r[8] ? String(r[8]) : undefined,
+        };
+      }
+      // Legacy columns (no Store)
+      return {
+        id: String(r[0]),
+        created: stringifyDate(r[1]),
+        source: String(r[2]) as NormalizedOrder["source"],
+        storeLabel: "Default",
+        product: String(r[3]),
+        customerEmail: String(r[4]),
+        amount: Number(r[5]) || 0,
+        currency: "USD",
+        status: String(r[6]),
+        rawId: String(r[0]),
+        country: r[7] ? String(r[7]) : undefined,
+      };
+    });
 }
 
 export function readSubscriptions(
@@ -296,42 +347,85 @@ export function readSubscriptions(
 ): NormalizedSubscription[] {
   const sheet = ss.getSheetByName(SHEET_NAMES.subscriptions);
   if (!sheet || sheet.getLastRow() < 2) return [];
-  const values = sheet.getDataRange().getValues().slice(1);
+  const values = sheet.getDataRange().getValues();
+  const headers = (values[0] as string[]).map(String);
+  const hasStore = headers.includes("Store");
   return values
+    .slice(1)
     .filter((r) => r[0])
-    .map((r) => ({
-      id: String(r[0]),
-      created: stringifyDate(r[1]),
-      source: String(r[2]) as NormalizedSubscription["source"],
-      product: String(r[3]),
-      customerEmail: String(r[4]),
-      mrr: Number(r[5]) || 0,
-      currency: "USD",
-      status: String(r[6]),
-      cancelledAt: r[7] ? stringifyDate(r[7]) : null,
-      interval: (String(r[8]) || "month") as NormalizedSubscription["interval"],
-      rawId: String(r[0]),
-      country: r[9] ? String(r[9]) : undefined,
-    }));
+    .map((r) => {
+      if (hasStore) {
+        return {
+          id: String(r[0]),
+          created: stringifyDate(r[1]),
+          source: String(r[2]) as NormalizedSubscription["source"],
+          storeLabel: String(r[3] || "Default"),
+          product: String(r[4]),
+          customerEmail: String(r[5]),
+          mrr: Number(r[6]) || 0,
+          currency: "USD",
+          status: String(r[7]),
+          cancelledAt: r[8] ? stringifyDate(r[8]) : null,
+          interval: (String(r[9]) || "month") as NormalizedSubscription["interval"],
+          rawId: String(r[0]),
+          country: r[10] ? String(r[10]) : undefined,
+        };
+      }
+      return {
+        id: String(r[0]),
+        created: stringifyDate(r[1]),
+        source: String(r[2]) as NormalizedSubscription["source"],
+        storeLabel: "Default",
+        product: String(r[3]),
+        customerEmail: String(r[4]),
+        mrr: Number(r[5]) || 0,
+        currency: "USD",
+        status: String(r[6]),
+        cancelledAt: r[7] ? stringifyDate(r[7]) : null,
+        interval: (String(r[8]) || "month") as NormalizedSubscription["interval"],
+        rawId: String(r[0]),
+        country: r[9] ? String(r[9]) : undefined,
+      };
+    });
 }
 
 export function readRefunds(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): NormalizedRefund[] {
   const sheet = ss.getSheetByName(SHEET_NAMES.refunds);
   if (!sheet || sheet.getLastRow() < 2) return [];
-  const values = sheet.getDataRange().getValues().slice(1);
+  const values = sheet.getDataRange().getValues();
+  const headers = (values[0] as string[]).map(String);
+  const hasStore = headers.includes("Store");
   return values
+    .slice(1)
     .filter((r) => r[0])
-    .map((r) => ({
-      id: String(r[0]),
-      created: stringifyDate(r[1]),
-      source: String(r[2]) as NormalizedRefund["source"],
-      orderId: String(r[3]),
-      amount: Number(r[4]) || 0,
-      currency: "USD",
-      status: String(r[5]),
-      rawId: String(r[0]),
-      country: r[6] ? String(r[6]) : undefined,
-    }));
+    .map((r) => {
+      if (hasStore) {
+        return {
+          id: String(r[0]),
+          created: stringifyDate(r[1]),
+          source: String(r[2]) as NormalizedRefund["source"],
+          storeLabel: String(r[3] || "Default"),
+          orderId: String(r[4]),
+          amount: Number(r[5]) || 0,
+          currency: "USD",
+          status: String(r[6]),
+          rawId: String(r[0]),
+          country: r[7] ? String(r[7]) : undefined,
+        };
+      }
+      return {
+        id: String(r[0]),
+        created: stringifyDate(r[1]),
+        source: String(r[2]) as NormalizedRefund["source"],
+        storeLabel: "Default",
+        orderId: String(r[3]),
+        amount: Number(r[4]) || 0,
+        currency: "USD",
+        status: String(r[5]),
+        rawId: String(r[0]),
+        country: r[6] ? String(r[6]) : undefined,
+      };
+    });
 }
 
 function stringifyDate(value: unknown): string {

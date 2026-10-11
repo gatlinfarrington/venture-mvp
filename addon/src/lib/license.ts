@@ -11,6 +11,8 @@ export interface LicenseStatus {
   degraded: boolean;
   message: string;
   maxSources: number;
+  /** Total store credentials across sources (Business 20; Pro/Free 1). */
+  maxStores: number;
   allowSchedule: boolean;
 }
 
@@ -23,6 +25,7 @@ function freeStatus(message: string): LicenseStatus {
     degraded: false,
     message,
     maxSources: CONFIG.FREE_MAX_SOURCES,
+    maxStores: 1,
     allowSchedule: false,
   };
 }
@@ -34,6 +37,7 @@ function degrade(message: string): LicenseStatus {
     degraded: true,
     message,
     maxSources: CONFIG.FREE_MAX_SOURCES,
+    maxStores: 1,
     allowSchedule: false,
   };
 }
@@ -53,7 +57,7 @@ function fromPayload(data: {
   message?: string;
   error?: string;
   status?: string;
-  limits?: { maxSources?: number; scheduledRefresh?: boolean };
+  limits?: { maxSources?: number; maxStores?: number; scheduledRefresh?: boolean };
 }): LicenseStatus {
   const valid = data.valid === true || data.ok === true;
   if (!valid) {
@@ -63,7 +67,9 @@ function fromPayload(data: {
   const tier = (data.tier || "free") as LicenseTier;
   const maxSources =
     data.limits?.maxSources ??
-    (tier === "pro" || tier === "business" ? 3 : CONFIG.FREE_MAX_SOURCES);
+    (tier === "pro" || tier === "business" ? 4 : CONFIG.FREE_MAX_SOURCES);
+  const maxStores =
+    data.limits?.maxStores ?? (tier === "business" ? 20 : 1);
   const allowSchedule =
     data.limits?.scheduledRefresh ?? (tier === "pro" || tier === "business");
 
@@ -73,6 +79,7 @@ function fromPayload(data: {
     degraded: false,
     message: data.message || (allowSchedule ? "License active." : "Free tier."),
     maxSources,
+    maxStores,
     allowSchedule,
   };
 }
@@ -120,7 +127,7 @@ export function checkLicenseSync(opts: { skipCache?: boolean } = {}): LicenseSta
       valid?: boolean;
       message?: string;
       error?: string;
-      limits?: { maxSources?: number; scheduledRefresh?: boolean };
+      limits?: { maxSources?: number; maxStores?: number; scheduledRefresh?: boolean };
     }>(url, {
       method: "post",
       headers: requestHeaders(),
@@ -154,7 +161,7 @@ export async function checkLicense(
       valid?: boolean;
       message?: string;
       error?: string;
-      limits?: { maxSources?: number; scheduledRefresh?: boolean };
+      limits?: { maxSources?: number; maxStores?: number; scheduledRefresh?: boolean };
     }>(url, {
       method: "post",
       headers: requestHeaders(),

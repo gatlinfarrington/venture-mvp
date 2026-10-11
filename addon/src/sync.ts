@@ -4,7 +4,6 @@ import { checkLicenseSync, enforceSourceLimit, type LicenseStatus } from "./lib/
 import type { BackfillSourceRow } from "./lib/onboardingCopy";
 import {
   clearSyncCursor,
-  getApiKey,
   getConnectedSources,
   getDashboardTemplate,
   getDisplayCurrency,
@@ -12,6 +11,7 @@ import {
   getLastSyncAt,
   getMrrGoal,
   getScheduleCadence,
+  getStoresBySource,
   getSyncCursor,
   setDemoMode,
   setLastSyncAt,
@@ -23,6 +23,7 @@ import {
   installSchedule as installScheduleTrigger,
   removeSchedule as removeScheduleTrigger,
 } from "./lib/schedule";
+import { enforceStoreLimit, tagBundleWithStore } from "./lib/stores";
 import { fetchGumroadResultSync } from "./importers/gumroad";
 import { fetchLemonSqueezyResultSync } from "./importers/lemonSqueezy";
 import { fetchPolarResultSync } from "./importers/polar";
@@ -138,6 +139,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   applyTabOrderAndColors(ss);
 
   const license = checkLicenseSync();
+  const storesBySource = getStoresBySource();
   const connected = getConnectedSources();
   if (!connected.length) {
     paintEmptyWorkbook(ss);
@@ -153,31 +155,45 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
     SpreadsheetApp.getActive().toast(limited.message || "Source limit reached", BRAND.name, 8);
   }
 
+  // Only sync stores under allowed sources, then cap by maxStores.
+  const storesForAllowed: typeof storesBySource = {};
+  for (const source of limited.allowed as SourceId[]) {
+    if (storesBySource[source]?.length) storesForAllowed[source] = storesBySource[source];
+  }
+  const storeLimit = enforceStoreLimit(storesForAllowed, license.maxStores);
+  if (storeLimit.blocked.length) {
+    SpreadsheetApp.getActive().toast(storeLimit.message || "Store limit reached", BRAND.name, 8);
+  }
+
   let bundle = emptyBundle();
   const errors: string[] = [];
   const incompleteSources: SourceId[] = [];
   const completedThisRun: SourceId[] = [];
   const totalKnownBySource: Partial<Record<SourceId, number>> = {};
   let resuming = false;
+  const syncedStoreLabels: string[] = [];
 
-  for (const source of limited.allowed as SourceId[]) {
-    const key = getApiKey(source);
-    if (!key) continue;
+  for (const { source, store } of storeLimit.allowed) {
     try {
-      const stored = getSyncCursor(source);
+      const stored = getSyncCursor(source, store.id);
       if (isBackfillIncomplete(stored)) resuming = true;
       const { cursor } = resolveFetchCursor(stored, !!opts.full);
-      const result = fetchSourceResult(source, key, cursor);
-      bundle = mergeBundles(bundle, result.bundle);
-      setSyncCursor(source, result.cursor);
+      const result = fetchSourceResult(source, store.apiKey, cursor);
+      const tagged = tagBundleWithStore(result.bundle, store);
+      bundle = mergeBundles(bundle, tagged);
+      setSyncCursor(source, result.cursor, store.id);
       if (result.totalCount != null && result.totalCount > 0) {
-        totalKnownBySource[source] = result.totalCount;
+        totalKnownBySource[source] = (totalKnownBySource[source] || 0) + result.totalCount;
       }
-      if (result.incomplete) incompleteSources.push(source);
-      else completedThisRun.push(source);
+      if (result.incomplete) {
+        if (!incompleteSources.includes(source)) incompleteSources.push(source);
+      } else if (!incompleteSources.includes(source) && !completedThisRun.includes(source)) {
+        completedThisRun.push(source);
+      }
+      syncedStoreLabels.push(`${SOURCES.find((s) => s.id === source)?.label || source} · ${store.label}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      errors.push(`${source}: ${msg}`);
+      errors.push(`${source}/${store.label}: ${msg}`);
     }
   }
 
@@ -193,7 +209,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   setLastSyncAt(now.toISOString());
   setDemoMode(false);
 
-  const labels = limited.allowed.map((id) => SOURCES.find((s) => s.id === id)?.label || id);
+  const labels = [...new Set(storeLimit.allowed.map(({ source }) => SOURCES.find((s) => s.id === source)?.label || source))];
   const incomplete = incompleteSources.length > 0;
   const syncTime = Utilities.formatDate(now, ss.getSpreadsheetTimeZone(), "HH:mm");
   const fullSyncTime = Utilities.formatDate(now, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd HH:mm");
@@ -221,7 +237,12 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
         doneLabels: completedThisRun
           .filter((id) => !incompleteSources.includes(id))
           .map((id) => SOURCES.find((s) => s.id === id)?.label || id),
-        sources: buildBackfillRows(orders, limited.allowed as SourceId[], incompleteSources, totalKnownBySource),
+        sources: buildBackfillRows(
+          orders,
+          storeLimit.allowed.map((a) => a.source),
+          incompleteSources,
+          totalKnownBySource,
+        ),
         partial: {
           mrr: mrr.total,
           net30,
@@ -249,15 +270,16 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
 
   ensureSettingsSheet(ss, license);
 
+  const sourcesSynced = [...new Set(storeLimit.allowed.map((a) => a.source))];
   return {
     ok: errors.length === 0,
     incomplete,
     message: errors.length
       ? `Synced with errors: ${errors.join("; ")}`
       : incomplete
-        ? `Synced ${labels.join(", ") || "no sources"} (backfill in progress · will resume on next sync).`
-        : `Synced ${labels.join(", ") || "no sources"}.`,
-    sources: limited.allowed as SourceId[],
+        ? `Synced ${syncedStoreLabels.join(", ") || "no stores"} (backfill in progress · will resume on next sync).`
+        : `Synced ${syncedStoreLabels.join(", ") || "no stores"}.`,
+    sources: sourcesSynced,
   };
 }
 
@@ -347,6 +369,7 @@ export function runDemoMode(): SyncResult {
     degraded: false,
     message: "Demo mode",
     maxSources: CONFIG.FREE_MAX_SOURCES,
+    maxStores: 1,
     allowSchedule: false,
   });
 
@@ -391,6 +414,10 @@ function ensureSettingsSheet(
   const schedule = opts.empty || !license.allowSchedule
     ? "Off · turn on in the sidebar"
     : getScheduleCadence();
+  const stores = getStoresBySource();
+  const storeSummaries = SOURCES.flatMap((s) =>
+    (stores[s.id] || []).map((st) => `${s.label} · ${st.label}`),
+  );
   const sources = opts.empty || !connected.length
     ? "None connected"
     : connected.map((id) => SOURCES.find((s) => s.id === id)?.label || id).join(", ");
@@ -402,6 +429,8 @@ function ensureSettingsSheet(
     ["Last sync", lastSync],
     ["Schedule", schedule],
     ["Sources", sources],
+    ["Stores", opts.empty || !storeSummaries.length ? "None connected" : storeSummaries.join(", ")],
+    ["Max stores", license.maxStores],
     ["Plan", plan],
     ["License tier", license.tier],
     ["License status", license.message],

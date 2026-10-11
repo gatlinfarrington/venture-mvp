@@ -12,6 +12,10 @@ export interface NormalizedOrder {
   rawId: string;
   /** ISO 3166-1 alpha-2 when known */
   country?: string;
+  /** Store credential id (multi-store); Default when omitted. */
+  storeId?: string;
+  /** User-facing store label. */
+  storeLabel?: string;
 }
 
 export interface NormalizedSubscription {
@@ -36,6 +40,8 @@ export interface NormalizedSubscription {
     | "unknown";
   rawId: string;
   country?: string;
+  storeId?: string;
+  storeLabel?: string;
 }
 
 export interface NormalizedCustomer {
@@ -46,6 +52,8 @@ export interface NormalizedCustomer {
   created: string;
   rawId: string;
   country?: string;
+  storeId?: string;
+  storeLabel?: string;
 }
 
 export interface NormalizedRefund {
@@ -58,6 +66,8 @@ export interface NormalizedRefund {
   status: string;
   rawId: string;
   country?: string;
+  storeId?: string;
+  storeLabel?: string;
 }
 
 export interface CsvColumnMap {

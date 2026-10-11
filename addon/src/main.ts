@@ -11,6 +11,7 @@ import {
 } from "./lib/config";
 import { runWeeklyDigest } from "./lib/emailDigest";
 import { mapCsvToBundle } from "./importers/csv";
+import { checkLicenseSync } from "./lib/license";
 import {
   getAllSettingsForSidebar,
   getConnectedSources,
@@ -19,6 +20,7 @@ import {
   getDisplayCurrency,
   getLastSyncAt,
   getMrrGoal,
+  getStoresBySource,
   setApiKey,
   setCsvColumnMap,
   setDashboardTemplate,
@@ -28,8 +30,10 @@ import {
   setLicenseKey,
   setMrrGoal,
   setScheduleCadence,
+  setStoresForSource,
 } from "./lib/properties";
 import { installDigestTrigger, removeDigestTrigger } from "./lib/schedule";
+import { countConnectedStores, upsertStoresForSource } from "./lib/stores";
 import {
   installSchedule,
   paintEmptyWorkbook,
@@ -140,11 +144,16 @@ function menuImportCsv(): void {
 }
 
 function sidebarGetSettings(): Record<string, unknown> {
+  const license = checkLicenseSync();
   return {
     ...getAllSettingsForSidebar(),
     brandName: BRAND.name,
     pitch: BRAND.pitch,
     emailDigestScope: EMAIL_DIGEST_SCOPE,
+    maxStores: license.maxStores,
+    maxSources: license.maxSources,
+    licenseTier: license.tier,
+    storeCount: countConnectedStores(getStoresBySource()),
   };
 }
 
@@ -153,6 +162,10 @@ function sidebarSaveSettings(payload: {
   polar?: string;
   gumroad?: string;
   stripe?: string;
+  /** Multi-store replace payload: per-source list of { id, label, apiKey }. */
+  storesBySource?: Partial<
+    Record<SourceId, Array<{ id?: string; label?: string; apiKey?: string; clear?: boolean }>>
+  >;
   licenseKey?: string;
   currency?: string;
   includeTrialingPastDue?: boolean;
@@ -162,19 +175,37 @@ function sidebarSaveSettings(payload: {
   template?: DashboardTemplate;
   csvMapJson?: string;
 }): string {
-  const maybeSet = (source: SourceId, value?: string) => {
-    if (value == null || value === "" || value.indexOf("••") === 0) return;
-    if (value === "-" || value.toLowerCase() === "clear") setApiKey(source, "");
-    else setApiKey(source, value);
-  };
-  maybeSet("lemon_squeezy", payload.lemonSqueezy);
-  maybeSet("polar", payload.polar);
-  maybeSet("gumroad", payload.gumroad);
-  maybeSet("stripe", payload.stripe);
+  // License first so maxStores is current when we validate store count.
   if (payload.licenseKey && payload.licenseKey.indexOf("••") !== 0) {
     if (payload.licenseKey === "-" || payload.licenseKey.toLowerCase() === "clear") setLicenseKey("");
     else setLicenseKey(payload.licenseKey);
   }
+
+  const license = checkLicenseSync({ skipCache: true });
+
+  if (payload.storesBySource) {
+    for (const source of Object.keys(payload.storesBySource) as SourceId[]) {
+      const updates = payload.storesBySource[source] || [];
+      const next = upsertStoresForSource(getStoresBySource()[source] || [], updates);
+      setStoresForSource(source, next);
+    }
+  } else {
+    const maybeSet = (source: SourceId, value?: string) => {
+      if (value == null || value === "" || value.indexOf("••") === 0) return;
+      if (value === "-" || value.toLowerCase() === "clear") setApiKey(source, "");
+      else setApiKey(source, value);
+    };
+    maybeSet("lemon_squeezy", payload.lemonSqueezy);
+    maybeSet("polar", payload.polar);
+    maybeSet("gumroad", payload.gumroad);
+    maybeSet("stripe", payload.stripe);
+  }
+
+  const storeCount = countConnectedStores(getStoresBySource());
+  if (storeCount > license.maxStores) {
+    return `Saved, but your plan allows ${license.maxStores} store(s) and you have ${storeCount}. Extra stores will not sync until you upgrade or remove keys.`;
+  }
+
   if (payload.currency) setDisplayCurrency(payload.currency);
   if (typeof payload.includeTrialingPastDue === "boolean") {
     setIncludeTrialingPastDue(payload.includeTrialingPastDue);
