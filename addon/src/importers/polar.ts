@@ -1,3 +1,4 @@
+import { deadlinePassed } from "../lib/deadline";
 import { buildQuery } from "../lib/query";
 import { CONFIG } from "../lib/config";
 import { completedCursor } from "../lib/backfill";
@@ -176,7 +177,7 @@ function paginateBudgetSync(
   const out: unknown[] = [];
   let url: string | null = start;
   let pages = 0;
-  while (url && pages < maxPages) {
+  while (url && pages < maxPages && (pages === 0 || !deadlinePassed())) {
     pages += 1;
     const { status, data } = fetchJsonSync<PolarPage<PolarRecord> | PolarRecord[]>(url, {
       headers: { Accept: "application/json", Authorization: `Bearer ${apiKey}` },
@@ -202,7 +203,7 @@ export function fetchPolarResultSync(
   let resource: SyncResource | "done" = (cursor?.resource as SyncResource) || "orders";
   let pageToken = cursor?.pageToken;
 
-  while (pagesLeft > 0 && resource !== "done") {
+  while (pagesLeft > 0 && resource !== "done" && !deadlinePassed()) {
     const path = pathFor(resource);
     const start =
       pageToken ||

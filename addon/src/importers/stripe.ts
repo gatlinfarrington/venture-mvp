@@ -1,3 +1,4 @@
+import { deadlinePassed } from "../lib/deadline";
 import { buildQuery } from "../lib/query";
 import { CONFIG } from "../lib/config";
 import { completedCursor } from "../lib/backfill";
@@ -16,6 +17,8 @@ import type {
 } from "./types";
 
 const BASE = "https://api.stripe.com/v1";
+/** Initial Stripe history window (~24 months). */
+export const STRIPE_HISTORY_DAYS = 730;
 
 type StripeRecord = Record<string, unknown>;
 
@@ -177,14 +180,18 @@ function paginateBudgetSync(
   const out: unknown[] = [];
   let startingAfter = startAfter;
   let pages = 0;
-  while (pages < maxPages) {
+  const floor = Math.floor((Date.now() - STRIPE_HISTORY_DAYS * 86400000) / 1000);
+  const since = cursor?.lastSyncedAt ? Math.floor(Date.parse(cursor.lastSyncedAt) / 1000) : NaN;
+  // Only payments are history-capped; active subscriptions/customers can be older than 24 months.
+  const capped = path === "/charges" || path === "/refunds";
+  const createdFloor = capped ? (Number.isNaN(since) ? floor : Math.max(floor, since)) : since;
+  while (pages < maxPages && (pages === 0 || !deadlinePassed())) {
     pages += 1;
     const params: Array<[string, string]> = [["limit", String(Math.min(CONFIG.PAGE_SIZE, 100))]];
     if (startingAfter) params.push(["starting_after", startingAfter]);
-    if (cursor?.lastSyncedAt && !startingAfter) {
-      const created = Math.floor(Date.parse(cursor.lastSyncedAt) / 1000);
-      if (!Number.isNaN(created)) params.push(["created[gte]", String(created)]);
-    }
+    // Initial backfill is capped at 24 months; keep the same filter on every page so
+    // starting_after pagination stays consistent.
+    if (!Number.isNaN(createdFloor)) params.push(["created[gte]", String(createdFloor)]);
     const url = `${BASE}${path}?${buildQuery(params)}`;
     const { status, data } = fetchJsonSync<StripeList>(url, { headers: authHeader(apiKey) });
     if (status === 401) {
@@ -224,7 +231,7 @@ export function fetchStripeResultSync(
       ? [`your restricted key is missing ${missing.join(", ")} (Stripe Dashboard → Developers → API keys → edit key)`]
       : undefined;
 
-  while (pagesLeft > 0 && resource !== "done") {
+  while (pagesLeft > 0 && resource !== "done" && !deadlinePassed()) {
     const path = pathFor(resource);
     let page: ReturnType<typeof paginateBudgetSync>;
     try {

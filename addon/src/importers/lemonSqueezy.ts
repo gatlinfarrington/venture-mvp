@@ -1,3 +1,4 @@
+import { deadlinePassed } from "../lib/deadline";
 import { CONFIG } from "../lib/config";
 import { completedCursor } from "../lib/backfill";
 import {
@@ -271,7 +272,7 @@ function paginateBudgetSync(
   let url: string | null = start;
   let pages = 0;
   const variantCache = new Map<string, LsResource>();
-  while (url && pages < maxPages) {
+  while (url && pages < maxPages && (pages === 0 || !deadlinePassed())) {
     pages += 1;
     const res: { status: number; data: LsListResponse<LsResource> } = fetchJsonSync(url, {
       headers: {
@@ -306,7 +307,7 @@ export function fetchLemonSqueezyResultSync(
   let resource: SyncResource | "done" = (cursor?.resource as SyncResource) || "orders";
   let pageToken = cursor?.pageToken;
 
-  while (pagesLeft > 0 && resource !== "done") {
+  while (pagesLeft > 0 && resource !== "done" && !deadlinePassed()) {
     const path = pathFor(resource);
     const start =
       pageToken ||

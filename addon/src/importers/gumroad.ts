@@ -1,3 +1,4 @@
+import { deadlinePassed } from "../lib/deadline";
 import { buildQuery } from "../lib/query";
 import { CONFIG } from "../lib/config";
 import { completedCursor } from "../lib/backfill";
@@ -108,7 +109,7 @@ export function fetchSalesPageSync(
     return { sales: [], incomplete: false };
   }
   let pages = 0;
-  while (pages < maxPages) {
+  while (pages < maxPages && (pages === 0 || !deadlinePassed())) {
     pages += 1;
     const params: Record<string, string> = { access_token: apiKey };
     if (pageKey) params.page_key = pageKey;
@@ -151,7 +152,7 @@ export async function fetchSalesPageAsync(
     return { sales: [], incomplete: false };
   }
   let pages = 0;
-  while (pages < maxPages) {
+  while (pages < maxPages && (pages === 0 || !deadlinePassed())) {
     pages += 1;
     const params: Record<string, string> = { access_token: apiKey };
     if (pageKey) params.page_key = pageKey;

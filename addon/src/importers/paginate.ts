@@ -1,3 +1,4 @@
+import { deadlinePassed } from "../lib/deadline";
 import { CONFIG } from "../lib/config";
 import { completedCursor } from "../lib/backfill";
 import type { ImportBundle, ImportResult, SyncCursor, SyncResource } from "./types";
@@ -21,7 +22,7 @@ export function paginateWithBudget<T>(
   const items: T[] = [];
   let token = startToken;
   let pages = 0;
-  while (pages < maxPages) {
+  while (pages < maxPages && (pages === 0 || !deadlinePassed())) {
     pages += 1;
     const page = fetchPage(token);
     for (const item of page.items) items.push(item);

@@ -1,3 +1,4 @@
+import { clearDeadline, deadlinePassed, setDeadline } from "./lib/deadline";
 import { CONFIG, SHEET_NAMES, SOURCES, type ScheduleCadence, type SourceId } from "./lib/config";
 import { isBackfillIncomplete, resolveFetchCursor } from "./lib/backfill";
 import { checkLicenseSync, enforceSourceLimit, type LicenseStatus } from "./lib/license";
@@ -48,6 +49,8 @@ export interface SyncResult {
   sources: SourceId[];
   sample?: boolean;
   incomplete?: boolean;
+  /** Rows in the data tabs after this run (orders + subscriptions + refunds). */
+  records?: number;
 }
 
 function emptyBundle(): ImportBundle {
@@ -132,8 +135,10 @@ export function paintEmptyWorkbook(ss?: GoogleAppsScript.Spreadsheet.Spreadsheet
   ensureSettingsSheet(spreadsheet, license, { empty: true });
 }
 
-export function runSync(opts: { full?: boolean } = {}): SyncResult {
-  const ss = SpreadsheetApp.getActive();
+export function runSync(
+  opts: { full?: boolean; ss?: GoogleAppsScript.Spreadsheet.Spreadsheet } = {},
+): SyncResult {
+  const ss = opts.ss || SpreadsheetApp.getActive();
   ensureAllTabs(ss);
   ensureDataSheets(ss);
   applyTabOrderAndColors(ss);
@@ -152,7 +157,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
 
   const limited = enforceSourceLimit(license, connected);
   if (limited.blocked.length) {
-    SpreadsheetApp.getActive().toast(limited.message || "Source limit reached", BRAND.name, 8);
+    safeToast(ss, limited.message || "Source limit reached");
   }
 
   // Only sync stores under allowed sources, then cap by maxStores per source.
@@ -162,7 +167,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   }
   const storeLimit = enforceStoreLimit(storesForAllowed, license.maxStores);
   if (storeLimit.blocked.length) {
-    SpreadsheetApp.getActive().toast(storeLimit.message || "Store limit reached", BRAND.name, 8);
+    safeToast(ss, storeLimit.message || "Store limit reached");
   }
 
   let bundle = emptyBundle();
@@ -174,6 +179,12 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   const syncedStoreLabels: string[] = [];
 
   for (const { source, store } of storeLimit.allowed) {
+    if (deadlinePassed()) {
+      // Out of time for this slice: leave the store's cursor as-is; next slice resumes it.
+      resuming = true;
+      if (!incompleteSources.includes(source)) incompleteSources.push(source);
+      continue;
+    }
     try {
       const stored = getSyncCursor(source, store.id);
       if (isBackfillIncomplete(stored)) resuming = true;
@@ -279,6 +290,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   return {
     ok: errors.length === 0,
     incomplete,
+    records: orders.length + subscriptions.length + refunds.length,
     message: errors.length
       ? `Synced with errors: ${errors.join("; ")}`
       : incomplete
@@ -400,7 +412,24 @@ export function runScheduledSync(): void {
     console.warn("Scheduled sync skipped — license does not allow schedule.");
     return;
   }
-  runSync({ full: false });
+  let ss: GoogleAppsScript.Spreadsheet.Spreadsheet | null = null;
+  try {
+    ss = SpreadsheetApp.getActive();
+  } catch {
+    ss = null;
+  }
+  if (!ss) {
+    // Time-driven triggers have no active spreadsheet; use the one the user last synced.
+    const id = PropertiesService.getUserProperties().getProperty("RS_BG_SYNC_SSID");
+    if (!id) return;
+    ss = SpreadsheetApp.openById(id);
+  }
+  setDeadline(270_000);
+  try {
+    runSync({ full: false, ss });
+  } finally {
+    clearDeadline();
+  }
 }
 
 function ensureSettingsSheet(
@@ -456,4 +485,12 @@ function ensureSettingsSheet(
 
 export function resetSourceCursor(source: SourceId): void {
   clearSyncCursor(source);
+}
+
+function safeToast(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, msg: string): void {
+  try {
+    ss.toast(msg, BRAND.name, 8);
+  } catch {
+    /* no UI in trigger context */
+  }
 }

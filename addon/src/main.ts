@@ -6,6 +6,7 @@
  * for the active spreadsheet (homepage card → requestFileScopeForActiveDocument).
  */
 import { BRAND } from "./lib/brand";
+import { continueSyncInBackground, getBgStatus, startCardSync } from "./background";
 import {
   EMAIL_DIGEST_SCOPE,
   EMAIL_DIGEST_SCOPE_DECLARED,
@@ -100,7 +101,17 @@ function readyHomepageCard(notice?: string): GoogleAppsScript.Card_Service.Card 
   const masked = (v: unknown) => (v ? "Saved (leave blank to keep)" : "");
   const input = (name: string, title: string, hint: string, value = "") =>
     CardService.newTextInput().setFieldName(name).setTitle(title).setHint(hint).setValue(value);
-  const lastSync = settings.lastSyncAt ? `Last sync: ${String(settings.lastSyncAt)}` : "Not synced yet.";
+  const bg = getBgStatus();
+  const lastSync =
+    bg?.state === "running"
+      ? bg.needsManualContinue
+        ? `${bg.records} records so far. Click Continue sync to fetch the rest.`
+        : `Syncing in background… ${bg.records} records so far.`
+      : bg?.state === "error"
+        ? bg.message
+        : settings.lastSyncAt
+          ? `Last sync: ${String(settings.lastSyncAt)}`
+          : "Not synced yet.";
 
   const card = CardService.newCardBuilder().setHeader(
     CardService.newCardHeader().setTitle(BRAND.name).setSubtitle(BRAND.pitch),
@@ -136,6 +147,13 @@ function readyHomepageCard(notice?: string): GoogleAppsScript.Card_Service.Card 
               .setText("Sync now")
               .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
               .setOnClickAction(CardService.newAction().setFunctionName("cardSync")),
+          )
+          .addButton(
+            CardService.newTextButton()
+              .setText(bg?.state === "running" ? "Continue sync" : "Refresh")
+              .setOnClickAction(
+                CardService.newAction().setFunctionName(bg?.state === "running" ? "cardSync" : "cardRefresh"),
+              ),
           )
           .addButton(
             CardService.newTextButton()
@@ -203,12 +221,20 @@ function cardSync(e: CardEvent): GoogleAppsScript.Card_Service.ActionResponse {
     // Save anything typed into the form first so "Save" isn't a required extra click.
     const typed = ["licenseKey", "lemonSqueezy", "polar", "gumroad", "stripe"].some((n) => formValue(e, n));
     if (typed) cardSave(e);
-    const r = sidebarSync(false);
+    if (!canAccessActiveSpreadsheet()) {
+      return cardResponse("Allow access to this spreadsheet from the RevenueSheet card first.");
+    }
+    const r = startCardSync(false);
     return cardResponse(r.message);
   } catch (err) {
     console.error("cardSync failed", err);
     return cardResponse(`Sync failed: ${errText(err)}`);
   }
+}
+
+function cardRefresh(): GoogleAppsScript.Card_Service.ActionResponse {
+  const bg = getBgStatus();
+  return cardResponse(bg?.message || "Up to date.");
 }
 
 function cardDemo(): GoogleAppsScript.Card_Service.ActionResponse {
@@ -453,7 +479,7 @@ function sidebarSync(full: boolean): { ok: boolean; message: string } {
   if (!canAccessActiveSpreadsheet()) {
     return { ok: false, message: "Allow access to this spreadsheet from the RevenueSheet card first." };
   }
-  return runSync({ full: !!full });
+  return startCardSync(!!full);
 }
 
 function sidebarDemo(): { ok: boolean; message: string } {
@@ -529,6 +555,8 @@ g.onFileScopeGranted = onFileScopeGranted;
 g.cardSave = cardSave;
 g.cardSync = cardSync;
 g.cardDemo = cardDemo;
+g.cardRefresh = cardRefresh;
+g.continueSyncInBackground = continueSyncInBackground;
 g.menuSync = menuSync;
 g.menuBackfill = menuBackfill;
 g.menuDemo = menuDemo;
