@@ -22,7 +22,7 @@ export const PRODUCT_LOOKUP = {
   },
   business: {
     name: "RevenueSheet Business",
-    description: "Everything in Pro plus multiple stores and priority sync.",
+    description: "Everything in Pro: four stores plus CSV, scheduled refresh, MRR dashboard.",
   },
 } as const;
 

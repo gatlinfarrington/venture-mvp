@@ -50,6 +50,7 @@ export const pricing = {
       "Manual (one click) refresh",
       "Full history backfill",
       "MRR dashboard tab",
+      "Support via /support",
     ],
   },
   pro: {
@@ -67,6 +68,7 @@ export const pricing = {
       "Revenue by product and source",
       "Full history backfill",
       "MRR, churn, revenue by product",
+      "Support via /support",
     ],
   },
   business: {
@@ -76,12 +78,13 @@ export const pricing = {
     annual: 190,
     sources: 4,
     refresh: "Hourly, every 6 hours, daily or weekly",
-    stores: "Multiple",
+    /** One API key slot per source today (same as Pro). */
+    stores: 1,
     features: [
       "Everything in Pro",
-      "Multiple stores per source",
-      "Priority sync queue",
-      "Email support",
+      "Four stores plus CSV import",
+      "Hourly, every 6 hours, daily or weekly refresh",
+      "Support via /support",
     ],
   },
 } as const;

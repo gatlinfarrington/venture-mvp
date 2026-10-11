@@ -44,19 +44,13 @@ const compareRows = [
     label: "Stores per source",
     free: String(pricing.free.stores),
     pro: "1",
-    business: "Multiple",
+    business: "1",
   },
   {
-    label: "Priority sync queue",
-    free: "No",
-    pro: "No",
-    business: "Yes",
-  },
-  {
-    label: "Email support",
-    free: "No",
-    pro: "No",
-    business: "Yes",
+    label: "Support",
+    free: "Via /support",
+    pro: "Via /support",
+    business: "Via /support",
   },
 ];
 
@@ -108,7 +102,7 @@ export default function PricingPage() {
             <table className="pricing-table">
               <thead>
                 <tr>
-                  <th scope="col"> </th>
+                  <th scope="col">Capability</th>
                   <th scope="col">Free</th>
                   <th scope="col">Pro</th>
                   <th scope="col">Business</th>

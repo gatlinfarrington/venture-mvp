@@ -477,9 +477,6 @@ export function HeroDemo() {
               </div>
             ))}
           </div>
-          <div className="hero-stores-foot">
-            <DemoFoot onReplay={run} />
-          </div>
         </div>
 
         <div className="hero-sheet-wrap">
@@ -525,9 +522,6 @@ export function HeroDemo() {
               </tbody>
             </table>
           </div>
-          <div className="hero-sheet-foot">
-            <DemoFoot onReplay={run} />
-          </div>
         </div>
 
         {packets.map((p) => (
@@ -535,10 +529,15 @@ export function HeroDemo() {
             key={p.id}
             className={`hero-packet${p.dissolving ? " is-dissolving" : ""}`}
             style={{ offsetPath: `path("${p.path}")` }}
+            aria-hidden="true"
           >
             +${p.amount}
           </div>
         ))}
+      </div>
+      {/* Replay stays outside role="img" so controls are not nested. */}
+      <div className="hero-demo-controls">
+        <DemoFoot onReplay={run} />
       </div>
     </div>
   );

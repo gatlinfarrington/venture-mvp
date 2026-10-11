@@ -21,7 +21,7 @@ const faqs = [
   },
   {
     q: "Can I use more than one storefront?",
-    a: "Free allows one source. Pro includes Lemon Squeezy, Polar, Gumroad, and Stripe together with scheduled refresh. Business adds multiple stores per source.",
+    a: "Free allows one source. Pro and Business include Lemon Squeezy, Polar, Gumroad, and Stripe together with scheduled refresh (one API key slot per source).",
   },
   {
     q: "What if Lemon Squeezy moves features toward Stripe?",

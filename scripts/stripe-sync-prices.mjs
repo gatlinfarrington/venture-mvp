@@ -29,7 +29,7 @@ const catalog = [
   {
     tier: "business",
     productName: "RevenueSheet Business",
-    description: "Everything in Pro plus multiple stores and priority sync.",
+    description: "Everything in Pro: four stores plus CSV, scheduled refresh, MRR dashboard.",
     prices: [
       { interval: "month", amount: 1900, lookup_key: "revenuesheet_business_monthly" },
       { interval: "year", amount: 19000, lookup_key: "revenuesheet_business_annual" },
