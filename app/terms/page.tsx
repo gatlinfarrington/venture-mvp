@@ -42,11 +42,12 @@ export default function TermsPage() {
         <p>
           The add-on accesses Google user data only as described in our{" "}
           <Link href="/privacy">Privacy policy</Link>, including the Google API Services Limited Use
-          disclosure. Scopes are limited to the current spreadsheet, outbound HTTPS for sync and
-          license checks, time-driven triggers, and the sidebar/menu UI (not Google Drive, Gmail,
-          or Contacts). You authorize us to read and write that spreadsheet to operate sync and the
-          dashboard. You must not use the add-on to process data you are not allowed to store in
-          Google Sheets.
+          disclosure. Scopes are limited to per-file access for the Sheet you open with the add-on (
+          <code>drive.file</code>), Sheets access to that file (
+          <code>spreadsheets.currentonly</code>), outbound HTTPS for sync and license checks,
+          time-driven triggers, and the sidebar/menu UI (not broad Drive, Gmail, or Contacts). You
+          authorize us to read and write that spreadsheet to operate sync and the dashboard. You
+          must not use the add-on to process data you are not allowed to store in Google Sheets.
         </p>
 
         <h2>Your responsibilities</h2>

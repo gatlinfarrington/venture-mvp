@@ -53,10 +53,13 @@ Declared in `src/appsscript.json` (no `send_mail`):
 
 | Scope | Why the code needs it |
 |---|---|
-| `spreadsheets.currentonly` | Read/write only the open spreadsheet (`SpreadsheetApp`) |
-| `script.container.ui` | Menu + sidebar (`getUi` / `showSidebar`) |
+| `drive.file` | Workspace add-on per-file grant before any `SpreadsheetApp` call |
+| `spreadsheets.currentonly` | Sheets service read/write of the open spreadsheet’s cells/tabs |
+| `script.container.ui` | Menu + sidebar (`getUi` / `HtmlService`) |
 | `script.external_request` | `UrlFetchApp` to sources + license API |
 | `script.scriptapp` | Time-driven scheduled refresh triggers |
+
+Homepage card requests file scope via `requestFileScopeForActiveDocument` when `sheets.addonHasFileScopePermission` is false.
 
 Manifest `logoUrl`: `https://www.revenuesheet.app/brand/logo-128.png`.
 

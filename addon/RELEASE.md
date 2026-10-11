@@ -59,12 +59,15 @@ Declared in [`src/appsscript.json`](./src/appsscript.json). Only what the shippe
 
 | Scope | Why |
 |---|---|
-| `https://www.googleapis.com/auth/spreadsheets.currentonly` | Read/write **only** the spreadsheet the add-on is opened from (dashboard tabs, synced rows). Prefer this over full Drive/Sheets. |
-| `https://www.googleapis.com/auth/script.container.ui` | Custom menu + sidebar (`SpreadsheetApp.getUi()`, `showSidebar`). |
+| `https://www.googleapis.com/auth/drive.file` | Workspace add-on per-file grant (`onFileScopeGrantedTrigger` / `requestFileScopeForActiveDocument`). Non-sensitive; only files the user opens with or grants to the app — **not** broad Drive. Required before any `SpreadsheetApp` call. |
+| `https://www.googleapis.com/auth/spreadsheets.currentonly` | `SpreadsheetApp` read/write of cells and tabs in that same open spreadsheet (dashboard + data tabs). Kept in addition to `drive.file` because the Sheets service needs this scope. |
+| `https://www.googleapis.com/auth/script.container.ui` | Custom menu + sidebar (`SpreadsheetApp.getUi()`, `HtmlService` / `showSidebar`). |
 | `https://www.googleapis.com/auth/script.external_request` | `UrlFetchApp` HTTPS to Lemon Squeezy, Polar, Gumroad, Stripe, and `LICENSE_API_BASE` license verify. |
 | `https://www.googleapis.com/auth/script.scriptapp` | Install/remove time-driven triggers for scheduled refresh (`ScriptApp.newTrigger`). |
 
-**Not declared:** `script.send_mail` (weekly digest is opt-in / not in default build). Paste-ready justifications for Google’s forms: [`docs/OAUTH-STEPS.md`](../docs/OAUTH-STEPS.md#scope-justifications-paste-ready).
+**Not declared:** `script.send_mail` (weekly digest is opt-in / not in default build). Paste-ready justifications: [`docs/OAUTH-STEPS.md`](../docs/OAUTH-STEPS.md#scope-justifications-paste-ready). Demo script: [`docs/DEMO-VIDEO-SCRIPT.md`](../docs/DEMO-VIDEO-SCRIPT.md).
+
+**Install UX:** homepage card checks `sheets.addonHasFileScopePermission`; if false, shows **Allow access to this spreadsheet** (no `SpreadsheetApp` until granted).
 
 ### `urlFetchWhitelist` (required by Marketplace / OAuth review)
 
@@ -204,16 +207,18 @@ On first use (Open sidebar / Sync / etc.):
 1. Google shows **Google hasn’t verified this app**.
 2. Click **Advanced** → **Go to RevenueSheet (unsafe)** (wording may vary slightly).
 3. Review scopes and **Allow** (English consent labels):
+   - See, edit, create, and delete only the specific Google Drive files you use with this app (`drive.file`)
    - See, edit, create, and delete only the specific Google Sheets spreadsheets you use with this app (`spreadsheets.currentonly`)
    - Display and run third-party web content in prompts and sidebars inside Google applications (`script.container.ui`)
    - Connect to an external service (`script.external_request`)
    - Allow this application to run when you are not present (`script.scriptapp`)
+4. On the RevenueSheet homepage card, click **Allow access to this spreadsheet** if prompted (per-file `drive.file` grant). Then use **Open sidebar**.
 
 Do **not** add `script.send_mail` unless you are intentionally testing the weekly digest (sensitive scope; not in the default manifest).
 
 ### C. Smoke checklist after install
 
-1. **Extensions → RevenueSheet → Open sidebar** (or menu **Open sidebar**).
+1. Homepage card → **Allow access to this spreadsheet** (if shown) → **Open sidebar** (or **Extensions → RevenueSheet → Open sidebar**).
 2. **Load example data** → Dashboard fills with EXAMPLE DATA; status band says example.
 3. Confirm tabs/order: Dashboard, Cohorts, Orders, Subscriptions, Customers, Refunds, MRR monthly, Settings.
 4. Clear keys / don’t connect a source on a fresh sheet → empty onboarding state (status **NOT CONNECTED**, step cards).

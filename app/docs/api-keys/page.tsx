@@ -46,7 +46,7 @@ export default function ApiKeysPage() {
         <ul>
           <li>Google account passwords</li>
           <li>Stripe secret keys for your customer payments (Checkout for {brand.name} licenses is separate)</li>
-          <li>Gmail, Contacts, or Google Drive scopes</li>
+          <li>Gmail, Contacts, or broad Google Drive scopes</li>
         </ul>
       </div>
     </main>

@@ -12,6 +12,14 @@ const files = [
   "lib/seo-pages.ts",
 ];
 
+const REQUIRED_SCOPES = [
+  "drive.file",
+  "spreadsheets.currentonly",
+  "script.external_request",
+  "script.scriptapp",
+  "script.container.ui",
+] as const;
+
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
     const full = path.join(dir, name);
@@ -22,11 +30,14 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe("OAuth scope copy", () => {
-  it("does not claim Google Drive access is required", () => {
+  it("does not claim broad Drive access is required", () => {
     for (const file of files) {
       const text = readFileSync(file, "utf8");
       expect(text).not.toMatch(/related Drive file access/i);
       expect(text).not.toMatch(/Drive file access required/i);
+      // May mention drive.readonly only as something we do not request.
+      expect(text).not.toMatch(/requires?\s+drive\.readonly/i);
+      expect(text).not.toMatch(/auth\/drive["'`\s]/i);
     }
     const landing = readFileSync("components/LandingSections.tsx", "utf8");
     const faq = readFileSync("app/docs/faq/page.tsx", "utf8");
@@ -38,20 +49,16 @@ describe("OAuth scope copy", () => {
     }
   });
 
-  it("names the trigger and UI scopes in privacy", () => {
+  it("names every published scope in privacy and security", () => {
     const privacy = readFileSync("app/privacy/page.tsx", "utf8");
-    expect(privacy).toContain("script.scriptapp");
-    expect(privacy).toContain("script.container.ui");
-    expect(privacy).toContain("script.external_request");
-    expect(privacy).toContain("spreadsheets.currentonly");
-  });
-
-  it("names the same scopes on the security page", () => {
     const security = readFileSync("app/security/page.tsx", "utf8");
-    expect(security).toContain("script.scriptapp");
-    expect(security).toContain("script.container.ui");
-    expect(security).toContain("script.external_request");
-    expect(security).toContain("spreadsheets.currentonly");
+    for (const text of [privacy, security]) {
+      for (const scope of REQUIRED_SCOPES) {
+        expect(text).toContain(scope);
+      }
+      expect(text).toMatch(/not broad Drive|broad Google Drive|broad Drive/i);
+      expect(text).not.toContain("script.send_mail");
+    }
     expect(security).toMatch(/User Properties|getUserProperties/i);
     expect(security).toMatch(/license verify|\/api\/license\/verify/i);
     expect(security).toContain("Vercel");
@@ -83,4 +90,3 @@ describe("copy accuracy", () => {
     }
   });
 });
-

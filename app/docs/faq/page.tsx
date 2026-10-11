@@ -18,7 +18,7 @@ const faqs: Array<{ q: string; a: ReactNode }> = [
   },
   {
     q: "Which Google scopes does the add-on use?",
-    a: "Only: current spreadsheet (spreadsheets.currentonly), outbound HTTPS for source and license APIs (script.external_request), time-driven triggers (script.scriptapp), and sidebar/menu UI (script.container.ui). No Google Drive, Gmail, or Contacts scopes. See the Privacy policy for Google user data and Limited Use.",
+    a: "drive.file (the Sheet you open with the add-on), spreadsheets.currentonly (cells/tabs in that Sheet), script.external_request (source and license HTTPS), script.scriptapp (scheduled refresh triggers), and script.container.ui (sidebar/menu). No broad Drive, Gmail, or Contacts. See the Privacy policy for Google user data and Limited Use.",
   },
   {
     q: "Can I use more than one storefront?",
