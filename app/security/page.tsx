@@ -32,8 +32,12 @@ export default function SecurityPage() {
         </p>
         <ul>
           <li>
-            <code>spreadsheets.currentonly</code>: read and write only the spreadsheet the add-on
-            is opened from
+            <code>drive.file</code>: per-file access for the Sheet you open with the add-on (not
+            broad Drive)
+          </li>
+          <li>
+            <code>spreadsheets.currentonly</code>: read and write cells and tabs in that open
+            spreadsheet
           </li>
           <li>
             <code>script.external_request</code>: outbound HTTPS to Lemon Squeezy, Polar, Gumroad,
@@ -47,8 +51,9 @@ export default function SecurityPage() {
           </li>
         </ul>
         <p>
-          We do not request Google Drive, Gmail, Contacts, or Calendar scopes. See the{" "}
-          <Link href="/privacy">privacy policy</Link> for Limited Use disclosure.
+          We do not request broad Drive (<code>drive</code> / <code>drive.readonly</code>), Gmail,
+          Contacts, or Calendar scopes. See the <Link href="/privacy">privacy policy</Link> for
+          Limited Use disclosure.
         </p>
 
         <h2>API keys stay in your Google account</h2>

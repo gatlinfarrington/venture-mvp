@@ -26,25 +26,26 @@ Logos (hosted on the site, not raw GitHub):
 8. Enable **Google Sheets API** (if not already On).
 9. Enable **Apps Script API** (if clasp push / deployments need it from this project).
 
-## C. Consent screen scopes (exact four)
+## C. Consent screen scopes (exact five)
 
 10. GCP → **APIs & Services → OAuth consent screen**.
 11. Confirm **User type = External**, app name **RevenueSheet**, homepage / privacy / terms, authorized domain **`revenuesheet.app`**.
 12. **Edit App → Scopes → Add or remove scopes** → add **only**:
 
+    - `https://www.googleapis.com/auth/drive.file`
     - `https://www.googleapis.com/auth/spreadsheets.currentonly`
     - `https://www.googleapis.com/auth/script.container.ui`
     - `https://www.googleapis.com/auth/script.external_request`
     - `https://www.googleapis.com/auth/script.scriptapp`
 
-13. Do **not** add `script.send_mail` or any Drive / Gmail scope.
+13. Do **not** add `script.send_mail`, `drive`, `drive.readonly`, or Gmail scopes.
 14. Save. Keep publishing status **Testing** until OAuth verification is submitted; then move to **In production** when Google instructs.
 
 ## D. Script property + push
 
 15. Apps Script → **Project Settings → Script properties** → set `LICENSE_API_BASE` = `https://www.revenuesheet.app` (no trailing slash).
 16. Locally: `cd addon && npm test && npm run typecheck && npm run build && clasp push`.
-17. Confirm `appsscript.json` on the script has the four scopes and `logoUrl` = `https://www.revenuesheet.app/brand/logo-128.png`.
+17. Confirm `appsscript.json` has the five scopes, `onFileScopeGrantedTrigger`, and `logoUrl` = `https://www.revenuesheet.app/brand/logo-128.png`.
 
 ## E. Versioned deployment
 
@@ -59,7 +60,7 @@ Logos (hosted on the site, not raw GitHub):
 23. **App visibility**: Public (or Private to your domain for a dry run).
 24. **Installation settings**: Individual + Admin install as you prefer for a Sheets add-on.
 25. **App integrations**: **Sheets add-on** → paste the **Deployment ID** from step 21.
-26. **OAuth scopes**: same four URLs as the consent screen / `appsscript.json` (no `send_mail`).
+26. **OAuth scopes**: same five URLs as the consent screen / `appsscript.json` (no `send_mail`).
 27. **Developer info**: support / developer emails you use for the listing.
 28. **Homepage**: https://www.revenuesheet.app  
     **Privacy**: https://www.revenuesheet.app/privacy  
@@ -78,7 +79,7 @@ Logos (hosted on the site, not raw GitHub):
 
 35. Detailed description (paste-ready; aligns with site meta / landing):
 
-    > RevenueSheet syncs Lemon Squeezy, Polar, Gumroad, and Stripe revenue into Google Sheets on a schedule and builds an MRR dashboard in a spreadsheet you own. Paste a source API key (or import CSV), sync orders and subscriptions, and track MRR, churn, and product revenue without another hosted analytics login. Free includes one connected store and manual refresh; Pro unlocks all four sources plus scheduled refresh; Business adds multi-store MRR (up to 20 stores). API keys stay in your Google account (User Properties). The add-on only reads the spreadsheet you open it from and calls commerce APIs plus our license verify endpoint over HTTPS.
+    > RevenueSheet syncs Lemon Squeezy, Polar, Gumroad, and Stripe revenue into Google Sheets on a schedule and builds an MRR dashboard in a spreadsheet you own. Paste a source API key (or import CSV), sync orders and subscriptions, and track MRR, churn, and product revenue without another hosted analytics login. Free includes one connected store and manual refresh; Pro unlocks all four sources plus scheduled refresh; Business adds multi-store MRR (up to 20 stores). API keys stay in your Google account (User Properties). The add-on only accesses the spreadsheet you open it from (per-file `drive.file` + `spreadsheets.currentonly`) and calls commerce APIs plus our license verify endpoint over HTTPS.
 
 36. Category: **Productivity** (Sheets add-on) — same as [`addon/README.md`](../addon/README.md).
 37. Screenshots (1280×800) from `addon/design/marketplace/`:
@@ -104,13 +105,17 @@ Logos (hosted on the site, not raw GitHub):
 
 Use these on the OAuth verification form. Match [`app/privacy/page.tsx`](../app/privacy/page.tsx) / [`app/security/page.tsx`](../app/security/page.tsx).
 
+### `https://www.googleapis.com/auth/drive.file`
+
+> RevenueSheet is a Google Workspace Sheets add-on. It needs the non-sensitive `drive.file` scope so the user can grant access to the specific spreadsheet they open with the add-on (homepage card → “Allow access to this spreadsheet” → `requestFileScopeForActiveDocument`). We do not request broad Drive access (`drive` / `drive.readonly`). This scope only covers files the user opens with or explicitly grants to the app, and is required for the Workspace add-on `onFileScopeGrantedTrigger` file-scope model before any `SpreadsheetApp` calls.
+
 ### `https://www.googleapis.com/auth/spreadsheets.currentonly`
 
-> RevenueSheet reads and writes only the Google Spreadsheet the user opens the add-on from. It creates and updates dashboard and data tabs (Orders, Subscriptions, Customers, Refunds, Settings, MRR monthly, Cohorts) with synced commerce rows and formulas. We use `spreadsheets.currentonly` so we never request access to the user’s full Drive or other spreadsheets.
+> After per-file access is granted, RevenueSheet uses the Sheets service (`SpreadsheetApp`) to create and update dashboard and data tabs (Orders, Subscriptions, Customers, Refunds, Settings, MRR monthly, Cohorts) in that same open spreadsheet. `spreadsheets.currentonly` limits Sheets API access to the current spreadsheet rather than all of the user’s spreadsheets.
 
 ### `https://www.googleapis.com/auth/script.container.ui`
 
-> RevenueSheet shows a custom menu and a sidebar inside Google Sheets so users can paste API keys, save settings, sync, and import CSV. This scope is required for `SpreadsheetApp.getUi()` / sidebar UI only; it does not access file contents by itself.
+> RevenueSheet shows a custom menu and a sidebar inside Google Sheets so users can paste API keys, save settings, sync, and import CSV. This scope is required for `SpreadsheetApp.getUi()` / `HtmlService` sidebar UI only; it does not access file contents by itself.
 
 ### `https://www.googleapis.com/auth/script.external_request`
 
@@ -132,11 +137,12 @@ Shot summary (~2–3 min, English consent scopes, pause on OAuth `client_id` in 
 
 | # | On screen | Scope | ~sec |
 |---|---|---|---|
-| 1 | Consent screen with four scopes → Allow | All four | 30 |
-| 2 | **Extensions → RevenueSheet → Open sidebar** | `script.container.ui` | 20 |
-| 3 | **Load example data** (menu) — EXAMPLE DATA only | `spreadsheets.currentonly` | 35 |
-| 4 | License key → **Save settings** / **Sync now** (no live store key) | `script.external_request` | 35 |
-| 5 | **Enable scheduled refresh** (or sidebar **Scheduled refresh** + **Save settings**) | `script.scriptapp` | 25 |
-| 6 | End: revenuesheet.app /privacy /terms | — | 15 |
+| 1 | Consent screen with five scopes → Allow | All five | 30 |
+| 2 | Homepage card → **Allow access to this spreadsheet** (file-scope grant) | `drive.file` | 20 |
+| 3 | **Open sidebar** | `script.container.ui` | 15 |
+| 4 | **Load example data** (menu) — EXAMPLE DATA only | `spreadsheets.currentonly` | 30 |
+| 5 | License key → **Save settings** / **Sync now** (no live store key) | `script.external_request` | 30 |
+| 6 | **Enable scheduled refresh** (or sidebar **Scheduled refresh** + **Save settings**) | `script.scriptapp` | 25 |
+| 7 | End: revenuesheet.app /privacy /terms | — | 10 |
 
 Do **not** demo `send_mail`.

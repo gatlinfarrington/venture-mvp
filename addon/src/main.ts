@@ -1,6 +1,9 @@
 /**
  * RevenueSheet — Google Sheets add-on entrypoints.
  * Bundled to dist/Code.js for clasp.
+ *
+ * Workspace add-on rule: never call SpreadsheetApp until `drive.file` is granted
+ * for the active spreadsheet (homepage card → requestFileScopeForActiveDocument).
  */
 import { BRAND } from "./lib/brand";
 import {
@@ -12,6 +15,11 @@ import {
   type SourceId,
 } from "./lib/config";
 import { runWeeklyDigest } from "./lib/emailDigest";
+import {
+  canAccessActiveSpreadsheet,
+  hasFileScopePermission,
+  type SheetsAddonEvent,
+} from "./lib/fileScope";
 import { mapCsvToBundle } from "./importers/csv";
 import { checkLicenseSync } from "./lib/license";
 import {
@@ -58,41 +66,29 @@ import {
 import { buildDashboard } from "./sheets/dashboard";
 import { readOrders, readRefunds, readSubscriptions, writeImportBundle } from "./sheets/dataTabs";
 
-function onOpen(): void {
-  SpreadsheetApp.getUi()
-    .createMenu(BRAND.name)
-    .addItem("Open sidebar", "showSidebar")
-    .addItem("Sync now", "menuSync")
-    .addItem("Full backfill", "menuBackfill")
-    .addItem("Load example data", "menuDemo")
-    .addItem("Import CSV…", "menuImportCsv")
-    .addSeparator()
-    .addItem("Enable scheduled refresh", "menuEnableSchedule")
-    .addItem("Disable schedule", "menuDisableSchedule")
-    .addItem("Send weekly digest now", "menuSendDigest")
-    .addToUi();
-  // First open with nothing connected: draw the empty onboarding dashboard.
-  try {
-    if (!getConnectedSources().length && !getLastSyncAt()) {
-      paintEmptyWorkbook();
-    }
-  } catch {
-    /* non-GAS / no active spreadsheet */
-  }
+/** Card: ask for per-file `drive.file` — no SpreadsheetApp. */
+function requestFileScopeCard(): GoogleAppsScript.Card_Service.Card {
+  return CardService.newCardBuilder()
+    .setHeader(CardService.newCardHeader().setTitle(BRAND.name).setSubtitle(BRAND.pitch))
+    .addSection(
+      CardService.newCardSection()
+        .addWidget(
+          CardService.newTextParagraph().setText(
+            "Allow access to this spreadsheet so RevenueSheet can sync revenue and build your dashboard. We only access files you open with the add-on.",
+          ),
+        )
+        .addWidget(
+          CardService.newTextButton()
+            .setText("Allow access to this spreadsheet")
+            .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+            .setOnClickAction(CardService.newAction().setFunctionName("onRequestFileScope")),
+        ),
+    )
+    .build();
 }
 
-function onInstall(_e: GoogleAppsScript.Events.AddonOnInstall): void {
-  onOpen();
-}
-
-function showSidebar(): void {
-  const html = HtmlService.createHtmlOutputFromFile("Sidebar")
-    .setTitle(BRAND.name)
-    .setWidth(340);
-  SpreadsheetApp.getUi().showSidebar(html);
-}
-
-function onHomepage(): GoogleAppsScript.Card_Service.Card {
+/** Card after file scope is granted — still no SpreadsheetApp here. */
+function readyHomepageCard(): GoogleAppsScript.Card_Service.Card {
   return CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader().setTitle(BRAND.name).setSubtitle(BRAND.pitch))
     .addSection(
@@ -111,35 +107,113 @@ function onHomepage(): GoogleAppsScript.Card_Service.Card {
     .build();
 }
 
-function onFileScopeGranted(): void {
+/**
+ * Homepage trigger. Must not touch SpreadsheetApp before file scope is granted.
+ */
+function onHomepage(e?: SheetsAddonEvent): GoogleAppsScript.Card_Service.Card {
+  if (!hasFileScopePermission(e)) return requestFileScopeCard();
+  return readyHomepageCard();
+}
+
+/** Button callback → per-file drive.file dialog for the active spreadsheet. */
+function onRequestFileScope(): GoogleAppsScript.Card_Service.EditorFileScopeActionResponse {
+  return CardService.newEditorFileScopeActionResponseBuilder()
+    .requestFileScopeForActiveDocument()
+    .build();
+}
+
+/** Runs after the user grants drive.file for this spreadsheet. */
+function onFileScopeGranted(_e?: SheetsAddonEvent): GoogleAppsScript.Card_Service.Card[] {
+  tryInstallEditorUi();
+  return [readyHomepageCard()];
+}
+
+/** Install menu + empty onboarding only when SpreadsheetApp is allowed. */
+function tryInstallEditorUi(): void {
+  if (!canAccessActiveSpreadsheet()) return;
+  SpreadsheetApp.getUi()
+    .createMenu(BRAND.name)
+    .addItem("Open sidebar", "showSidebar")
+    .addItem("Sync now", "menuSync")
+    .addItem("Full backfill", "menuBackfill")
+    .addItem("Load example data", "menuDemo")
+    .addItem("Import CSV…", "menuImportCsv")
+    .addSeparator()
+    .addItem("Enable scheduled refresh", "menuEnableSchedule")
+    .addItem("Disable schedule", "menuDisableSchedule")
+    .addItem("Send weekly digest now", "menuSendDigest")
+    .addToUi();
+  try {
+    if (!getConnectedSources().length && !getLastSyncAt()) {
+      paintEmptyWorkbook();
+    }
+  } catch {
+    /* paint best-effort */
+  }
+}
+
+function onOpen(): void {
+  tryInstallEditorUi();
+}
+
+function onInstall(_e: GoogleAppsScript.Events.AddonOnInstall): void {
   onOpen();
 }
 
+function showSidebar(): void {
+  if (!canAccessActiveSpreadsheet()) return;
+  const html = HtmlService.createHtmlOutputFromFile("Sidebar")
+    .setTitle(BRAND.name)
+    .setWidth(340);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function requireSheetAccess(): boolean {
+  if (canAccessActiveSpreadsheet()) return true;
+  try {
+    SpreadsheetApp.getUi().alert(
+      BRAND.name,
+      "Allow access to this spreadsheet from the RevenueSheet sidebar card first (Allow access to this spreadsheet).",
+      SpreadsheetApp.getUi().ButtonSet.OK,
+    );
+  } catch {
+    /* no UI without file scope */
+  }
+  return false;
+}
+
 function menuSync(): void {
+  if (!requireSheetAccess()) return;
   SpreadsheetApp.getActive().toast(runSync({ full: false }).message, BRAND.name, 8);
 }
 
 function menuBackfill(): void {
+  if (!requireSheetAccess()) return;
   SpreadsheetApp.getActive().toast(runSync({ full: true }).message, BRAND.name, 8);
 }
 
 function menuDemo(): void {
+  if (!requireSheetAccess()) return;
   SpreadsheetApp.getActive().toast(runDemoMode().message, BRAND.name, 8);
 }
 
 function menuEnableSchedule(): void {
+  if (!requireSheetAccess()) return;
   SpreadsheetApp.getActive().toast(installSchedule(), BRAND.name, 8);
 }
 
 function menuDisableSchedule(): void {
+  if (!requireSheetAccess()) return;
   SpreadsheetApp.getActive().toast(removeSchedule(), BRAND.name, 5);
 }
 
 function menuSendDigest(): void {
+  if (!requireSheetAccess()) return;
   SpreadsheetApp.getActive().toast(runWeeklyDigest().message, BRAND.name, 10);
 }
 
 function menuImportCsv(): void {
+  if (!requireSheetAccess()) return;
   const ui = SpreadsheetApp.getUi();
   const res = ui.prompt(
     "CSV import",
@@ -263,14 +337,23 @@ function sidebarSaveSettings(payload: {
 }
 
 function sidebarSync(full: boolean): { ok: boolean; message: string } {
+  if (!canAccessActiveSpreadsheet()) {
+    return { ok: false, message: "Allow access to this spreadsheet from the RevenueSheet card first." };
+  }
   return runSync({ full: !!full });
 }
 
 function sidebarDemo(): { ok: boolean; message: string } {
+  if (!canAccessActiveSpreadsheet()) {
+    return { ok: false, message: "Allow access to this spreadsheet from the RevenueSheet card first." };
+  }
   return runDemoMode();
 }
 
 function sidebarEnableSchedule(): string {
+  if (!canAccessActiveSpreadsheet()) {
+    return "Allow access to this spreadsheet from the RevenueSheet card first.";
+  }
   return installSchedule();
 }
 
@@ -279,6 +362,9 @@ function sidebarDisableSchedule(): string {
 }
 
 function sidebarImportCsv(text: string): { ok: boolean; message: string } {
+  if (!canAccessActiveSpreadsheet()) {
+    return { ok: false, message: "Allow access to this spreadsheet from the RevenueSheet card first." };
+  }
   try {
     const bundle = mapCsvToBundle(text || "", getCsvColumnMap());
     const ss = SpreadsheetApp.getActive();
@@ -302,7 +388,19 @@ function sidebarImportCsv(text: string): { ok: boolean; message: string } {
 }
 
 function sidebarSendDigest(): { ok: boolean; message: string } {
+  if (!canAccessActiveSpreadsheet()) {
+    return { ok: false, message: "Allow access to this spreadsheet from the RevenueSheet card first." };
+  }
   return runWeeklyDigest();
+}
+
+/** Time-driven sync — skip quietly if this execution cannot open a spreadsheet. */
+function gatedRunScheduledSync(): void {
+  if (!canAccessActiveSpreadsheet()) {
+    console.warn("Scheduled sync skipped — no file scope for active spreadsheet.");
+    return;
+  }
+  runScheduledSync();
 }
 
 declare const globalThis: typeof global & Record<string, unknown>;
@@ -313,6 +411,7 @@ g.onOpen = onOpen;
 g.onInstall = onInstall;
 g.showSidebar = showSidebar;
 g.onHomepage = onHomepage;
+g.onRequestFileScope = onRequestFileScope;
 g.onFileScopeGranted = onFileScopeGranted;
 g.menuSync = menuSync;
 g.menuBackfill = menuBackfill;
@@ -329,5 +428,5 @@ g.sidebarEnableSchedule = sidebarEnableSchedule;
 g.sidebarDisableSchedule = sidebarDisableSchedule;
 g.sidebarImportCsv = sidebarImportCsv;
 g.sidebarSendDigest = sidebarSendDigest;
-g.runScheduledSync = runScheduledSync;
+g.runScheduledSync = gatedRunScheduledSync;
 g.runWeeklyDigest = runWeeklyDigest;

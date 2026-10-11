@@ -333,7 +333,7 @@ export function FAQ() {
     },
     {
       q: "What Google scopes do you need?",
-      a: "Only four Apps Script scopes: the current spreadsheet (spreadsheets.currentonly), outbound HTTPS to source and license APIs (script.external_request), time-driven triggers for scheduled refresh (script.scriptapp), and the sidebar/menu UI (script.container.ui). No Google Drive, Gmail, or Contacts access. Confirm on the consent screen at install.",
+      a: "Five Apps Script scopes: drive.file (per-file access for the Sheet you open with the add-on), spreadsheets.currentonly (cells and tabs in that Sheet), script.external_request (source and license HTTPS), script.scriptapp (scheduled refresh), and script.container.ui (sidebar/menu). No broad Drive, Gmail, or Contacts. Confirm on the consent screen at install.",
     },
     {
       q: "How do refunds work for paid plans?",

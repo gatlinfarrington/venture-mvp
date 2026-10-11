@@ -76,8 +76,12 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            <code>spreadsheets.currentonly</code>: read and write only the spreadsheet the add-on
-            is opened from
+            <code>drive.file</code>: per-file access for the Google Sheet you open with the add-on
+            (Workspace add-on file-scope grant; not broad Drive)
+          </li>
+          <li>
+            <code>spreadsheets.currentonly</code>: read and write cells and tabs in that same open
+            spreadsheet via the Sheets service
           </li>
           <li>
             <code>script.external_request</code>: HTTPS calls to Lemon Squeezy, Polar, Gumroad,
@@ -91,9 +95,9 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          We do not request Google Drive, Gmail, Contacts, or Calendar scopes. Spreadsheet access is
-          limited to the file the add-on is opened from (
-          <code>spreadsheets.currentonly</code>).
+          We do not request broad Google Drive access (
+          <code>drive</code> / <code>drive.readonly</code>), Gmail, Contacts, or Calendar.
+          <code>drive.file</code> only covers files you open with or explicitly grant to the add-on.
         </p>
         <p>Google user data (contents of the current spreadsheet) is used only to:</p>
         <ul>
