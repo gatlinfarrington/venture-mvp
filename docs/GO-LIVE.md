@@ -49,7 +49,7 @@ Minimum for paid Checkout:
 
 | Variable | Notes |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Canonical origin (e.g. `https://venture-mvp.vercel.app`); falls back to `VERCEL_PROJECT_PRODUCTION_URL` |
+| `NEXT_PUBLIC_SITE_URL` | **Canonical origin for the whole site** (no trailing slash). See [Domain swap](#domain-swap) below. Falls back to `VERCEL_PROJECT_PRODUCTION_URL` when unset. |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` or `pk_live_…` (no `REPLACE`) — **enables paid buttons** |
 | `STRIPE_SECRET_KEY` | Matching `sk_test_…` / `sk_live_…` |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_…` from the webhook endpoint |
@@ -74,6 +74,38 @@ Optional:
 - `/success` after Checkout: masked license key (Reveal / Copy), 3-step checklist, and “what happens next”. Make a copy + Marketplace buttons stay **hidden** until their env URLs exist. Polls up to 3 minutes, then falls back to not-found. Never surfaces raw Stripe errors.
 
 **Launch-list email sends:** if you send launch emails (Resend or similar), use `launchListUnsubscribeHeaders(email)` and `launchUnsubscribeFooter(email)` from `lib/launch-email.ts` so every message has a one-click unsubscribe URL plus `List-Unsubscribe` / `List-Unsubscribe-Post`. Optional `LAUNCH_UNSUB_SECRET` signs tokens (falls back to `LICENSE_API_SECRET` / `STRIPE_WEBHOOK_SECRET`).
+
+## Domain swap
+
+Pointing production at a custom domain is **one Vercel env var**:
+
+1. In Vercel → Project → Settings → Environment Variables (Production), set  
+   `NEXT_PUBLIC_SITE_URL=https://your.domain`  
+   (scheme + host, **no trailing slash**).
+2. Redeploy Production so the client bundle and server both pick up the new value.
+
+That single variable drives `siteUrl()` / `siteConfig.url` (`lib/brand.ts`), which everything else reads:
+
+| Surface | How it follows `NEXT_PUBLIC_SITE_URL` |
+| --- | --- |
+| `metadataBase`, root `canonical`, `openGraph.url` | `app/layout.tsx` via `siteConfig.url` |
+| Page `alternates.canonical` / `openGraph.url` | Each page uses `` `${siteConfig.url}/…` `` |
+| `/sitemap.xml` | `app/sitemap.ts` prefixes every URL with `siteConfig.url` |
+| `/robots.txt` sitemap line | `app/robots.ts` → `` `${siteConfig.url}/sitemap.xml` `` |
+| Stripe Checkout `success_url` / `cancel_url` | `app/api/checkout/route.ts` → `siteConfig.url` |
+| Launch-list unsubscribe links + `List-Unsubscribe` | `lib/launch-email.ts` → `siteUrl()` |
+| Absolute OG image on the 404 page | `app/not-found.tsx` → `` `${siteUrl()}/opengraph-image` `` |
+
+Do **not** hardcode the custom domain in app code. After the env change, confirm:
+
+```bash
+curl -sI https://your.domain/ | tr -d '\r' | grep -i location || true
+curl -s https://your.domain/sitemap.xml | head -20
+curl -s https://your.domain/robots.txt
+curl -s https://your.domain/api/version
+```
+
+**Add-on note (separate from the marketing site):** the Apps Script project’s `LICENSE_API_BASE` (see `addon/RELEASE.md`) must also point at the new origin so license verify hits the same deployment. That is not read from `NEXT_PUBLIC_SITE_URL` inside Sheets.
 
 ## 4. Verify
 

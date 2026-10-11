@@ -29,6 +29,14 @@ describe("brand config", () => {
     expect(siteConfig.domain).toBe("example.test");
   });
 
+  it("domain swap is one env var — siteConfig.url tracks NEXT_PUBLIC_SITE_URL", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://custom.example";
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    // Canonical, sitemap, robots, checkout, and launch emails all read siteConfig.url / siteUrl().
+    expect(siteConfig.url).toBe("https://custom.example");
+    expect(siteUrl()).toBe(siteConfig.url);
+  });
+
   it("falls back to VERCEL_PROJECT_PRODUCTION_URL when site URL unset", () => {
     delete process.env.NEXT_PUBLIC_SITE_URL;
     process.env.VERCEL_PROJECT_PRODUCTION_URL = "venture-mvp.vercel.app";

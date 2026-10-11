@@ -5,6 +5,7 @@ import { hasDesignerOg, serveDesignerOg } from "@/lib/og-static";
 
 export const size = ogSize;
 export const contentType = "image/png";
+export const dynamicParams = false;
 
 export function generateStaticParams() {
   return seoPages.map((p) => ({ slug: p.slug }));

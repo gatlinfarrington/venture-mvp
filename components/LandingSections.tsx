@@ -265,8 +265,8 @@ export function Comparison() {
           <p className="eyebrow">Compare</p>
           <h2 className="h2">Append-only tools stop at new rows.</h2>
           <p className="muted body-lg">
-            Zapier, Make, and API Connector can stream events. They have no built-in history
-            backfill or MRR tab.
+            Zapier and Make can stream events without a built-in history backfill or MRR tab. Google
+            Sheets&apos; API Connector has no MRR tab; you build the requests yourself.
           </p>
         </Reveal>
         <Reveal className="compare-wrap">

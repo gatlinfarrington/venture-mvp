@@ -102,10 +102,19 @@ test("404 page returns 404 with noindex and stable screenshot", async ({ page },
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "This page isn't in the sheet",
   );
+  await expect(page).toHaveTitle("Page not found · RevenueSheet");
   await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute(
     "content",
-    "noindex",
+    /noindex/,
   );
+  const ogImage = await page.locator('meta[property="og:image"]').first().getAttribute("content");
+  expect(ogImage, "404 og:image").toBeTruthy();
+  expect(ogImage!).toMatch(/\/opengraph-image/);
+  expect(ogImage!).not.toMatch(/this-page-is-not-a-real-route/);
+  const twImage = await page.locator('meta[name="twitter:image"]').first().getAttribute("content");
+  expect(twImage, "404 twitter:image").toBeTruthy();
+  expect(twImage!).toMatch(/\/opengraph-image/);
+  expect(twImage!).not.toMatch(/this-page-is-not-a-real-route/);
 
   await page.waitForTimeout(400);
   await expectNoHorizontalOverflow(page);
