@@ -19,9 +19,11 @@ export function withPricingCta(reason: string): string {
 export function storeLimitReachedMessage(maxStores: number): string {
   const n = Math.max(1, Number(maxStores) || 1);
   if (n <= 1) {
-    return withPricingCta("Multiple stores need Business (Free and Pro include 1 store)");
+    return withPricingCta(
+      "Multiple stores on one source need Business (Free and Pro include one store per source)",
+    );
   }
-  return withPricingCta(`Your plan allows ${n} store(s)`);
+  return withPricingCta(`Your plan allows ${n} store(s) per source`);
 }
 
 export function sourceLimitReachedMessage(maxSources: number, blocked: string[]): string {
@@ -42,5 +44,5 @@ export function multiStoreUpgradeHeadline(): string {
 }
 
 export function multiStoreUpgradeBody(): string {
-  return "Free and Pro include one store. Business combines MRR across up to 20.";
+  return "Free and Pro include one store per source. Business combines MRR across up to 20 per source.";
 }

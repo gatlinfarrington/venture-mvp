@@ -155,7 +155,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
     SpreadsheetApp.getActive().toast(limited.message || "Source limit reached", BRAND.name, 8);
   }
 
-  // Only sync stores under allowed sources, then cap by maxStores.
+  // Only sync stores under allowed sources, then cap by maxStores per source.
   const storesForAllowed: typeof storesBySource = {};
   for (const source of limited.allowed as SourceId[]) {
     if (storesBySource[source]?.length) storesForAllowed[source] = storesBySource[source];

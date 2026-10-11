@@ -36,7 +36,7 @@ function money(n: number) {
 }
 
 function MrrBars() {
-  const max = 12000;
+  const max = 11700;
   return (
     <div
       className="sample-bars"
@@ -51,10 +51,11 @@ function MrrBars() {
         const gH = Math.max(0, h - pH - lH);
         return (
           <div key={m.month} className="sample-bar-col">
+            {/* column-reverse: first child (Polar) sits at the bottom of the stack */}
             <div className="sample-bar-stack" style={{ height: `${h}px` }}>
-              <i className="sample-seg-gum" style={{ height: `${gH}px` }} />
-              <i className="sample-seg-ls" style={{ height: `${lH}px` }} />
               <i className="sample-seg-polar" style={{ height: `${pH}px` }} />
+              <i className="sample-seg-ls" style={{ height: `${lH}px` }} />
+              <i className="sample-seg-gum" style={{ height: `${gH}px` }} />
             </div>
             <span className="sample-bar-label">{m.month}</span>
           </div>
@@ -67,6 +68,8 @@ function MrrBars() {
 function DashboardGrid() {
   const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
   const emptyTail = 5;
+  const sourceRows = DASHBOARD.sources;
+  const chartSpan = 10;
 
   return (
     <table
@@ -75,6 +78,13 @@ function DashboardGrid() {
       aria-readonly="true"
       aria-label="Dashboard tab, example data"
     >
+      <colgroup>
+        <col className="sample-col-rn" />
+        <col className="sample-col-a" />
+        {letters.slice(1).map((L) => (
+          <col key={L} />
+        ))}
+      </colgroup>
       <thead>
         <tr>
           <th className="sample-rn sample-c0" scope="col">
@@ -92,7 +102,7 @@ function DashboardGrid() {
           <th className="sample-rn" scope="row">
             1
           </th>
-          <td />
+          <td className="sample-col-a" />
           <td colSpan={7} className="sample-dash-title is-selected">
             Revenue dashboard
           </td>
@@ -113,14 +123,14 @@ function DashboardGrid() {
             3
           </th>
           {letters.map((L) => (
-            <td key={L} />
+            <td key={L} className={L === "A" ? "sample-col-a" : undefined} />
           ))}
         </tr>
         <tr>
           <th className="sample-rn" scope="row">
             4
           </th>
-          <td />
+          <td className="sample-col-a" />
           <td className="sample-kl" colSpan={2}>
             MRR
           </td>
@@ -141,7 +151,7 @@ function DashboardGrid() {
           <th className="sample-rn" scope="row">
             5
           </th>
-          <td />
+          <td className="sample-col-a" />
           <td className="sample-kv" colSpan={2}>
             {DASHBOARD.mrr}
           </td>
@@ -162,7 +172,7 @@ function DashboardGrid() {
           <th className="sample-rn" scope="row">
             6
           </th>
-          <td />
+          <td className="sample-col-a" />
           <td className="sample-kd" colSpan={2}>
             {DASHBOARD.mrrDelta}
           </td>
@@ -175,15 +185,15 @@ function DashboardGrid() {
             {DASHBOARD.activeDelta}
           </td>
           <td />
-                  <td className="sample-kd" colSpan={2}>
-                    {DASHBOARD.churnDelta}
-                  </td>
+          <td className="sample-kd" colSpan={2}>
+            {DASHBOARD.churnDelta}
+          </td>
         </tr>
         <tr>
           <th className="sample-rn" scope="row">
             7
           </th>
-          <td />
+          <td className="sample-col-a" />
           <td colSpan={11} className="sample-past-due-line">
             {DASHBOARD.pastDueLine}
           </td>
@@ -193,14 +203,14 @@ function DashboardGrid() {
             8
           </th>
           {letters.map((L) => (
-            <td key={L} />
+            <td key={L} className={L === "A" ? "sample-col-a" : undefined} />
           ))}
         </tr>
         <tr>
           <th className="sample-rn" scope="row">
             9
           </th>
-          <td />
+          <td className="sample-col-a" />
           <td colSpan={6} className="sample-sec">
             MRR BY SOURCE · LAST 12 MONTHS
           </td>
@@ -209,57 +219,61 @@ function DashboardGrid() {
             SOURCES
           </td>
         </tr>
-        <tr>
-          <th className="sample-rn" scope="row">
-            10
-          </th>
-          <td />
-          <td colSpan={6} rowSpan={10} className="sample-chart-cell">
-            <div className="sample-legend-row">
-              <span>
-                <i className="sample-swatch-polar" /> Polar
-              </span>
-              <span>
-                <i className="sample-swatch-ls" /> Lemon Squeezy
-              </span>
-              <span>
-                <i className="sample-swatch-gum" /> Gumroad
-              </span>
-            </div>
-            <MrrBars />
-          </td>
-          <td />
-          <td colSpan={4} rowSpan={10} className="sample-sources-cell">
-            <ul className="sample-sources-list">
-              {DASHBOARD.sources.map((s) => (
-                <li key={s.name}>
-                  <strong>{s.name}</strong>
-                  {s.detail ? <span className="muted"> {s.detail}</span> : null}
-                  <span className={s.state === "Synced" ? "sample-src-synced" : "sample-src-muted"}>
-                    {" "}
-                    {s.state}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </td>
-        </tr>
-        {Array.from({ length: 9 }, (_, i) => (
-          <tr key={`mid-${i}`}>
-            <th className="sample-rn" scope="row">
-              {11 + i}
-            </th>
-            <td />
-            <td />
-          </tr>
-        ))}
+        {Array.from({ length: chartSpan }, (_, i) => {
+          const rowNum = 10 + i;
+          const source = sourceRows[i];
+          return (
+            <tr key={`chart-${rowNum}`}>
+              <th className="sample-rn" scope="row">
+                {rowNum}
+              </th>
+              <td className="sample-col-a" />
+              {i === 0 ? (
+                <td colSpan={6} rowSpan={chartSpan} className="sample-chart-cell">
+                  <div className="sample-legend-row">
+                    <span>
+                      <i className="sample-swatch-polar" /> Polar
+                    </span>
+                    <span>
+                      <i className="sample-swatch-ls" /> Lemon Squeezy
+                    </span>
+                    <span>
+                      <i className="sample-swatch-gum" /> Gumroad
+                    </span>
+                  </div>
+                  <MrrBars />
+                </td>
+              ) : null}
+              <td />
+              {source ? (
+                <>
+                  <td className="sample-src-name">{source.name}</td>
+                  <td colSpan={2} className="sample-num muted">
+                    {source.detail}
+                  </td>
+                  <td
+                    className={`sample-num${source.state === "Synced" ? " sample-src-synced" : " sample-src-muted"}`}
+                  >
+                    {source.state}
+                  </td>
+                </>
+              ) : (
+                <>
+                  <td />
+                  <td colSpan={2} />
+                  <td />
+                </>
+              )}
+            </tr>
+          );
+        })}
         {Array.from({ length: emptyTail }, (_, i) => (
           <tr key={`tail-${i}`}>
             <th className="sample-rn" scope="row">
               {20 + i}
             </th>
             {letters.map((L) => (
-              <td key={L} />
+              <td key={L} className={L === "A" ? "sample-col-a" : undefined} />
             ))}
           </tr>
         ))}
@@ -303,7 +317,7 @@ function DataGrid({
             1
           </th>
           {headers.map((h) => (
-            <th key={h} scope="col">
+            <th key={h} scope="col" className={h.includes("USD") ? "sample-num" : undefined}>
               {h}
             </th>
           ))}
@@ -358,6 +372,7 @@ export function SampleSheet() {
   const tab = tabOverride ?? hashTab;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolledX, setScrolledX] = useState(false);
+  const [canScrollX, setCanScrollX] = useState(false);
   const baseId = useId();
 
   useEffect(() => {
@@ -365,6 +380,42 @@ export function SampleSheet() {
     if (!el) return;
     el.scrollLeft = 0;
     setScrolledX(false);
+
+    let cancelled = false;
+    const measure = () => {
+      if (cancelled) return;
+      setCanScrollX(el.scrollWidth > el.clientWidth + 1);
+      setScrolledX(el.scrollLeft > 8);
+    };
+
+    measure();
+    const t0 = window.setTimeout(measure, 0);
+    const t1 = window.setTimeout(measure, 50);
+    const t2 = window.setTimeout(measure, 200);
+
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    const observeGrids = () => {
+      for (const grid of el.querySelectorAll(".sample-grid")) ro.observe(grid);
+    };
+    observeGrids();
+
+    const mo = new MutationObserver(() => {
+      observeGrids();
+      measure();
+    });
+    mo.observe(el, { childList: true, subtree: true });
+    window.addEventListener("resize", measure);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t0);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      ro.disconnect();
+      mo.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, [tab]);
 
   const formulaRef = tab === "Dashboard" ? "B1" : "A2";
@@ -475,7 +526,10 @@ export function SampleSheet() {
         </div>
       </div>
 
-      <p className={`sample-scroll-hint mono${scrolledX ? " is-hidden" : ""}`} aria-hidden="true">
+      <p
+        className={`sample-scroll-hint mono${canScrollX && !scrolledX ? " is-visible" : ""}`}
+        aria-hidden="true"
+      >
         Scroll sideways for more columns →
       </p>
 

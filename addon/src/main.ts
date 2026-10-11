@@ -6,6 +6,7 @@ import { BRAND } from "./lib/brand";
 import {
   EMAIL_DIGEST_SCOPE,
   EMAIL_DIGEST_SCOPE_DECLARED,
+  SOURCES,
   type DashboardTemplate,
   type ScheduleCadence,
   type SourceId,
@@ -224,10 +225,13 @@ function sidebarSaveSettings(payload: {
     maybeSet("stripe", payload.stripe);
   }
 
-  const storeCount = countConnectedStores(getStoresBySource());
-  if (storeCount > license.maxStores) {
+  const storesAfter = getStoresBySource();
+  const overSources = SOURCES.filter(
+    (meta) => (storesAfter[meta.id] || []).filter((s) => s.apiKey?.trim()).length > license.maxStores,
+  );
+  if (overSources.length) {
     return withPricingCta(
-      `Saved ${storeCount} store(s), but your plan allows ${license.maxStores}. Extra stores will not sync until you remove keys or upgrade`,
+      `Saved more than ${license.maxStores} store(s) on ${overSources.map((s) => s.label).join(", ")}. Extra stores on those sources will not sync until you remove keys or upgrade`,
     );
   }
 
