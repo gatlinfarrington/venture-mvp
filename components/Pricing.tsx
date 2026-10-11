@@ -74,7 +74,6 @@ export function Pricing({ variant = "section" }: Props) {
             const btnClass = featured ? "btn btn-primary" : "btn btn-secondary";
             const cardClass = `price-card${featured ? " is-featured" : ""}`;
             const lead = "lead" in plan ? plan.lead : null;
-            const leadNote = "leadNote" in plan ? plan.leadNote : null;
             const body = (
               <>
                 <div className="price-card-top">
@@ -87,7 +86,6 @@ export function Pricing({ variant = "section" }: Props) {
                 {lead ? (
                   <div className="price-pro-lead">
                     <p className="price-pro-lead-text">{lead}</p>
-                    {leadNote ? <p className="price-pro-lead-note mono muted">{leadNote}</p> : null}
                   </div>
                 ) : null}
                 <ul className={`price-features${lead ? " has-lead" : ""}`}>

@@ -62,10 +62,9 @@ export const pricing = {
     refresh: "Hourly, every 6 hours, daily or weekly",
     stores: 1,
     lead: "One MRR number across every store, refreshed while you sleep.",
-    leadNote: "Auto-refresh as often as hourly",
     features: [
       "Four stores plus CSV import",
-      "Hourly, 6h, daily or weekly refresh",
+      "Revenue by product and source",
       "Full history backfill",
       "MRR, churn, revenue by product",
     ],

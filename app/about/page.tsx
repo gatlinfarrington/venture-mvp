@@ -33,10 +33,10 @@ export default function AboutPage() {
           update you already maintain in Sheets.
         </p>
         <p>
-          Exporting CSVs works until Monday, when the paste is already stale. Append-only
-          automations add new rows but rarely rebuild history or MRR. Hosted analytics suites are
-          excellent when you want their cloud product; they are the wrong shape when the sheet is
-          already the system of record.
+          Copying numbers out by hand works until Monday, when the paste is already stale.
+          Append-only automations add new rows but rarely rebuild history or MRR. Hosted analytics
+          suites are excellent when you want their cloud product; they are the wrong shape when the
+          sheet is already the system of record.
         </p>
 
         <h2>Why a sheet you own</h2>

@@ -14,7 +14,7 @@ const HeroDemo = dynamic(
         <div className="hero-sheet-wrap">
           <div className="hero-sheet">
             <div className="hero-sheet-top">
-              <div className="eyebrow">MRR · all sources</div>
+              <div className="eyebrow">MRR · all sources · example</div>
               <div className="hero-mrr">
                 <b>$4,314</b>
                 <span className="hero-delta">+3.2%</span>
