@@ -87,24 +87,137 @@ function requestFileScopeCard(): GoogleAppsScript.Card_Service.Card {
     .build();
 }
 
-/** Card after file scope is granted — still no SpreadsheetApp here. */
-function readyHomepageCard(): GoogleAppsScript.Card_Service.Card {
-  return CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle(BRAND.name).setSubtitle(BRAND.pitch))
-    .addSection(
-      CardService.newCardSection()
-        .addWidget(
-          CardService.newTextParagraph().setText(
-            "Open the sidebar to connect Lemon Squeezy, Polar, Gumroad, or Stripe (restricted key), set an MRR goal, and pick a dashboard template.",
+/** Native card UI. Card actions run as the Google account that opened the Sheet,
+ * so they work even when several Google accounts are signed in (the HTML sidebar's
+ * google.script.run calls can silently hang in that case). */
+function readyHomepageCard(notice?: string): GoogleAppsScript.Card_Service.Card {
+  let settings: Record<string, unknown> = {};
+  try {
+    settings = getAllSettingsForSidebar();
+  } catch {
+    /* properties unavailable: render empty form */
+  }
+  const masked = (v: unknown) => (v ? "Saved (leave blank to keep)" : "");
+  const input = (name: string, title: string, hint: string, value = "") =>
+    CardService.newTextInput().setFieldName(name).setTitle(title).setHint(hint).setValue(value);
+  const lastSync = settings.lastSyncAt ? `Last sync: ${String(settings.lastSyncAt)}` : "Not synced yet.";
+
+  const card = CardService.newCardBuilder().setHeader(
+    CardService.newCardHeader().setTitle(BRAND.name).setSubtitle(BRAND.pitch),
+  );
+  if (notice) {
+    card.addSection(CardService.newCardSection().addWidget(CardService.newTextParagraph().setText(notice)));
+  }
+  card.addSection(
+    CardService.newCardSection()
+      .setHeader("Connect")
+      .addWidget(input("licenseKey", "License key", masked(settings.licenseKey) || "From your purchase email"))
+      .addWidget(input("lemonSqueezy", "Lemon Squeezy API key", masked(settings.lemonSqueezy)))
+      .addWidget(input("polar", "Polar access token", masked(settings.polar)))
+      .addWidget(input("gumroad", "Gumroad access token", masked(settings.gumroad)))
+      .addWidget(input("stripe", "Stripe restricted key (rk_...)", masked(settings.stripe)))
+      .addWidget(input("currency", "Display currency", "e.g. USD", String(settings.currency || "USD")))
+      .addWidget(input("mrrGoal", "MRR goal (optional)", "e.g. 5000", String(settings.mrrGoal || "")))
+      .addWidget(
+        CardService.newTextButton()
+          .setText("Save")
+          .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+          .setOnClickAction(CardService.newAction().setFunctionName("cardSave")),
+      ),
+  );
+  card.addSection(
+    CardService.newCardSection()
+      .setHeader("Sync")
+      .addWidget(CardService.newTextParagraph().setText(lastSync))
+      .addWidget(
+        CardService.newButtonSet()
+          .addButton(
+            CardService.newTextButton()
+              .setText("Sync now")
+              .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+              .setOnClickAction(CardService.newAction().setFunctionName("cardSync")),
+          )
+          .addButton(
+            CardService.newTextButton()
+              .setText("Load demo data")
+              .setOnClickAction(CardService.newAction().setFunctionName("cardDemo")),
           ),
-        )
-        .addWidget(
-          CardService.newTextButton()
-            .setText("Open sidebar")
-            .setOnClickAction(CardService.newAction().setFunctionName("showSidebar")),
-        ),
-    )
+      )
+      .addWidget(
+        CardService.newTextButton()
+          .setText("Advanced settings (sidebar)")
+          .setOnClickAction(CardService.newAction().setFunctionName("showSidebar")),
+      ),
+  );
+  return card.build();
+}
+
+function errText(err: unknown): string {
+  const m = err instanceof Error ? err.message : String(err);
+  return m || "Unknown error";
+}
+
+function cardResponse(message: string): GoogleAppsScript.Card_Service.ActionResponse {
+  let card: GoogleAppsScript.Card_Service.Card;
+  try {
+    card = readyHomepageCard(message);
+  } catch {
+    card = CardService.newCardBuilder()
+      .setHeader(CardService.newCardHeader().setTitle(BRAND.name))
+      .addSection(CardService.newCardSection().addWidget(CardService.newTextParagraph().setText(message)))
+      .build();
+  }
+  return CardService.newActionResponseBuilder()
+    .setNotification(CardService.newNotification().setText(message.slice(0, 250)))
+    .setNavigation(CardService.newNavigation().updateCard(card))
     .build();
+}
+
+type CardEvent = { formInput?: Record<string, string>; commonEventObject?: { formInputs?: Record<string, { stringInputs?: { value?: string[] } }> } };
+
+function formValue(e: CardEvent, name: string): string {
+  const v = e?.commonEventObject?.formInputs?.[name]?.stringInputs?.value?.[0] ?? e?.formInput?.[name] ?? "";
+  return String(v).trim();
+}
+
+function cardSave(e: CardEvent): GoogleAppsScript.Card_Service.ActionResponse {
+  try {
+    const msg = sidebarSaveSettings({
+      licenseKey: formValue(e, "licenseKey"),
+      lemonSqueezy: formValue(e, "lemonSqueezy"),
+      polar: formValue(e, "polar"),
+      gumroad: formValue(e, "gumroad"),
+      stripe: formValue(e, "stripe"),
+      currency: formValue(e, "currency") || undefined,
+      mrrGoal: formValue(e, "mrrGoal"),
+    });
+    return cardResponse(msg);
+  } catch (err) {
+    console.error("cardSave failed", err);
+    return cardResponse(`Couldn't save: ${errText(err)}`);
+  }
+}
+
+function cardSync(e: CardEvent): GoogleAppsScript.Card_Service.ActionResponse {
+  try {
+    // Save anything typed into the form first so "Save" isn't a required extra click.
+    const typed = ["licenseKey", "lemonSqueezy", "polar", "gumroad", "stripe"].some((n) => formValue(e, n));
+    if (typed) cardSave(e);
+    const r = sidebarSync(false);
+    return cardResponse(r.message);
+  } catch (err) {
+    console.error("cardSync failed", err);
+    return cardResponse(`Sync failed: ${errText(err)}`);
+  }
+}
+
+function cardDemo(): GoogleAppsScript.Card_Service.ActionResponse {
+  try {
+    return cardResponse(sidebarDemo().message);
+  } catch (err) {
+    console.error("cardDemo failed", err);
+    return cardResponse(`Demo failed: ${errText(err)}`);
+  }
 }
 
 /**
@@ -413,6 +526,9 @@ g.showSidebar = showSidebar;
 g.onHomepage = onHomepage;
 g.onRequestFileScope = onRequestFileScope;
 g.onFileScopeGranted = onFileScopeGranted;
+g.cardSave = cardSave;
+g.cardSync = cardSync;
+g.cardDemo = cardDemo;
 g.menuSync = menuSync;
 g.menuBackfill = menuBackfill;
 g.menuDemo = menuDemo;
