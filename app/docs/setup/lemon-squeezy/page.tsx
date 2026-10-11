@@ -27,9 +27,7 @@ export default function LemonSetupPage() {
             Sign in to Lemon Squeezy and open <code className="ui-chip">Settings › API</code>.
           </li>
           <li>
-            Create a key and name it <code className="ui-chip">RevenueSheet</code> so you can find
-            and delete it anytime. Lemon Squeezy does not offer read-only or single-store keys
-            (account-level access only; see{" "}
+            Lemon Squeezy doesn&apos;t document read-only or per-store API keys (see{" "}
             <a
               href="https://docs.lemonsqueezy.com/guides/developer-guide/getting-started"
               rel="noopener noreferrer"
@@ -37,7 +35,7 @@ export default function LemonSetupPage() {
             >
               their API getting started guide
             </a>
-            ).
+            ), so name the key <code className="ui-chip">RevenueSheet</code> and delete it anytime.
           </li>
           <li>Copy the key once: Lemon Squeezy will not show it again.</li>
         </ol>
