@@ -1,3 +1,4 @@
+import { buildQuery } from "../lib/query";
 import { CONFIG } from "../lib/config";
 import { completedCursor } from "../lib/backfill";
 import { normalizeBillingInterval, roundMoney, toMonthlyAmount } from "../lib/intervals";
@@ -107,9 +108,9 @@ export function mapPolarRefund(row: PolarRecord): NormalizedRefund {
 }
 
 function startUrl(path: string, cursor?: SyncCursor): string {
-  const params = new URLSearchParams({ limit: String(CONFIG.PAGE_SIZE) });
-  if (cursor?.lastSyncedAt) params.set("created_at.gt", cursor.lastSyncedAt);
-  return `${BASE}${path}?${params.toString()}`;
+  const params: Record<string, string> = { limit: String(CONFIG.PAGE_SIZE) };
+  if (cursor?.lastSyncedAt) params["created_at.gt"] = cursor.lastSyncedAt;
+  return `${BASE}${path}?${buildQuery(params)}`;
 }
 
 function nextUrl(data: PolarPage<PolarRecord> | PolarRecord[]): string | null {

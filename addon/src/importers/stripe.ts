@@ -1,3 +1,4 @@
+import { buildQuery } from "../lib/query";
 import { CONFIG } from "../lib/config";
 import { completedCursor } from "../lib/backfill";
 import { normalizeBillingInterval, roundMoney, toMonthlyAmount } from "../lib/intervals";
@@ -178,13 +179,13 @@ function paginateBudgetSync(
   let pages = 0;
   while (pages < maxPages) {
     pages += 1;
-    const params = new URLSearchParams({ limit: String(Math.min(CONFIG.PAGE_SIZE, 100)) });
-    if (startingAfter) params.set("starting_after", startingAfter);
+    const params: Array<[string, string]> = [["limit", String(Math.min(CONFIG.PAGE_SIZE, 100))]];
+    if (startingAfter) params.push(["starting_after", startingAfter]);
     if (cursor?.lastSyncedAt && !startingAfter) {
       const created = Math.floor(Date.parse(cursor.lastSyncedAt) / 1000);
-      if (!Number.isNaN(created)) params.set("created[gte]", String(created));
+      if (!Number.isNaN(created)) params.push(["created[gte]", String(created)]);
     }
-    const url = `${BASE}${path}?${params.toString()}`;
+    const url = `${BASE}${path}?${buildQuery(params)}`;
     const { status, data } = fetchJsonSync<StripeList>(url, { headers: authHeader(apiKey) });
     if (status === 401) {
       throw new Error(

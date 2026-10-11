@@ -1,3 +1,4 @@
+import { buildQuery } from "../lib/query";
 import { CONFIG } from "../lib/config";
 import { completedCursor } from "../lib/backfill";
 import { normalizeBillingInterval, roundMoney, toMonthlyAmount } from "../lib/intervals";
@@ -109,13 +110,13 @@ export function fetchSalesPageSync(
   let pages = 0;
   while (pages < maxPages) {
     pages += 1;
-    const params = new URLSearchParams({ access_token: apiKey });
-    if (pageKey) params.set("page_key", pageKey);
+    const params: Record<string, string> = { access_token: apiKey };
+    if (pageKey) params.page_key = pageKey;
     if (cursor?.lastSyncedAt && !pageKey) {
       // Incremental watermark only on first page of an incremental run
-      params.set("after", cursor.lastSyncedAt.slice(0, 10));
+      params.after = cursor.lastSyncedAt.slice(0, 10);
     }
-    const url = `${BASE}/sales?${params.toString()}`;
+    const url = `${BASE}/sales?${buildQuery(params)}`;
     const { status, data } = fetchJsonSync<{
       success?: boolean;
       sales?: GumRecord[];
@@ -152,12 +153,12 @@ export async function fetchSalesPageAsync(
   let pages = 0;
   while (pages < maxPages) {
     pages += 1;
-    const params = new URLSearchParams({ access_token: apiKey });
-    if (pageKey) params.set("page_key", pageKey);
+    const params: Record<string, string> = { access_token: apiKey };
+    if (pageKey) params.page_key = pageKey;
     if (cursor?.lastSyncedAt && !pageKey) {
-      params.set("after", cursor.lastSyncedAt.slice(0, 10));
+      params.after = cursor.lastSyncedAt.slice(0, 10);
     }
-    const url = `${BASE}/sales?${params.toString()}`;
+    const url = `${BASE}/sales?${buildQuery(params)}`;
     const { status, data } = await fetchJson<{
       success?: boolean;
       sales?: GumRecord[];
