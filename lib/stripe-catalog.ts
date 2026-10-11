@@ -3,6 +3,12 @@ import { pricing, type BillingInterval, type Tier } from "@/lib/site";
 
 export type PaidTier = Exclude<Tier, "free">;
 
+/**
+ * Stripe Managed Payments requires a product tax code on Checkout line items.
+ * Software as a service — https://stripe.com/docs/tax/tax-codes
+ */
+export const STRIPE_PRODUCT_TAX_CODE = "txcd_10103001" as const;
+
 /** Stable lookup_keys — go-live only needs Stripe secret + publishable keys. */
 export const PRICE_LOOKUP_KEYS = {
   pro: {
@@ -66,17 +72,45 @@ export function tierIntervalFromLookupKey(
   return null;
 }
 
+/** Resolve the Product on a Price and set tax_code when missing. */
+export async function ensureTaxCodeForPrice(
+  stripe: Stripe,
+  price: Stripe.Price | string,
+): Promise<void> {
+  const resolved =
+    typeof price === "string"
+      ? await stripe.prices.retrieve(price, { expand: ["product"] })
+      : price.product && typeof price.product === "object"
+        ? price
+        : await stripe.prices.retrieve(price.id, { expand: ["product"] });
+
+  const productRef = resolved.product;
+  if (!productRef) return;
+  const product =
+    typeof productRef === "string"
+      ? await stripe.products.retrieve(productRef)
+      : productRef;
+  if ("deleted" in product && product.deleted) return;
+  await ensureProductTaxCode(stripe, product as Stripe.Product);
+}
+
 export async function findOrCreatePrice(
   stripe: Stripe,
   tier: PaidTier,
   interval: BillingInterval,
 ): Promise<string> {
   const fromEnv = envPriceId(tier, interval);
-  if (fromEnv) return fromEnv;
+  if (fromEnv) {
+    await ensureTaxCodeForPrice(stripe, fromEnv);
+    return fromEnv;
+  }
 
   const lookup_key = lookupKeyFor(tier, interval);
   const existing = await stripe.prices.list({ lookup_keys: [lookup_key], limit: 1, active: true });
-  if (existing.data[0]?.id) return existing.data[0].id;
+  if (existing.data[0]?.id) {
+    await ensureTaxCodeForPrice(stripe, existing.data[0]);
+    return existing.data[0].id;
+  }
 
   const product = await findOrCreateProduct(stripe, tier);
   const price = await stripe.prices.create({
@@ -91,17 +125,45 @@ export async function findOrCreatePrice(
   return price.id;
 }
 
-async function findOrCreateProduct(stripe: Stripe, tier: PaidTier): Promise<Stripe.Product> {
+export function catalogProductCreateParams(tier: PaidTier): Stripe.ProductCreateParams {
+  return {
+    name: PRODUCT_LOOKUP[tier].name,
+    description: PRODUCT_LOOKUP[tier].description,
+    tax_code: STRIPE_PRODUCT_TAX_CODE,
+    metadata: { revenuesheet_product: `revenuesheet_${tier}` },
+  };
+}
+
+/** True when the product already carries the Managed Payments tax code. */
+export function productHasTaxCode(
+  product: Pick<Stripe.Product, "tax_code">,
+  taxCode: string = STRIPE_PRODUCT_TAX_CODE,
+): boolean {
+  const raw = product.tax_code;
+  if (!raw) return false;
+  if (typeof raw === "string") return raw === taxCode;
+  return raw.id === taxCode;
+}
+
+/** Set tax_code on an existing product when missing (idempotent). */
+export async function ensureProductTaxCode(
+  stripe: Stripe,
+  product: Stripe.Product,
+): Promise<Stripe.Product> {
+  if (productHasTaxCode(product)) return product;
+  return stripe.products.update(product.id, { tax_code: STRIPE_PRODUCT_TAX_CODE });
+}
+
+export async function findOrCreateProduct(
+  stripe: Stripe,
+  tier: PaidTier,
+): Promise<Stripe.Product> {
   const metaKey = `revenuesheet_${tier}`;
   const listed = await stripe.products.list({ limit: 100, active: true });
   const found = listed.data.find(
     (p) => p.metadata?.revenuesheet_product === metaKey || p.name === PRODUCT_LOOKUP[tier].name,
   );
-  if (found) return found;
+  if (found) return ensureProductTaxCode(stripe, found);
 
-  return stripe.products.create({
-    name: PRODUCT_LOOKUP[tier].name,
-    description: PRODUCT_LOOKUP[tier].description,
-    metadata: { revenuesheet_product: metaKey },
-  });
+  return stripe.products.create(catalogProductCreateParams(tier));
 }
