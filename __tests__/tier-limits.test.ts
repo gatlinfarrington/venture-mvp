@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pricing, tierLimits } from "@/lib/site";
+import { everyPlanIncludes, pricing, tierLimits } from "@/lib/site";
 
 describe("tierLimits", () => {
   it("free allows one source and manual-only sync", () => {
@@ -56,5 +56,12 @@ describe("pricing", () => {
     expect(pricing.business.lead).toBe(
       "For sellers running several stores on one platform.",
     );
+  });
+
+  it("lists help docs once under every plan, not on each card", () => {
+    expect(everyPlanIncludes).toContain("Help docs and support form");
+    for (const plan of [pricing.free, pricing.pro, pricing.business]) {
+      expect(plan.features).not.toContain("Help docs and support form");
+    }
   });
 });
