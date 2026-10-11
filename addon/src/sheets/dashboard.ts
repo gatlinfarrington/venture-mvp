@@ -1,3 +1,4 @@
+import { netRevenueBetween } from "../metrics/netRevenue";
 import { BRAND, managedByFooter } from "../lib/brand";
 import { SHEET_NAMES, type DashboardTemplate } from "../lib/config";
 import type { BackfillSourceRow } from "../lib/onboardingCopy";
@@ -768,22 +769,7 @@ function computeNetRevenue30d(
   const start = end - 30 * 86400000;
   const prevStart = start - 30 * 86400000;
 
-  const sumOrders = (from: number, to: number) => {
-    let n = 0;
-    for (const o of orders) {
-      const t = Date.parse(o.created);
-      if (Number.isNaN(t) || t < from || t >= to) continue;
-      const st = String(o.status || "").toLowerCase();
-      if (st === "refunded" || st === "chargeback" || st === "failed") continue;
-      n += Number(o.amount) || 0;
-    }
-    for (const r of refunds) {
-      const t = Date.parse(r.created);
-      if (Number.isNaN(t) || t < from || t >= to) continue;
-      n -= Number(r.amount) || 0;
-    }
-    return n;
-  };
+  const sumOrders = (from: number, to: number) => netRevenueBetween(orders, refunds, from, to);
 
   const cur = sumOrders(start, end);
   const prev = sumOrders(prevStart, start);

@@ -1,3 +1,4 @@
+import { netRevenueBetween } from "./metrics/netRevenue";
 import { clearDeadline, deadlinePassed, setDeadline } from "./lib/deadline";
 import { CONFIG, SHEET_NAMES, SOURCES, type ScheduleCadence, type SourceId } from "./lib/config";
 import { isBackfillIncomplete, resolveFetchCursor } from "./lib/backfill";
@@ -305,21 +306,7 @@ function sumNetRevenue30d(
   refunds: { created: string; amount: number }[],
 ): number {
   const end = Date.now();
-  const start = end - 30 * 86400000;
-  let sum = 0;
-  for (const o of orders) {
-    const t = Date.parse(o.created);
-    if (Number.isNaN(t) || t < start || t > end) continue;
-    const status = String(o.status || "").toLowerCase();
-    if (status === "refunded" || status === "chargeback" || status === "failed") continue;
-    sum += Number(o.amount) || 0;
-  }
-  for (const r of refunds) {
-    const t = Date.parse(r.created);
-    if (Number.isNaN(t) || t < start || t > end) continue;
-    sum -= Number(r.amount) || 0;
-  }
-  return Math.round(sum * 100) / 100;
+  return netRevenueBetween(orders as never, refunds as never, end - 30 * 86400000, end + 1);
 }
 
 function buildBackfillRows(
