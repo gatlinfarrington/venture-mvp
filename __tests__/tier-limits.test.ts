@@ -64,4 +64,14 @@ describe("pricing", () => {
       expect(plan.features).not.toContain("Help docs and support form");
     }
   });
+
+  it("Business lists concrete shipped features (no Everything in Pro)", () => {
+    expect(pricing.business.features).toEqual([
+      "All four sources plus CSV import",
+      "Up to 20 stores per source, one combined MRR",
+      "MRR by source",
+      "Hourly, every 6 hours, daily or weekly",
+    ]);
+    expect(pricing.business.features.join(" ")).not.toMatch(/by store/i);
+  });
 });

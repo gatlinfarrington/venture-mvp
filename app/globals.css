@@ -471,6 +471,7 @@ a.chip[aria-current="page"] {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: 44px;
   font-weight: 600;
   font-size: var(--t-brand-size);
   letter-spacing: -0.02em;
@@ -701,16 +702,12 @@ a.chip[aria-current="page"] {
   gap: var(--space-2);
 }
 
-.hero-demo-controls {
-  margin-top: var(--space-3);
-  width: 168px;
-}
-
-.hero-demo-controls .hero-demo-foot {
+/* Pin Replay to the bottom of the source column (aligned with sheet height). */
+.hero-stores-col .hero-demo-foot {
+  margin-top: auto;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
-  margin-top: 0;
 }
 
 .hero-store {
@@ -985,16 +982,13 @@ a.chip[aria-current="page"] {
     justify-content: flex-start;
   }
 
-  .hero-demo-controls {
-    width: 100%;
+  .hero-stores-col .hero-demo-foot {
     margin-top: var(--space-3);
-  }
-
-  .hero-demo-controls .hero-demo-foot {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
+    width: 100%;
   }
 
   .hero-stores {
@@ -2422,12 +2416,14 @@ body:has(.success-shell) .admin-stripe-banner {
   margin-top: var(--space-4);
 }
 
+h2.docs-group-label,
 .docs-group-label {
   margin: 0 0 var(--space-2);
   font: 500 11px var(--font-mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--c-ink-muted);
+  line-height: 1.3;
 }
 
 .docs-nav a {
@@ -2539,6 +2535,11 @@ body:has(.success-shell) .admin-stripe-banner {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.docs-page .prose ol + p,
+.docs-main .prose ol + p {
+  margin-top: var(--space-4);
 }
 
 .legal .prose li,
@@ -3106,6 +3107,7 @@ a.tag-pill:focus-visible {
 .support-field textarea,
 .invite-form input[type="email"] {
   width: 100%;
+  min-height: 44px;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--c-border);
   background: var(--c-surface);
@@ -3201,6 +3203,7 @@ a.tag-pill:focus-visible {
 .launch-invite input[type="email"] {
   flex: 1;
   min-width: 0;
+  min-height: 44px;
   border: 0;
   outline: 0;
   font: 400 var(--t-prose-size) var(--font-sans);
@@ -3348,16 +3351,9 @@ a.tag-pill:focus-visible {
   padding-top: 0;
 }
 
-.pricing-every-plan {
-  margin-top: var(--space-10);
-  max-width: 40rem;
-}
-
-.pricing-every-plan-title {
-  margin: 0;
-  font-size: var(--t-h3-size);
-  font-weight: 500;
-  color: var(--c-ink);
+.pricing-shared-note {
+  margin: var(--space-6) 0 0;
+  font-size: var(--t-mono-size);
 }
 
 .pricing-extras-h2 {
@@ -3387,6 +3383,12 @@ a.tag-pill:focus-visible {
 .blog-back {
   margin: 0 0 var(--space-4);
   font-size: var(--t-mono-size);
+}
+
+.blog-back a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .blog-featured {
@@ -3583,6 +3585,9 @@ a.tag-pill:focus-visible {
 }
 
 .vs-polar-ghost {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   font-size: var(--t-ui-sm-size);
   color: var(--c-ink-muted);
   text-decoration: underline;

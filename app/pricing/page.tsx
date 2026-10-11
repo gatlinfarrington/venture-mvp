@@ -25,7 +25,6 @@ const includes = [
   "Named tabs: Orders, Subscriptions, Customers, Refunds, Dashboard",
   "Full history backfill on every plan",
   "Named ranges for formulas (rs_orders and friends)",
-  "Help docs and support form",
 ];
 
 const compareRows = [

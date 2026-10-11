@@ -152,16 +152,9 @@ export function Pricing({ variant = "section" }: Props) {
             );
           })}
         </div>
-        {variant === "section" ? (
-          <div className="pricing-every-plan">
-            <h3 className="pricing-every-plan-title">What every plan includes</h3>
-            <ul className="hairline-list">
-              {everyPlanIncludes.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        <p className="pricing-shared-note mono muted">
+          {everyPlanIncludes.join(" · ")}
+        </p>
         <p className="pricing-upgrade-note">
           Free covers one store with one-click refresh. Upgrade when you sell in two places or want
           it to run on its own.

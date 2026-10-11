@@ -83,8 +83,10 @@ export const pricing = {
     stores: 20,
     lead: "For sellers running several stores on one platform.",
     features: [
-      "Everything in Pro",
+      "All four sources plus CSV import",
       "Up to 20 stores per source, one combined MRR",
+      "MRR by source",
+      "Hourly, every 6 hours, daily or weekly",
     ],
   },
 } as const;
