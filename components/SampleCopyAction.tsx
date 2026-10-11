@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { templateCopyUrl } from "@/lib/brand";
 
 type Props = {
@@ -8,7 +8,7 @@ type Props = {
 };
 
 export function SampleCopyAction({ source }: Props) {
-  const tipId = useId();
+  const tipId = "sample-copy-tip";
   const href = templateCopyUrl();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
