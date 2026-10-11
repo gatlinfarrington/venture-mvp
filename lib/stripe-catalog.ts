@@ -22,7 +22,8 @@ export const PRODUCT_LOOKUP = {
   },
   business: {
     name: "RevenueSheet Business",
-    description: "Everything in Pro: four stores plus CSV, scheduled refresh, MRR dashboard.",
+    description:
+      "Everything in Pro, plus up to 20 stores per source with one combined MRR. Same scheduled refresh as Pro.",
   },
 } as const;
 

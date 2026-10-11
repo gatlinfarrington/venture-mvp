@@ -328,7 +328,7 @@ export function FAQ() {
     },
     {
       q: "How do I cancel?",
-      a: "When paid plans are live, open the Stripe customer portal from your receipt email. After cancel, the license becomes inactive on the next webhook; Free-tier limits still apply if you keep the add-on installed.",
+      a: "Open the Stripe customer portal from your receipt email. Your license stays active through the period you already paid for. When that period ends, paid features turn off and Free limits apply if you keep the add-on installed. Your sheet data stays.",
     },
   ];
 

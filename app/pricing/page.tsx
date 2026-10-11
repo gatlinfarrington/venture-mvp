@@ -31,8 +31,8 @@ const compareRows = [
   {
     label: "Sources",
     free: String(pricing.free.sources),
-    pro: "Four stores plus CSV import",
-    business: "Four stores plus CSV import",
+    pro: "All four sources plus CSV import",
+    business: "All four sources plus CSV import",
   },
   {
     label: "Refresh",
@@ -43,14 +43,14 @@ const compareRows = [
   {
     label: "Stores per source",
     free: String(pricing.free.stores),
-    pro: "1",
-    business: "1",
+    pro: String(pricing.pro.stores),
+    business: String(pricing.business.stores),
   },
   {
     label: "Support",
-    free: "Via /support",
-    pro: "Via /support",
-    business: "Via /support",
+    free: "Help docs and support form",
+    pro: "Help docs and support form",
+    business: "Help docs and support form",
   },
 ];
 

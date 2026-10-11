@@ -30,4 +30,20 @@ describe("pricing", () => {
     expect(pricing.pro.annual).toBe(pricing.pro.monthly * 10);
     expect(pricing.business.annual).toBe(pricing.business.monthly * 10);
   });
+
+  it("advertises store limits that match tierLimits", () => {
+    expect(pricing.free.stores).toBe(tierLimits("free").maxStores);
+    expect(pricing.pro.stores).toBe(tierLimits("pro").maxStores);
+    expect(pricing.business.stores).toBe(tierLimits("business").maxStores);
+    expect(pricing.business.features).toContain(
+      "Up to 20 stores per source, one combined MRR",
+    );
+    expect(pricing.pro.features).toContain("All four sources plus CSV import");
+  });
+
+  it("Pro and Business share the same refresh cadence copy", () => {
+    expect(pricing.pro.refresh).toBe(pricing.business.refresh);
+    expect(tierLimits("pro").scheduledRefresh).toBe(true);
+    expect(tierLimits("business").scheduledRefresh).toBe(true);
+  });
 });
