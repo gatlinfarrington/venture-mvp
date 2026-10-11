@@ -140,7 +140,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "Importer details",
         paragraphs: [
-          "Connect with a Lemon Squeezy API key. Lemon Squeezy keys are account-level: their docs do not offer read-only or single-store limits. Name the key RevenueSheet so you can delete it anytime. The first run backfills historical orders; later syncs are incremental. Refunds and subscription state changes update existing rows by id. The add-on only reads; it never creates, edits, or refunds.",
+          "Connect with a Lemon Squeezy API key. Lemon Squeezy doesn't document read-only or per-store API keys, so name the key RevenueSheet and delete it anytime. The first run backfills historical orders; later syncs are incremental. Refunds and subscription state changes update existing rows by id. The add-on only reads; it never creates, edits, or refunds.",
         ],
         bullets: [
           "One store on Free/Pro; up to 20 stores on Business, one combined MRR",
