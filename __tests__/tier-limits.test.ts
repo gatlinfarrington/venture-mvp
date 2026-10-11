@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pricing, tierLimits } from "@/lib/site";
+import { everyPlanIncludes, pricing, tierLimits } from "@/lib/site";
 
 describe("tierLimits", () => {
   it("free allows one source and manual-only sync", () => {
@@ -20,7 +20,7 @@ describe("tierLimits", () => {
 
   it("business allows multiple stores", () => {
     expect(tierLimits("business").maxSources).toBe(4);
-    expect(tierLimits("business").maxStores).toBeGreaterThan(1);
+    expect(tierLimits("business").maxStores).toBe(20);
     expect(tierLimits("business").scheduledRefresh).toBe(true);
   });
 });
@@ -56,5 +56,22 @@ describe("pricing", () => {
     expect(pricing.business.lead).toBe(
       "For sellers running several stores on one platform.",
     );
+  });
+
+  it("lists help docs once under every plan, not on each card", () => {
+    expect(everyPlanIncludes).toContain("Help docs and support form");
+    for (const plan of [pricing.free, pricing.pro, pricing.business]) {
+      expect(plan.features).not.toContain("Help docs and support form");
+    }
+  });
+
+  it("Business lists concrete shipped features (no Everything in Pro)", () => {
+    expect(pricing.business.features).toEqual([
+      "All four sources plus CSV import",
+      "Up to 20 stores per source, one combined MRR",
+      "MRR by source",
+      "Hourly, every 6 hours, daily or weekly",
+    ]);
+    expect(pricing.business.features.join(" ")).not.toMatch(/by store/i);
   });
 });

@@ -450,14 +450,9 @@ export function HeroDemo() {
 
   return (
     <div className="hero-demo">
-      <div
-        ref={stageRef}
-        className="hero-stage"
-        role="img"
-        aria-label="Animated example: orders from Lemon Squeezy, Polar, Gumroad and Stripe land in a Google Sheet and the MRR total updates. Example data."
-      >
-        <div className="hero-stores-col" aria-hidden="true">
-          <div className="hero-stores">
+      <div ref={stageRef} className="hero-stage">
+        <div className="hero-stores-col">
+          <div className="hero-stores" aria-hidden="true">
             {[
               { name: "Lemon Squeezy", store: "example-store" },
               { name: "Polar", store: "example-org" },
@@ -477,9 +472,15 @@ export function HeroDemo() {
               </div>
             ))}
           </div>
+          {/* Pinned to bottom of source column at desktop width. */}
+          <DemoFoot onReplay={run} />
         </div>
 
-        <div className="hero-sheet-wrap">
+        <div
+          className="hero-sheet-wrap"
+          role="img"
+          aria-label="Animated example: orders from Lemon Squeezy, Polar, Gumroad and Stripe land in a Google Sheet and the MRR total updates. Example data."
+        >
           <div className="hero-sheet" aria-hidden="true">
             <div className="hero-sheet-top">
               <div className="eyebrow">MRR · all sources · example</div>
@@ -534,10 +535,6 @@ export function HeroDemo() {
             +${p.amount}
           </div>
         ))}
-      </div>
-      {/* Replay stays outside role="img" so controls are not nested. */}
-      <div className="hero-demo-controls">
-        <DemoFoot onReplay={run} />
       </div>
     </div>
   );

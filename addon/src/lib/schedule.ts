@@ -48,6 +48,17 @@ export function removeSchedule(): string {
   return "Scheduled refresh removed.";
 }
 
+/** True when a time-driven sync trigger is installed. */
+export function isScheduleEnabled(): boolean {
+  try {
+    return ScriptApp.getProjectTriggers().some(
+      (t) => t.getHandlerFunction() === CONFIG.SYNC_TRIGGER_HANDLER,
+    );
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Weekly digest trigger. Requires optional sensitive scope script.send_mail —
  * NOT declared in the default manifest. See README.

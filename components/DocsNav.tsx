@@ -35,7 +35,7 @@ export function DocsNav() {
     <nav className="docs-nav" aria-label="Docs">
       {groups.map((group) => (
         <div key={group.label} className="docs-nav-group">
-          <p className="docs-group-label mono">{group.label}</p>
+          <h2 className="docs-group-label mono">{group.label}</h2>
           <ul>
             {group.links.map((link) => {
               const active =

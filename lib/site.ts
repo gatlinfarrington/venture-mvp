@@ -36,6 +36,9 @@ export type BillingInterval = "month" | "year";
  * addon/src/lib/emailDigest.ts needs script.send_mail, which is not in the
  * default appsscript.json oauthScopes (sensitive; opt-in only).
  */
+/** Shared across Free / Pro / Business — shown once under the cards, not on each card. */
+export const everyPlanIncludes = ["Help docs and support form"] as const;
+
 export const pricing = {
   free: {
     tier: "free" as const,
@@ -50,7 +53,6 @@ export const pricing = {
       "Manual (one click) refresh",
       "Full history backfill",
       "MRR dashboard tab",
-      "Help docs and support form",
     ],
   },
   pro: {
@@ -68,7 +70,6 @@ export const pricing = {
       "Hourly, every 6 hours, daily or weekly",
       "Full history backfill",
       "MRR, churn, and revenue by product and source",
-      "Help docs and support form",
     ],
   },
   business: {
@@ -82,9 +83,10 @@ export const pricing = {
     stores: 20,
     lead: "For sellers running several stores on one platform.",
     features: [
-      "Everything in Pro",
+      "All four sources plus CSV import",
       "Up to 20 stores per source, one combined MRR",
-      "Help docs and support form",
+      "MRR by source",
+      "Hourly, every 6 hours, daily or weekly",
     ],
   },
 } as const;

@@ -6,7 +6,12 @@ import { Reveal } from "@/components/Reveal";
 import { SampleSheetLink } from "@/components/SampleSheetLink";
 import { REFUND_LINE } from "@/lib/copy";
 import { marketplaceUrlClient } from "@/lib/marketplace-client";
-import { checkoutEnabled, pricing, type BillingInterval } from "@/lib/site";
+import {
+  checkoutEnabled,
+  everyPlanIncludes,
+  pricing,
+  type BillingInterval,
+} from "@/lib/site";
 
 type Props = {
   /** Dedicated /pricing page uses inner-page H1; homepage keeps section H2. */
@@ -147,6 +152,9 @@ export function Pricing({ variant = "section" }: Props) {
             );
           })}
         </div>
+        <p className="pricing-shared-note mono muted">
+          {everyPlanIncludes.join(" · ")}
+        </p>
         <p className="pricing-upgrade-note">
           Free covers one store with one-click refresh. Upgrade when you sell in two places or want
           it to run on its own.

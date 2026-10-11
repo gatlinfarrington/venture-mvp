@@ -46,12 +46,6 @@ const compareRows = [
     pro: String(pricing.pro.stores),
     business: String(pricing.business.stores),
   },
-  {
-    label: "Support",
-    free: "Help docs and support form",
-    pro: "Help docs and support form",
-    business: "Help docs and support form",
-  },
 ];
 
 const faq: Array<{ q: string; a: ReactNode }> = [
@@ -112,9 +106,9 @@ export default function PricingPage() {
                 {compareRows.map((row) => (
                   <tr key={row.label}>
                     <th scope="row">{row.label}</th>
-                    <td>{row.free}</td>
-                    <td>{row.pro}</td>
-                    <td>{row.business}</td>
+                    <td data-label="Free">{row.free}</td>
+                    <td data-label="Pro">{row.pro}</td>
+                    <td data-label="Business">{row.business}</td>
                   </tr>
                 ))}
               </tbody>
