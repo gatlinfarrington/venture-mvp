@@ -35,6 +35,10 @@ export default function PolarSetupPage() {
           your Apps Script User Properties (per Google account), not in sheet cells. Anyone with your
           Google account can use it. Rotate the token if that account was compromised.
         </p>
+        <p className="mono muted">
+          Keys stay in your Google account. We never receive them. Rotate anytime.{" "}
+          <Link href="/security">How it works →</Link>
+        </p>
         <h2>Backfill and schedule</h2>
         <p>
           Press Backfill once. On Pro or Business, enable scheduled refresh so Polar tabs stay

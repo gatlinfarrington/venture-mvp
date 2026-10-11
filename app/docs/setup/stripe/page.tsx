@@ -41,6 +41,10 @@ export default function StripeSetupPage() {
           paste the restricted key, and save. It is stored in Apps Script User Properties for your
           Google account, not in sheet cells.
         </p>
+        <p className="mono muted">
+          Keys stay in your Google account. We never receive them. Rotate anytime.{" "}
+          <Link href="/security">How it works →</Link>
+        </p>
         <h2>Backfill and schedule</h2>
         <p>
           Press Backfill once. Charges land as orders; subscriptions contribute to MRR on the

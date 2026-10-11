@@ -793,6 +793,12 @@ a.chip[aria-current="page"] {
   font-variant-numeric: tabular-nums;
 }
 
+.hero-mrr-caption {
+  margin: var(--space-2) 0 0;
+  font-size: var(--t-mono-size);
+  color: var(--c-ink-muted);
+}
+
 .hero-delta {
   font: 500 var(--t-mono-size) var(--font-mono);
   color: var(--c-signal);
@@ -3437,6 +3443,22 @@ a.tag-pill:hover {
 
 .vs-polar-ghost:hover {
   color: var(--c-ink);
+  text-decoration-color: var(--c-ink);
+}
+
+.compare-more {
+  margin: var(--space-6) 0 0;
+  font-size: var(--t-body-size);
+}
+
+.compare-more a {
+  color: var(--c-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--c-border);
+  text-underline-offset: 3px;
+}
+
+.compare-more a:hover {
   text-decoration-color: var(--c-ink);
 }
 

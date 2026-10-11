@@ -302,6 +302,10 @@ export function Comparison() {
             </tbody>
           </table>
         </Reveal>
+        <p className="compare-more muted">
+          Selling on Polar too?{" "}
+          <Link href="/vs/polar-dashboard">RevenueSheet vs Polar’s dashboard →</Link>
+        </p>
       </div>
     </section>
   );

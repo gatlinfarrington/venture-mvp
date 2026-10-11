@@ -34,6 +34,10 @@ export default function LemonSetupPage() {
           Squeezy and paste the key. Keys are stored in Apps Script User Properties for your Google
           account. See <Link href="/docs/api-keys">API keys</Link>.
         </p>
+        <p className="mono muted">
+          Keys stay in your Google account. We never receive them. Rotate anytime.{" "}
+          <Link href="/security">How it works →</Link>
+        </p>
         <h2>Run Backfill</h2>
         <p>
           Press Backfill once. The importer walks historical orders into the Orders tab, then fills

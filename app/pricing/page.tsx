@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
 import { brand } from "@/lib/brand";
@@ -7,11 +8,11 @@ import { pricing, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: `Free, Pro, and Business plans for ${brand.name}. Manual refresh free; scheduled sync from $9/mo.`,
+  description: `Free, Pro, and Business plans for ${brand.name}. Manual (one click) free; hourly, every 6 hours, daily or weekly from $${pricing.pro.monthly}/mo.`,
   alternates: { canonical: `${siteConfig.url}/pricing` },
   openGraph: {
     title: `Pricing · ${brand.name}`,
-    description: `Free, Pro, and Business plans for ${brand.name}.`,
+    description: `Free, Pro, and Business plans for ${brand.name}. Manual (one click) free; hourly, every 6 hours, daily or weekly from $${pricing.pro.monthly}/mo.`,
     url: `${siteConfig.url}/pricing`,
   },
 };
@@ -112,6 +113,10 @@ export default function PricingPage() {
               </tbody>
             </table>
           </div>
+          <p className="compare-more muted">
+            Already on Polar?{" "}
+            <Link href="/vs/polar-dashboard">See RevenueSheet vs Polar’s dashboard →</Link>
+          </p>
 
           <h2 className="h2 pricing-extras-h2">Billing FAQ</h2>
           <div className="faq-list">

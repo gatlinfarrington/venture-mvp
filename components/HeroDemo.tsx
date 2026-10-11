@@ -490,6 +490,7 @@ export function HeroDemo() {
                 <b>{fmt(mrr)}</b>
                 {delta ? <span className="hero-delta">{delta}</span> : null}
               </div>
+              <p className="hero-mrr-caption mono muted">Example data</p>
               <div className="hero-bars">
                 {barHeights.map((h, i) => (
                   <i

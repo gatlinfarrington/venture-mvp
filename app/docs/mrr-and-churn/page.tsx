@@ -15,9 +15,9 @@ export default function MrrAndChurnDocsPage() {
       <p className="eyebrow">Docs</p>
       <h1>How we calculate MRR and churn</h1>
       <p className="body-lg muted docs-lede">
-        Plain-language summary of <code>addon/src/lib/intervals.ts</code> and{" "}
-        <code>addon/src/metrics/churn.ts</code> (plus the MRR eligibility rules in{" "}
-        <code>addon/src/metrics/mrr.ts</code>).
+        Plain-language summary of <code>addon/src/lib/intervals.ts</code>,{" "}
+        <code>addon/src/metrics/churn.ts</code>, <code>addon/src/metrics/mrr.ts</code>, and{" "}
+        <code>addon/src/metrics/refunds.ts</code>.
       </p>
 
       <div className="prose">
@@ -45,7 +45,61 @@ export default function MrrAndChurnDocsPage() {
         <p>
           By default only subscriptions with status <code>active</code> count toward total MRR.
           Trialing and past-due can be included when that option is turned on in the sidebar (
-          <code>includeTrialingPastDue</code>).
+          <code>includeTrialingPastDue</code>). Paused subscriptions are not included in the total.
+        </p>
+
+        <h2>Refunds and chargebacks</h2>
+        <p>
+          Refund summary math lives in <code>computeRefundSummary</code> (
+          <code>addon/src/metrics/refunds.ts</code>). Over a trailing window (default 30 days):
+        </p>
+        <ul>
+          <li>
+            Refund amount and count sum every refund row whose <code>created</code> timestamp falls
+            inside the window.
+          </li>
+          <li>
+            Order revenue for the rate sums order amounts in the same window, skipping orders with
+            status <code>failed</code>.
+          </li>
+          <li>
+            Refund rate is <code>refundAmount ÷ orderRevenue</code> (0 when order revenue is 0).
+          </li>
+        </ul>
+        <p>
+          That helper does not special-case chargebacks. Separately, when the add-on builds a 30-day
+          net revenue figure for the dashboard (
+          <code>sumNetRevenue30d</code> in <code>addon/src/sync.ts</code>), it skips orders marked{" "}
+          <code>refunded</code>, <code>chargeback</code>, or <code>failed</code>, then subtracts
+          refund amounts in the window. Refund and chargeback rows also land on the Refunds tab from
+          each source importer when the API returns them.
+        </p>
+        <p>
+          MRR itself is subscription-based. Refund and chargeback totals do not change an active
+          subscription’s monthly contribution until that subscription’s status or amount changes on
+          the next sync.
+        </p>
+
+        <h2>Why the number may differ from Polar’s</h2>
+        <p>
+          Polar’s public Analytics docs define MRR as the sum of every ongoing subscription’s net
+          amount, normalized monthly (yearly ÷ 12). Trialing subscriptions are excluded. Paused and
+          past-due subscriptions are included until the subscription actually ends (
+          <a
+            href="https://polar.sh/docs/features/analytics"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            Polar Analytics
+          </a>
+          , checked 2026-10-11).
+        </p>
+        <p>
+          {brand.name} defaults the other way on eligibility: only <code>active</code> counts toward
+          total MRR; paused is out; past-due and trialing stay out unless you turn on{" "}
+          <code>includeTrialingPastDue</code>. We also combine Polar with other stores in one sheet,
+          so a combined figure will not match Polar’s Polar-only dashboard even when eligibility
+          rules align.
         </p>
 
         <h2>Churn</h2>

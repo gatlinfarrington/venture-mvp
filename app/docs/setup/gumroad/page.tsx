@@ -34,6 +34,10 @@ export default function GumroadSetupPage() {
           land in Orders with product, email, amount, and refund status. Re-running sync updates
           refunded rows instead of duplicating.
         </p>
+        <p className="mono muted">
+          Keys stay in your Google account. We never receive them. Rotate anytime.{" "}
+          <Link href="/security">How it works →</Link>
+        </p>
         <h2>Combine with other stores</h2>
         <p>
           Free allows one source. Upgrade to Pro to add Polar or Lemon Squeezy beside Gumroad so the
