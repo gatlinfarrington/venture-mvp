@@ -66,9 +66,8 @@ export const pricing = {
     features: [
       "All four sources plus CSV import",
       "Hourly, every 6 hours, daily or weekly",
-      "Revenue by product and source",
       "Full history backfill",
-      "MRR, churn, revenue by product",
+      "MRR, churn, and revenue by product and source",
       "Help docs and support form",
     ],
   },

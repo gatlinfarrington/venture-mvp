@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LaunchAvailabilityNote } from "@/components/LaunchAvailabilityNote";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
@@ -14,10 +15,12 @@ export default function PolarSetupPage() {
     <main className="docs-page">
       <p className="eyebrow">Setup</p>
       <h1>Polar</h1>
+      <LaunchAvailabilityNote />
       <div className="prose">
         <p>
-          Polar connects with an organization access token. You need an org where you can create
-          tokens with read access to orders and subscriptions.
+          Use this guide once you install {brand.name} (at launch). Polar connects with an
+          organization access token. You need an org where you can create tokens with read access to
+          orders and subscriptions.
         </p>
         <h2>Create a token</h2>
         <ol>
@@ -29,6 +32,10 @@ export default function PolarSetupPage() {
           <li>Create a token scoped to the organization you sell from.</li>
           <li>Grant read access to orders, subscriptions, customers, and refunds.</li>
         </ol>
+        <p>
+          The add-on only reads; it never creates, edits, or refunds. It calls Polar with GET
+          requests only.
+        </p>
         <h2>Connect in {brand.name}</h2>
         <p>
           Open the {brand.name} sidebar, choose Polar, paste the token, then save. It is stored in
@@ -42,7 +49,8 @@ export default function PolarSetupPage() {
         <h2>Backfill and schedule</h2>
         <p>
           Press Backfill once. On Pro or Business, enable scheduled refresh so Polar tabs stay
-          current without opening the sheet. Free remains manual refresh for one source.
+          current without opening the sheet. Free remains manual refresh for one source. Multiple
+          Polar orgs need separate tokens and a Business plan (up to 20 stores).
         </p>
         <p>
           Guide: <Link href="/polar-analytics">Polar analytics</Link>.

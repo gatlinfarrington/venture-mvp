@@ -86,7 +86,7 @@ export function HowItWorks() {
     {
       n: "01",
       title: "Connect",
-      body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe, or import CSV for anything else. No OAuth dance with those stores: the add-on reads what you grant.",
+      body: "Paste an API key from Lemon Squeezy, Polar, Gumroad, or Stripe, or import CSV for anything else. No OAuth dance with those stores: the add-on only reads what you grant; it never creates, edits, or refunds.",
       keysNote: true,
       src: "/design/how-connect-2x.png",
       w: 600,
@@ -250,11 +250,21 @@ export function WhySheet() {
 }
 
 export function Comparison() {
-  const rows = [
+  const rows: Array<{
+    feature: string;
+    rs: boolean | string;
+    zapier: boolean | string;
+    csv: boolean | string;
+  }> = [
     { feature: "Full history backfill", rs: true, zapier: false, csv: false },
     { feature: "MRR dashboard tab", rs: true, zapier: false, csv: "Manual" },
     { feature: "Multi-source (Pro+)", rs: true, zapier: "Extra Zaps", csv: false },
-    { feature: "Scheduled refresh", rs: true, zapier: true, csv: false },
+    {
+      feature: "Scheduled refresh",
+      rs: "Hourly to weekly (Pro)",
+      zapier: true,
+      csv: false,
+    },
     { feature: "Data stays in your Sheet", rs: true, zapier: true, csv: true },
   ];
 
@@ -283,18 +293,21 @@ export function Comparison() {
               {rows.map((r) => (
                 <tr key={r.feature}>
                   <td>{r.feature}</td>
-                  <td data-label={brand.name} className={r.rs === true ? "yes" : "no"}>
-                    {r.rs === true ? "Yes" : String(r.rs)}
+                  <td
+                    data-label={brand.name}
+                    className={r.rs === true ? "yes" : r.rs === false ? "no" : "yes-ink"}
+                  >
+                    {r.rs === true ? "Yes" : r.rs === false ? "No" : r.rs}
                   </td>
                   <td
                     data-label="Zapier / Make"
-                    className={r.zapier === true ? "yes-ink" : "no"}
+                    className={r.zapier === true ? "yes-ink" : r.zapier === false ? "no" : "yes-ink"}
                   >
                     {r.zapier === true ? "Yes" : r.zapier === false ? "No" : r.zapier}
                   </td>
                   <td
                     data-label="CSV templates"
-                    className={r.csv === true ? "yes-ink" : "no"}
+                    className={r.csv === true ? "yes-ink" : r.csv === false ? "no" : "yes-ink"}
                   >
                     {r.csv === true ? "Yes" : r.csv === false ? "No" : r.csv}
                   </td>
