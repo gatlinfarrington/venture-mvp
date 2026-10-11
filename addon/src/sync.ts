@@ -1,4 +1,4 @@
-import { CONFIG, SHEET_NAMES, SOURCES, type SourceId } from "./lib/config";
+import { CONFIG, SHEET_NAMES, SOURCES, type ScheduleCadence, type SourceId } from "./lib/config";
 import { isBackfillIncomplete, resolveFetchCursor } from "./lib/backfill";
 import { checkLicenseSync, enforceSourceLimit, type LicenseStatus } from "./lib/license";
 import type { BackfillSourceRow } from "./lib/onboardingCopy";
@@ -381,8 +381,8 @@ export function runDemoMode(): SyncResult {
   };
 }
 
-export function installSchedule(): string {
-  return installScheduleTrigger();
+export function installSchedule(cadence?: import("./lib/config").ScheduleCadence): string {
+  return installScheduleTrigger(cadence);
 }
 
 export function removeSchedule(): string {

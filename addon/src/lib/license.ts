@@ -1,4 +1,4 @@
-import { CONFIG, getLicenseApiBase } from "./config";
+import { BUSINESS_MAX_STORES, CONFIG, getLicenseApiBase } from "./config";
 import { fetchJson, fetchJsonSync } from "./http";
 import { getConnectedSources, getLicenseKey } from "./properties";
 import { sourceLimitReachedMessage } from "./upgrade";
@@ -70,7 +70,7 @@ function fromPayload(data: {
     data.limits?.maxSources ??
     (tier === "pro" || tier === "business" ? 4 : CONFIG.FREE_MAX_SOURCES);
   const maxStores =
-    data.limits?.maxStores ?? (tier === "business" ? 20 : 1);
+    data.limits?.maxStores ?? (tier === "business" ? BUSINESS_MAX_STORES : 1);
   const allowSchedule =
     data.limits?.scheduledRefresh ?? (tier === "pro" || tier === "business");
 

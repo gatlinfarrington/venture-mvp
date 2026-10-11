@@ -20,7 +20,7 @@ describe("tierLimits", () => {
 
   it("business allows multiple stores", () => {
     expect(tierLimits("business").maxSources).toBe(4);
-    expect(tierLimits("business").maxStores).toBeGreaterThan(1);
+    expect(tierLimits("business").maxStores).toBe(20);
     expect(tierLimits("business").scheduledRefresh).toBe(true);
   });
 });

@@ -5,6 +5,7 @@
 import { BRAND } from "./lib/brand";
 import {
   EMAIL_DIGEST_SCOPE,
+  EMAIL_DIGEST_SCOPE_DECLARED,
   type DashboardTemplate,
   type ScheduleCadence,
   type SourceId,
@@ -32,7 +33,11 @@ import {
   setScheduleCadence,
   setStoresForSource,
 } from "./lib/properties";
-import { installDigestTrigger, removeDigestTrigger } from "./lib/schedule";
+import {
+  installDigestTrigger,
+  isScheduleEnabled,
+  removeDigestTrigger,
+} from "./lib/schedule";
 import { countConnectedStores, upsertStoresForSource } from "./lib/stores";
 import {
   getPricingUrl,
@@ -156,7 +161,11 @@ function sidebarGetSettings(): Record<string, unknown> {
     ...getAllSettingsForSidebar(),
     brandName: BRAND.name,
     pitch: BRAND.pitch,
-    emailDigestScope: EMAIL_DIGEST_SCOPE,
+    // Only expose digest when the sensitive scope is actually declared.
+    emailDigestAvailable: EMAIL_DIGEST_SCOPE_DECLARED,
+    ...(EMAIL_DIGEST_SCOPE_DECLARED
+      ? { emailDigestScope: EMAIL_DIGEST_SCOPE }
+      : {}),
     maxStores: license.maxStores,
     maxSources: license.maxSources,
     licenseTier: license.tier,
@@ -165,6 +174,7 @@ function sidebarGetSettings(): Record<string, unknown> {
     pricingUrl: getPricingUrl(),
     multiStoreUpgradeHeadline: multiStoreUpgradeHeadline(),
     multiStoreUpgradeBody: multiStoreUpgradeBody(),
+    scheduleEnabled: isScheduleEnabled(),
   };
 }
 
@@ -182,6 +192,8 @@ function sidebarSaveSettings(payload: {
   includeTrialingPastDue?: boolean;
   mrrGoal?: string | number;
   scheduleCadence?: ScheduleCadence;
+  /** When set, install or remove the time-driven sync trigger (cadence preserved either way). */
+  scheduleEnabled?: boolean;
   emailDigest?: boolean;
   template?: DashboardTemplate;
   csvMapJson?: string;
@@ -225,7 +237,12 @@ function sidebarSaveSettings(payload: {
   }
   if (payload.mrrGoal != null && payload.mrrGoal !== "") setMrrGoal(Number(payload.mrrGoal));
   if (payload.scheduleCadence) setScheduleCadence(payload.scheduleCadence);
-  if (typeof payload.emailDigest === "boolean") {
+  if (typeof payload.scheduleEnabled === "boolean") {
+    if (payload.scheduleEnabled) installSchedule(payload.scheduleCadence);
+    else removeSchedule();
+  }
+  // Digest only when the sensitive send_mail scope is declared in the manifest.
+  if (EMAIL_DIGEST_SCOPE_DECLARED && typeof payload.emailDigest === "boolean") {
     setEmailDigestOptIn(payload.emailDigest);
     if (payload.emailDigest) installDigestTrigger();
     else removeDigestTrigger();
