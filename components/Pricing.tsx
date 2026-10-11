@@ -7,7 +7,6 @@ import { REFUND_LINE } from "@/lib/copy";
 import { marketplaceUrlClient } from "@/lib/marketplace-client";
 import {
   checkoutEnabled,
-  everyPlanIncludes,
   pricing,
   type BillingInterval,
 } from "@/lib/site";
@@ -154,8 +153,8 @@ export function Pricing({ variant = "section" }: Props) {
             );
           })}
         </div>
-        <p className="pricing-shared-note mono muted">
-          {everyPlanIncludes.join(" · ")}
+        <p className="pricing-shared-note muted">
+          Every plan includes the help docs and the support form.
         </p>
         <p className="pricing-upgrade-note">
           Free covers one store with one-click refresh. Upgrade when you sell in two places or want

@@ -46,19 +46,37 @@ describe("migrateLegacyKeys", () => {
 });
 
 describe("enforceStoreLimit / maxStores", () => {
-  it("allows one store on free/pro (maxStores=1)", () => {
+  it("Pro with Polar + Lemon Squeezy syncs one store per source (both)", () => {
     const stores = migrateLegacyKeys({
-      lemon_squeezy: "a",
-      polar: "b",
+      lemon_squeezy: "ls_key",
+      polar: "polar_key",
     });
+    assert.equal(countConnectedStores(stores), 2);
     const limited = enforceStoreLimit(stores, 1);
-    assert.equal(limited.allowed.length, 1);
+    assert.equal(limited.allowed.length, 2, "one store on each source should sync");
+    assert.equal(limited.blocked.length, 0);
+    const sources = limited.allowed.map((a) => a.source).sort();
+    assert.deepEqual(sources, ["lemon_squeezy", "polar"]);
+  });
+
+  it("blocks a second store on the same source when maxStores=1", () => {
+    const stores = {
+      lemon_squeezy: [
+        { id: "us", label: "US", apiKey: "ls_us" },
+        { id: "eu", label: "EU", apiKey: "ls_eu" },
+      ],
+      polar: [{ id: "default", label: "Default", apiKey: "polar_1" }],
+    };
+    const limited = enforceStoreLimit(stores, 1);
+    assert.equal(limited.allowed.length, 2);
     assert.equal(limited.blocked.length, 1);
+    assert.equal(limited.blocked[0].source, "lemon_squeezy");
+    assert.equal(limited.blocked[0].store.id, "eu");
     assert.ok(limited.message?.includes("Business"));
     assert.ok(limited.message?.includes("/pricing"));
   });
 
-  it("allows up to 20 stores on business", () => {
+  it("allows up to 20 stores per source on business", () => {
     const stores = {
       lemon_squeezy: Array.from({ length: 12 }, (_, i) => ({
         id: `ls-${i}`,
@@ -73,9 +91,21 @@ describe("enforceStoreLimit / maxStores", () => {
     };
     assert.equal(countConnectedStores(stores), 22);
     const limited = enforceStoreLimit(stores, 20);
-    assert.equal(limited.allowed.length, 20);
-    assert.equal(limited.blocked.length, 2);
-    assert.ok(limited.message?.includes("/pricing"));
+    assert.equal(limited.allowed.length, 22);
+    assert.equal(limited.blocked.length, 0);
+
+    const over = {
+      lemon_squeezy: Array.from({ length: 21 }, (_, i) => ({
+        id: `ls-${i}`,
+        label: `LS ${i}`,
+        apiKey: `key-ls-${i}`,
+      })),
+    };
+    const capped = enforceStoreLimit(over, 20);
+    assert.equal(capped.allowed.length, 20);
+    assert.equal(capped.blocked.length, 1);
+    assert.ok(capped.message?.includes("per source"));
+    assert.ok(capped.message?.includes("/pricing"));
   });
 });
 

@@ -79,8 +79,9 @@ function normalizeStore(raw: Partial<StoreCredential> | null | undefined): Store
 }
 
 /**
- * Enforce total store slots (across all sources) from license `maxStores`.
- * Keeps earlier stores in source order (SOURCES order, then list order).
+ * Enforce store slots per source from license `maxStores`.
+ * Pro/Free: 1 store per source; Business: up to 20 per source (matches /pricing).
+ * Keeps earlier stores in list order within each source; sources follow SOURCES order.
  */
 export function enforceStoreLimit(
   stores: StoresBySource,
@@ -91,19 +92,33 @@ export function enforceStoreLimit(
   message?: string;
 } {
   const max = Math.max(1, Number(maxStores) || 1);
-  const all = listConnectedStores(stores);
-  if (all.length <= max) {
-    return { allowed: all, blocked: [] };
+  const allowed: Array<{ source: SourceId; store: StoreCredential }> = [];
+  const blocked: Array<{ source: SourceId; store: StoreCredential }> = [];
+
+  for (const meta of SOURCES) {
+    const connected = (stores[meta.id] || []).filter((s) => s.apiKey && s.apiKey.trim());
+    if (connected.length <= max) {
+      for (const store of connected) allowed.push({ source: meta.id, store });
+      continue;
+    }
+    for (const store of connected.slice(0, max)) {
+      allowed.push({ source: meta.id, store });
+    }
+    for (const store of connected.slice(max)) {
+      blocked.push({ source: meta.id, store });
+    }
   }
-  const allowed = all.slice(0, max);
-  const blocked = all.slice(max);
+
+  if (!blocked.length) {
+    return { allowed, blocked: [] };
+  }
   const blockedLabels = blocked
     .map((b) => `${labelForSource(b.source)} · ${b.store.label}`)
     .join(", ");
   const reason =
     max <= 1
-      ? `Multiple stores need Business. Not syncing: ${blockedLabels}`
-      : `Your plan allows ${max} store(s). Not syncing: ${blockedLabels}`;
+      ? `Multiple stores on one source need Business. Not syncing: ${blockedLabels}`
+      : `Your plan allows ${max} store(s) per source. Not syncing: ${blockedLabels}`;
   return {
     allowed,
     blocked,

@@ -27,9 +27,10 @@ describe("upgrade / pricing links", () => {
   it("Free/Pro second-store prompt links to /pricing", () => {
     const msg = storeLimitReachedMessage(1);
     assert.ok(msg.includes("Business"));
+    assert.ok(msg.includes("per source"));
     assert.ok(msg.endsWith(getPricingUrl()) || msg.includes("/pricing"));
     assert.ok(multiStoreUpgradeHeadline().includes("Business"));
-    assert.ok(multiStoreUpgradeBody().includes("Free and Pro"));
+    assert.ok(multiStoreUpgradeBody().includes("one store per source"));
   });
 
   it("source-limit upgrade links to /pricing", () => {
