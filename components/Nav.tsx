@@ -25,6 +25,7 @@ export function Nav() {
         <BrandWordmark />
         <nav className="nav-links" aria-label="Primary">
           <Link href="/pricing">Pricing</Link>
+          <Link href="/sample">Sample</Link>
           <Link href="/#how-it-works">How it works</Link>
           <Link href="/#faq">FAQ</Link>
           <Link href="/docs">Docs</Link>
@@ -67,6 +68,9 @@ export function Nav() {
           </InstallCta>
           <Link href="/pricing" onClick={() => setOpen(false)}>
             Pricing
+          </Link>
+          <Link href="/sample" onClick={() => setOpen(false)}>
+            Sample
           </Link>
           <Link href="/#how-it-works" onClick={() => setOpen(false)}>
             How it works
