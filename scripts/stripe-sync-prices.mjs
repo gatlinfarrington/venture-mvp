@@ -2,6 +2,7 @@
 /**
  * One-command Stripe catalog sync.
  * Creates (or reuses) Pro/Business products and prices with stable lookup_keys.
+ * Always sets product tax_code (Stripe Managed Payments).
  *
  * Usage:
  *   STRIPE_SECRET_KEY=sk_test_… npm run stripe:sync-prices
@@ -15,6 +16,9 @@ if (!KEY || KEY.includes("REPLACE")) {
 }
 
 const stripe = new Stripe(KEY, { apiVersion: "2026-09-30.endive" });
+
+/** Must match STRIPE_PRODUCT_TAX_CODE in lib/stripe-catalog.ts */
+const PRODUCT_TAX_CODE = "txcd_10103001";
 
 const catalog = [
   {
@@ -38,6 +42,13 @@ const catalog = [
   },
 ];
 
+function hasTaxCode(product) {
+  const raw = product.tax_code;
+  if (!raw) return false;
+  if (typeof raw === "string") return raw === PRODUCT_TAX_CODE;
+  return raw.id === PRODUCT_TAX_CODE;
+}
+
 async function ensureProduct(entry) {
   const metaKey = `revenuesheet_${entry.tier}`;
   const listed = await stripe.products.list({ limit: 100, active: true });
@@ -45,15 +56,21 @@ async function ensureProduct(entry) {
     (p) => p.metadata?.revenuesheet_product === metaKey || p.name === entry.productName,
   );
   if (found) {
+    if (!hasTaxCode(found)) {
+      const updated = await stripe.products.update(found.id, { tax_code: PRODUCT_TAX_CODE });
+      console.log(`product tax ${updated.id}  ${updated.name}  tax_code=${PRODUCT_TAX_CODE}`);
+      return updated;
+    }
     console.log(`product ok  ${found.id}  ${found.name}`);
     return found;
   }
   const created = await stripe.products.create({
     name: entry.productName,
     description: entry.description,
+    tax_code: PRODUCT_TAX_CODE,
     metadata: { revenuesheet_product: metaKey },
   });
-  console.log(`product new ${created.id}  ${created.name}`);
+  console.log(`product new ${created.id}  ${created.name}  tax_code=${PRODUCT_TAX_CODE}`);
   return created;
 }
 
