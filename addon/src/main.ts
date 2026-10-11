@@ -35,6 +35,13 @@ import {
 import { installDigestTrigger, removeDigestTrigger } from "./lib/schedule";
 import { countConnectedStores, upsertStoresForSource } from "./lib/stores";
 import {
+  getPricingUrl,
+  getSiteBaseUrl,
+  multiStoreUpgradeBody,
+  multiStoreUpgradeHeadline,
+  withPricingCta,
+} from "./lib/upgrade";
+import {
   installSchedule,
   paintEmptyWorkbook,
   removeSchedule,
@@ -154,6 +161,10 @@ function sidebarGetSettings(): Record<string, unknown> {
     maxSources: license.maxSources,
     licenseTier: license.tier,
     storeCount: countConnectedStores(getStoresBySource()),
+    siteUrl: getSiteBaseUrl(),
+    pricingUrl: getPricingUrl(),
+    multiStoreUpgradeHeadline: multiStoreUpgradeHeadline(),
+    multiStoreUpgradeBody: multiStoreUpgradeBody(),
   };
 }
 
@@ -203,7 +214,9 @@ function sidebarSaveSettings(payload: {
 
   const storeCount = countConnectedStores(getStoresBySource());
   if (storeCount > license.maxStores) {
-    return `Saved, but your plan allows ${license.maxStores} store(s) and you have ${storeCount}. Extra stores will not sync until you upgrade or remove keys.`;
+    return withPricingCta(
+      `Saved ${storeCount} store(s), but your plan allows ${license.maxStores}. Extra stores will not sync until you remove keys or upgrade`,
+    );
   }
 
   if (payload.currency) setDisplayCurrency(payload.currency);
