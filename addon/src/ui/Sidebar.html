@@ -180,6 +180,49 @@
         padding: 0;
         font-family: "Inter Tight", sans-serif;
       }
+      .toggle-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin: 8px 0 8px;
+        font-weight: 500;
+      }
+      .toggle-row input { width: auto; margin: 0; }
+      details.advanced {
+        margin-top: 14px;
+        border-top: 1px solid var(--hairline);
+        padding-top: 10px;
+      }
+      details.advanced > summary {
+        cursor: pointer;
+        font: 500 11px "JetBrains Mono", monospace;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        list-style: none;
+        margin-bottom: 8px;
+      }
+      details.advanced > summary::-webkit-details-marker { display: none; }
+      details.advanced > summary::after { content: " ▾"; }
+      details.advanced[open] > summary::after { content: " ▴"; }
+      select.field {
+        width: 100%;
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0 12px;
+        margin-bottom: 10px;
+        font: 400 13px "JetBrains Mono", monospace;
+        background: #fff;
+      }
+      textarea.field {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 12px;
+        font: 400 11px "JetBrains Mono", monospace;
+        margin-bottom: 10px;
+      }
     </style>
   </head>
   <body>
@@ -203,17 +246,17 @@
     <div id="sourceStatus"></div>
 
     <div class="eb">Stores</div>
-    <div class="hint" id="storesHint">One API key per source on Free and Pro. Business combines MRR across many stores.</div>
+    <div class="hint" id="storesHint">Pro includes one store per source. More stores need Business.</div>
 
     <div id="singleKeys">
       <label for="ls">Lemon Squeezy API key</label>
-      <input id="ls" type="password" placeholder="ls_api_… or type clear to remove" autocomplete="off" />
+      <input id="ls" type="password" placeholder="ls_api_…" autocomplete="off" />
       <label for="polar">Polar API key</label>
-      <input id="polar" type="password" placeholder="polar_oat_… or type clear to remove" autocomplete="off" />
+      <input id="polar" type="password" placeholder="polar_oat_…" autocomplete="off" />
       <label for="gumroad">Gumroad access token</label>
-      <input id="gumroad" type="password" placeholder="access_token or type clear to remove" autocomplete="off" />
+      <input id="gumroad" type="password" placeholder="gumroad_…" autocomplete="off" />
       <label for="stripe">Stripe restricted key</label>
-      <input id="stripe" type="password" placeholder="rk_live_… / rk_test_… or type clear to remove" autocomplete="off" />
+      <input id="stripe" type="password" placeholder="rk_live_…" autocomplete="off" />
       <div id="singleEmpty" class="empty-stores" style="display:none;">
         <strong>No stores connected</strong>
         <p>Paste a key above, save, then sync. Free and Pro include one store total across sources.</p>
@@ -228,6 +271,8 @@
       <button type="button" class="btn2" id="addStoreBtn" onclick="addStoreRow()" style="margin-top:4px;">Add store</button>
     </div>
 
+    <div class="hint" id="clearKeyHint">Type clear to remove a saved key.</div>
+
     <div class="upgrade" id="upgradePrompt" role="status">
       <strong id="upgradeHeadline">Multiple stores are on Business</strong>
       <p id="upgradeBody">Free and Pro include one store. Business combines MRR across up to 20.</p>
@@ -236,58 +281,66 @@
 
     <div class="eb">License & display</div>
     <label for="license">License key</label>
-    <input id="license" type="password" placeholder="rs_pro_… or rs_business_…" autocomplete="off" />
+    <input id="license" type="password" placeholder="rs_pro_…" autocomplete="off" />
     <label for="currency">Display currency</label>
     <input id="currency" type="text" placeholder="USD" maxlength="3" />
     <label for="mrrGoal">MRR goal</label>
     <input id="mrrGoal" type="number" placeholder="e.g. 10000" min="0" step="1" />
     <label for="template">Dashboard template</label>
-    <select id="template" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-bottom:10px;font:400 13px 'JetBrains Mono',monospace;background:#fff;">
+    <select id="template" class="field">
       <option value="growth" selected>Growth (+ ARR, LTV, cohorts, country)</option>
       <option value="classic">Classic (launch v2)</option>
     </select>
-    <label for="cadence">Auto-refresh cadence</label>
-    <select id="cadence" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-bottom:10px;font:400 13px 'JetBrains Mono',monospace;background:#fff;">
+
+    <label class="toggle-row" for="scheduleOn">
+      <input id="scheduleOn" type="checkbox" />
+      Scheduled refresh
+    </label>
+    <label for="cadence">Cadence</label>
+    <select id="cadence" class="field">
       <option value="hourly">Hourly</option>
       <option value="every_6h">Every 6 hours</option>
       <option value="daily">Daily</option>
       <option value="weekly">Weekly</option>
     </select>
-    <label for="includeTrial" style="display:flex;gap:8px;align-items:center;margin:8px 0 8px;font-weight:500;">
-      <input id="includeTrial" type="checkbox" style="width:auto;margin:0;" />
+
+    <label class="toggle-row" for="includeTrial">
+      <input id="includeTrial" type="checkbox" />
       Include trialing + past due in MRR
     </label>
-    <label for="emailDigest" style="display:flex;gap:8px;align-items:center;margin:0 0 12px;font-weight:500;">
-      <input id="emailDigest" type="checkbox" style="width:auto;margin:0;" />
-      Weekly email digest (opt-in)
-    </label>
-    <div class="hint" id="digestHint">Digest needs sensitive scope script.send_mail (not in the default manifest).</div>
 
-    <div class="eb">CSV fallback</div>
-    <label for="csvText">Paste CSV</label>
-    <textarea id="csvText" rows="4" placeholder="id,created,product,email,amount,currency,status,country,kind" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font:400 11px 'JetBrains Mono',monospace;margin-bottom:10px;"></textarea>
+    <div id="digestBlock" style="display:none;">
+      <label class="toggle-row" for="emailDigest">
+        <input id="emailDigest" type="checkbox" />
+        Weekly email digest (opt-in)
+      </label>
+    </div>
 
     <button class="btn" id="saveBtn" onclick="save()">Save settings</button>
     <button class="btn2" id="syncBtn" onclick="syncNow()">Sync now</button>
-    <button class="btn2" onclick="fullBackfill()">Full backfill</button>
-    <button class="btn2" onclick="demo()">Load example data</button>
-    <button class="btn2" onclick="importCsv()">Import CSV</button>
-    <button class="btn2" onclick="scheduleOn()">Enable scheduled refresh</button>
-    <button class="btn2" onclick="scheduleOff()">Disable schedule</button>
-    <button class="btn2" onclick="sendDigest()">Send weekly digest now</button>
+
+    <details class="advanced">
+      <summary>Advanced</summary>
+      <button class="btn2" onclick="fullBackfill()">Full backfill</button>
+      <button class="btn2" onclick="demo()">Load example data</button>
+      <label for="csvText" style="margin-top:10px;">Paste CSV</label>
+      <textarea id="csvText" class="field" rows="4" placeholder="id,created,product,email,amount,currency,status,country,kind"></textarea>
+      <button class="btn2" onclick="importCsv()">Import CSV</button>
+    </details>
 
     <div class="status" id="status">Keys are stored in your Google account (User Properties), not in the sheet.</div>
 
     <script>
       var SOURCE_OPTS = [
-        { id: "lemon_squeezy", label: "Lemon Squeezy" },
-        { id: "polar", label: "Polar" },
-        { id: "gumroad", label: "Gumroad" },
-        { id: "stripe", label: "Stripe" },
+        { id: "lemon_squeezy", label: "Lemon Squeezy", ph: "ls_api_…" },
+        { id: "polar", label: "Polar", ph: "polar_oat_…" },
+        { id: "gumroad", label: "Gumroad", ph: "gumroad_…" },
+        { id: "stripe", label: "Stripe", ph: "rk_live_…" },
       ];
       var maxStores = 1;
       var pricingUrl = "https://venture-mvp.vercel.app/pricing";
       var storeRows = [];
+      var emailDigestAvailable = false;
 
       function setStatus(msg, kind) {
         var el = document.getElementById("status");
@@ -322,6 +375,13 @@
             '" target="_blank" rel="noopener">View pricing</a>',
           "err",
         );
+      }
+
+      function keyPlaceholder(source) {
+        var opt = SOURCE_OPTS.filter(function (o) {
+          return o.id === source;
+        })[0];
+        return (opt && opt.ph) || "key_…";
       }
 
       function renderStoresEditor() {
@@ -364,7 +424,7 @@
             '" placeholder="e.g. US store" />' +
             "<label>API key</label>" +
             '<input class="store-key" type="password" value="" placeholder="' +
-            (row.hasKey ? "Saved · leave blank to keep, or type clear" : "Paste API key") +
+            keyPlaceholder(row.source) +
             '" autocomplete="off" />' +
             '<button type="button" class="btn2" style="margin-top:4px;height:36px;font-size:13px;" onclick="removeStoreRow(' +
             idx +
@@ -447,12 +507,17 @@
             document.getElementById("mrrGoal").value = s.mrrGoal || "";
             document.getElementById("template").value = s.template || "growth";
             document.getElementById("cadence").value = s.scheduleCadence || "hourly";
+            document.getElementById("scheduleOn").checked = !!s.scheduleEnabled;
             document.getElementById("includeTrial").checked = !!s.includeTrialingPastDue;
-            document.getElementById("emailDigest").checked = !!s.emailDigest;
-            if (s.emailDigestScope) {
-              document.getElementById("digestHint").textContent =
-                "Digest needs sensitive scope " + s.emailDigestScope + " (not in the default manifest).";
+
+            emailDigestAvailable = !!s.emailDigestAvailable;
+            document.getElementById("digestBlock").style.display = emailDigestAvailable
+              ? "block"
+              : "none";
+            if (emailDigestAvailable) {
+              document.getElementById("emailDigest").checked = !!s.emailDigest;
             }
+
             maxStores = Number(s.maxStores) || 1;
             pricingUrl = s.pricingUrl || pricingUrl;
             var multi = maxStores > 1;
@@ -467,14 +532,11 @@
             }
             hideUpgradePrompt();
 
-            var tier = s.licenseTier || "free";
             document.getElementById("storesHint").textContent = multi
               ? "Business · up to " +
                 maxStores +
                 " stores. Each row is one API key; MRR combines across all of them."
-              : "Your " +
-                tier +
-                " plan includes 1 store. Add another store requires Business.";
+              : "Pro includes one store per source. More stores need Business.";
 
             storeRows = [];
             window.__prevStores = s.stores || {};
@@ -546,9 +608,12 @@
           mrrGoal: document.getElementById("mrrGoal").value,
           template: document.getElementById("template").value,
           scheduleCadence: document.getElementById("cadence").value,
+          scheduleEnabled: document.getElementById("scheduleOn").checked,
           includeTrialingPastDue: document.getElementById("includeTrial").checked,
-          emailDigest: document.getElementById("emailDigest").checked,
         };
+        if (emailDigestAvailable) {
+          payload.emailDigest = document.getElementById("emailDigest").checked;
+        }
         if (maxStores > 1) {
           payload.storesBySource = collectStoresBySource();
         } else {
@@ -561,7 +626,6 @@
           .withSuccessHandler(function (msg) {
             var kind = msg.indexOf("Upgrade at") >= 0 ? "err" : "ok";
             if (msg.indexOf("Upgrade at ") >= 0) {
-              var url = msg.split("Upgrade at ").pop();
               setStatusHtml(
                 msg.replace(
                   /Upgrade at (\S+)/,
@@ -619,28 +683,6 @@
           .sidebarDemo();
       }
 
-      function scheduleOn() {
-        google.script.run
-          .withSuccessHandler(function (msg) {
-            setStatus(msg, "ok");
-          })
-          .withFailureHandler(function (e) {
-            setStatus(String(e), "err");
-          })
-          .sidebarEnableSchedule();
-      }
-
-      function scheduleOff() {
-        google.script.run
-          .withSuccessHandler(function (msg) {
-            setStatus(msg, "ok");
-          })
-          .withFailureHandler(function (e) {
-            setStatus(String(e), "err");
-          })
-          .sidebarDisableSchedule();
-      }
-
       function importCsv() {
         var text = document.getElementById("csvText").value;
         if (!text || !text.trim()) {
@@ -656,18 +698,6 @@
             setStatus(String(e), "err");
           })
           .sidebarImportCsv(text);
-      }
-
-      function sendDigest() {
-        setStatus("Sending digest…");
-        google.script.run
-          .withSuccessHandler(function (r) {
-            setStatus(r.message, r.ok ? "ok" : "err");
-          })
-          .withFailureHandler(function (e) {
-            setStatus(String(e), "err");
-          })
-          .sidebarSendDigest();
       }
 
       load();

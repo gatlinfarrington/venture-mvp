@@ -51,7 +51,16 @@ export const SHEET_NAMES = {
 /** Optional sensitive scope for weekly digest — NOT in default manifest. */
 export const EMAIL_DIGEST_SCOPE = "https://www.googleapis.com/auth/script.send_mail";
 
+/**
+ * Must match whether EMAIL_DIGEST_SCOPE is listed in `src/appsscript.json` oauthScopes.
+ * Default build omits it — sidebar must not promise digest features.
+ */
+export const EMAIL_DIGEST_SCOPE_DECLARED = false;
+
 export const DIGEST_HANDLER = "runWeeklyDigest";
+
+/** Business tier store cap — must match site `tierLimits("business").maxStores` /pricing. */
+export const BUSINESS_MAX_STORES = 20;
 
 export function getLicenseApiBase(): string {
   try {
