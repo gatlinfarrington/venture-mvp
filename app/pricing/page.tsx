@@ -24,7 +24,7 @@ const includes = [
   "Data written to your own Google Sheet",
   "Named tabs: Orders, Subscriptions, Customers, Refunds, Dashboard",
   "Full history backfill on every plan",
-  "Named ranges for formulas (rs_orders and friends)",
+  "Named ranges for formulas (rs_orders, rs_subs, rs_customers, rs_mrr_monthly)",
 ];
 
 const compareRows = [

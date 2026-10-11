@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { InstallCta } from "@/components/InstallCta";
 import { Reveal } from "@/components/Reveal";
-import { SampleSheetLink } from "@/components/SampleSheetLink";
 import { REFUND_LINE } from "@/lib/copy";
 import { marketplaceUrlClient } from "@/lib/marketplace-client";
 import {
@@ -12,6 +11,7 @@ import {
   pricing,
   type BillingInterval,
 } from "@/lib/site";
+import Link from "next/link";
 
 type Props = {
   /** Dedicated /pricing page uses inner-page H1; homepage keeps section H2. */
@@ -107,7 +107,9 @@ export function Pricing({ variant = "section" }: Props) {
                     >
                       {listing ? "Install free" : "Join the launch list"}
                     </InstallCta>
-                    <SampleSheetLink className="btn btn-secondary" source="pricing-free-sample" />
+                    <Link className="btn btn-secondary" href="/sample">
+                      See a sample sheet
+                    </Link>
                   </div>
                 ) : paidCheckoutReady ? (
                   <div className="price-cta-stack">

@@ -2,6 +2,7 @@
 export const SITEMAP_ROUTES_FALLBACK = [
   "/",
   "/pricing",
+  "/sample",
   "/about",
   "/security",
   "/support",

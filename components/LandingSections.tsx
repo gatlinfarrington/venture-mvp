@@ -4,7 +4,6 @@ import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
 import { ResponsiveCrop } from "@/components/ResponsiveCrop";
 import { Reveal } from "@/components/Reveal";
-import { SampleSheetLink } from "@/components/SampleSheetLink";
 import { brand, marketplaceUrl } from "@/lib/brand";
 import { REFUND_LINE } from "@/lib/copy";
 import Link from "next/link";
@@ -35,15 +34,16 @@ export function Hero() {
                 <InstallCta className="btn btn-primary" source="hero">
                   Install for Google Sheets
                 </InstallCta>
-                <a className="btn btn-secondary" href="#dashboard">
-                  See the dashboard
-                </a>
-                <SampleSheetLink className="btn btn-secondary" source="hero-sample" />
+                <Link className="btn btn-secondary" href="/sample">
+                  See a sample sheet
+                </Link>
               </>
             ) : (
               <>
                 <LaunchInvite id="launch" source="hero" />
-                <SampleSheetLink className="btn btn-secondary" source="hero-sample" />
+                <Link className="btn btn-secondary" href="/sample">
+                  See a sample sheet
+                </Link>
               </>
             )}
           </div>
