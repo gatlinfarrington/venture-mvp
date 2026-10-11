@@ -3690,9 +3690,8 @@ a.tag-pill:focus-visible {
 }
 
 .sample-page-intro {
-  max-width: none;
+  /* Keep .container horizontal centering; only left-align copy with the frame. */
   text-align: left;
-  margin-inline: 0;
 }
 
 .sample-page-intro .sample-lede {

@@ -107,11 +107,11 @@ test.describe("/sample acceptance", () => {
     const frameScroll = await scroll.evaluate((el) => el.scrollWidth - el.clientWidth);
     expect(frameScroll).toBeGreaterThan(8);
 
-    await expect(page.locator(".sample-scroll-hint")).toBeVisible();
+    await expect(page.locator(".sample-scroll-hint")).toHaveClass(/is-visible/);
     await scroll.evaluate((el) => {
       el.scrollLeft = 40;
     });
-    await expect(page.locator(".sample-scroll-hint")).toHaveClass(/is-hidden/);
+    await expect(page.locator(".sample-scroll-hint")).not.toHaveClass(/is-visible/);
 
     await expect(page.locator(".sample-fx")).toBeHidden();
     await expect(page.locator(".sample-example-pill")).toBeVisible();

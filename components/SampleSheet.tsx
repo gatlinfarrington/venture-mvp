@@ -380,14 +380,42 @@ export function SampleSheet() {
     if (!el) return;
     el.scrollLeft = 0;
     setScrolledX(false);
+
+    let cancelled = false;
     const measure = () => {
+      if (cancelled) return;
       setCanScrollX(el.scrollWidth > el.clientWidth + 1);
       setScrolledX(el.scrollLeft > 8);
     };
+
     measure();
+    const t0 = window.setTimeout(measure, 0);
+    const t1 = window.setTimeout(measure, 50);
+    const t2 = window.setTimeout(measure, 200);
+
     const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+    const observeGrids = () => {
+      for (const grid of el.querySelectorAll(".sample-grid")) ro.observe(grid);
+    };
+    observeGrids();
+
+    const mo = new MutationObserver(() => {
+      observeGrids();
+      measure();
+    });
+    mo.observe(el, { childList: true, subtree: true });
+    window.addEventListener("resize", measure);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t0);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      ro.disconnect();
+      mo.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, [tab]);
 
   const formulaRef = tab === "Dashboard" ? "B1" : "A2";
