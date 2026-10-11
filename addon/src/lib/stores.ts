@@ -1,6 +1,7 @@
 import type { SourceId } from "./config";
 import { SOURCES } from "./config";
 import type { ImportBundle } from "../importers/types";
+import { withPricingCta } from "./upgrade";
 
 /** One API key + label for a merchant store under a source. */
 export interface StoreCredential {
@@ -96,12 +97,17 @@ export function enforceStoreLimit(
   }
   const allowed = all.slice(0, max);
   const blocked = all.slice(max);
+  const blockedLabels = blocked
+    .map((b) => `${labelForSource(b.source)} · ${b.store.label}`)
+    .join(", ");
+  const reason =
+    max <= 1
+      ? `Multiple stores need Business. Not syncing: ${blockedLabels}`
+      : `Your plan allows ${max} store(s). Not syncing: ${blockedLabels}`;
   return {
     allowed,
     blocked,
-    message: `Your plan allows ${max} store(s). Not syncing: ${blocked
-      .map((b) => `${labelForSource(b.source)} · ${b.store.label}`)
-      .join(", ")}.`,
+    message: withPricingCta(reason),
   };
 }
 

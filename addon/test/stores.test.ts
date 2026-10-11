@@ -54,7 +54,8 @@ describe("enforceStoreLimit / maxStores", () => {
     const limited = enforceStoreLimit(stores, 1);
     assert.equal(limited.allowed.length, 1);
     assert.equal(limited.blocked.length, 1);
-    assert.ok(limited.message?.includes("1 store"));
+    assert.ok(limited.message?.includes("Business"));
+    assert.ok(limited.message?.includes("/pricing"));
   });
 
   it("allows up to 20 stores on business", () => {
@@ -74,6 +75,7 @@ describe("enforceStoreLimit / maxStores", () => {
     const limited = enforceStoreLimit(stores, 20);
     assert.equal(limited.allowed.length, 20);
     assert.equal(limited.blocked.length, 2);
+    assert.ok(limited.message?.includes("/pricing"));
   });
 });
 

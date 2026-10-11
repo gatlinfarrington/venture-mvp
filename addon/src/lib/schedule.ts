@@ -1,7 +1,7 @@
 import { CONFIG, DIGEST_HANDLER, type ScheduleCadence } from "./config";
-import { SCHEDULE_NEEDS_LICENSE } from "./onboardingCopy";
 import { checkLicenseSync } from "./license";
 import { getScheduleCadence, isEmailDigestOptIn, setScheduleCadence } from "./properties";
+import { scheduleNeedsPaidMessage } from "./upgrade";
 
 function removeTriggersByHandler(handler: string): void {
   for (const t of ScriptApp.getProjectTriggers()) {
@@ -13,7 +13,7 @@ function removeTriggersByHandler(handler: string): void {
 export function installSchedule(cadence?: ScheduleCadence): string {
   const license = checkLicenseSync();
   if (!license.allowSchedule) {
-    return SCHEDULE_NEEDS_LICENSE;
+    return scheduleNeedsPaidMessage();
   }
   const chosen = cadence || getScheduleCadence();
   setScheduleCadence(chosen);

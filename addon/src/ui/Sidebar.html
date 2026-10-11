@@ -100,6 +100,86 @@
       .src small { display: block; font: 400 11px "JetBrains Mono", monospace; color: var(--muted); margin-top: 2px; }
       .dot { color: var(--signal); font-weight: 500; }
       .dot.off { color: var(--muted); }
+      .store-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fff;
+      }
+      .store-card .card-title {
+        font: 500 12px "JetBrains Mono", monospace;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 10px;
+      }
+      .store-card select {
+        width: 100%;
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0 12px;
+        margin-bottom: 10px;
+        font: 400 13px "JetBrains Mono", monospace;
+        background: #fff;
+      }
+      .empty-stores {
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        padding: 16px 14px;
+        margin-bottom: 10px;
+        background: var(--surface2);
+      }
+      .empty-stores strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .empty-stores p {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .upgrade {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin: 8px 0 10px;
+        background: var(--surface2);
+        display: none;
+      }
+      .upgrade.show { display: block; }
+      .upgrade strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .upgrade p {
+        margin: 0 0 10px;
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .upgrade a {
+        color: var(--signal);
+        font: 500 13px "Inter Tight", sans-serif;
+        text-decoration: underline;
+      }
+      .linkish {
+        color: var(--signal);
+        font-size: 12px;
+        font-weight: 500;
+        text-decoration: underline;
+        cursor: pointer;
+        background: none;
+        border: 0;
+        padding: 0;
+        font-family: "Inter Tight", sans-serif;
+      }
     </style>
   </head>
   <body>
@@ -122,21 +202,36 @@
     <div class="eb">Sources</div>
     <div id="sourceStatus"></div>
 
-    <div class="eb">API keys</div>
+    <div class="eb">Stores</div>
+    <div class="hint" id="storesHint">One API key per source on Free and Pro. Business combines MRR across many stores.</div>
+
     <div id="singleKeys">
-      <label for="ls">Lemon Squeezy</label>
-      <input id="ls" type="password" placeholder="ls_api_… or leave blank to clear" autocomplete="off" />
-      <label for="polar">Polar</label>
-      <input id="polar" type="password" placeholder="polar_oat_…" autocomplete="off" />
-      <label for="gumroad">Gumroad</label>
-      <input id="gumroad" type="password" placeholder="access_token" autocomplete="off" />
-      <label for="stripe">Stripe (restricted read-only key)</label>
-      <input id="stripe" type="password" placeholder="rk_live_… or rk_test_…" autocomplete="off" />
+      <label for="ls">Lemon Squeezy API key</label>
+      <input id="ls" type="password" placeholder="ls_api_… or type clear to remove" autocomplete="off" />
+      <label for="polar">Polar API key</label>
+      <input id="polar" type="password" placeholder="polar_oat_… or type clear to remove" autocomplete="off" />
+      <label for="gumroad">Gumroad access token</label>
+      <input id="gumroad" type="password" placeholder="access_token or type clear to remove" autocomplete="off" />
+      <label for="stripe">Stripe restricted key</label>
+      <input id="stripe" type="password" placeholder="rk_live_… / rk_test_… or type clear to remove" autocomplete="off" />
+      <div id="singleEmpty" class="empty-stores" style="display:none;">
+        <strong>No stores connected</strong>
+        <p>Paste a key above, save, then sync. Free and Pro include one store total across sources.</p>
+      </div>
+      <button type="button" class="btn2" id="addStoreLockedBtn" onclick="showUpgradePrompt()" style="margin-top:4px;">
+        Add another store
+      </button>
     </div>
+
     <div id="multiStores" style="display:none;">
-      <div class="hint" id="storesHint">Business plan: add up to 20 stores. Combined MRR across all of them.</div>
       <div id="storesEditor"></div>
       <button type="button" class="btn2" id="addStoreBtn" onclick="addStoreRow()" style="margin-top:4px;">Add store</button>
+    </div>
+
+    <div class="upgrade" id="upgradePrompt" role="status">
+      <strong id="upgradeHeadline">Multiple stores are on Business</strong>
+      <p id="upgradeBody">Free and Pro include one store. Business combines MRR across up to 20.</p>
+      <a id="upgradeLink" href="https://venture-mvp.vercel.app/pricing" target="_blank" rel="noopener">View pricing</a>
     </div>
 
     <div class="eb">License & display</div>
@@ -191,12 +286,19 @@
         { id: "stripe", label: "Stripe" },
       ];
       var maxStores = 1;
+      var pricingUrl = "https://venture-mvp.vercel.app/pricing";
       var storeRows = [];
 
       function setStatus(msg, kind) {
         var el = document.getElementById("status");
         el.className = "status" + (kind ? " " + kind : "");
         el.textContent = msg;
+      }
+
+      function setStatusHtml(html, kind) {
+        var el = document.getElementById("status");
+        el.className = "status" + (kind ? " " + kind : "");
+        el.innerHTML = html;
       }
 
       function slugId(label) {
@@ -208,16 +310,42 @@
         return s || "store";
       }
 
+      function hideUpgradePrompt() {
+        document.getElementById("upgradePrompt").classList.remove("show");
+      }
+
+      function showUpgradePrompt() {
+        document.getElementById("upgradePrompt").classList.add("show");
+        setStatusHtml(
+          "Multiple stores need Business. <a href=\"" +
+            pricingUrl +
+            '" target="_blank" rel="noopener">View pricing</a>',
+          "err",
+        );
+      }
+
       function renderStoresEditor() {
         var root = document.getElementById("storesEditor");
+        if (!storeRows.length) {
+          root.innerHTML =
+            '<div class="empty-stores">' +
+            "<strong>No stores yet</strong>" +
+            "<p>Add a store, paste its API key, and save. MRR combines across every store you connect.</p>" +
+            "</div>";
+          return;
+        }
         var html = "";
         storeRows.forEach(function (row, idx) {
           html +=
-            '<div class="src" style="display:block;padding:10px 12px;" data-idx="' +
+            '<div class="store-card" data-idx="' +
             idx +
             '">' +
-            '<label>Source</label>' +
-            '<select class="store-source" style="width:100%;height:36px;margin-bottom:8px;border:1px solid var(--border);border-radius:8px;font:400 12px JetBrains Mono,monospace;">' +
+            '<div class="card-title">Store ' +
+            (idx + 1) +
+            (row.hasKey ? " · connected" : " · needs key") +
+            "</div>" +
+            "<label>Source</label>" +
+            '<select class="store-source">' +
             SOURCE_OPTS.map(function (o) {
               return (
                 '<option value="' +
@@ -230,25 +358,37 @@
               );
             }).join("") +
             "</select>" +
-            '<label>Store label</label>' +
+            "<label>Store label</label>" +
             '<input class="store-label" type="text" value="' +
             (row.label || "").replace(/"/g, "&quot;") +
             '" placeholder="e.g. US store" />' +
-            '<label>API key</label>' +
+            "<label>API key</label>" +
             '<input class="store-key" type="password" value="" placeholder="' +
-            (row.hasKey ? "•••••••• (saved · leave blank to keep)" : "Paste key") +
+            (row.hasKey ? "Saved · leave blank to keep, or type clear" : "Paste API key") +
             '" autocomplete="off" />' +
             '<button type="button" class="btn2" style="margin-top:4px;height:36px;font-size:13px;" onclick="removeStoreRow(' +
             idx +
             ')">Remove store</button>' +
             "</div>";
         });
-        root.innerHTML = html || '<div class="hint">No stores yet. Click Add store.</div>';
+        root.innerHTML = html;
       }
 
       function addStoreRow() {
+        hideUpgradePrompt();
         if (storeRows.length >= maxStores) {
-          setStatus("Your plan allows " + maxStores + " store(s).", "err");
+          if (maxStores <= 1) {
+            showUpgradePrompt();
+            return;
+          }
+          setStatusHtml(
+            "Your plan allows " +
+              maxStores +
+              ' store(s). <a href="' +
+              pricingUrl +
+              '" target="_blank" rel="noopener">View pricing</a>',
+            "err",
+          );
           return;
         }
         storeRows.push({
@@ -266,7 +406,7 @@
       }
 
       function collectStoresBySource() {
-        var nodes = document.querySelectorAll("#storesEditor > .src");
+        var nodes = document.querySelectorAll("#storesEditor > .store-card");
         var bySource = {};
         nodes.forEach(function (node, i) {
           var source = node.querySelector(".store-source").value;
@@ -282,7 +422,6 @@
             clear: false,
           });
         });
-        // Mark removed prior stores for each source
         SOURCE_OPTS.forEach(function (o) {
           var kept = {};
           (bySource[o.id] || []).forEach(function (s) {
@@ -315,39 +454,50 @@
                 "Digest needs sensitive scope " + s.emailDigestScope + " (not in the default manifest).";
             }
             maxStores = Number(s.maxStores) || 1;
+            pricingUrl = s.pricingUrl || pricingUrl;
             var multi = maxStores > 1;
             document.getElementById("singleKeys").style.display = multi ? "none" : "block";
             document.getElementById("multiStores").style.display = multi ? "block" : "none";
-            document.getElementById("storesHint").textContent =
-              "Up to " +
-              maxStores +
-              " stores on your plan (" +
-              (s.licenseTier || "free") +
-              "). Combined MRR across all of them.";
+            document.getElementById("upgradeLink").href = pricingUrl;
+            if (s.multiStoreUpgradeHeadline) {
+              document.getElementById("upgradeHeadline").textContent = s.multiStoreUpgradeHeadline;
+            }
+            if (s.multiStoreUpgradeBody) {
+              document.getElementById("upgradeBody").textContent = s.multiStoreUpgradeBody;
+            }
+            hideUpgradePrompt();
+
+            var tier = s.licenseTier || "free";
+            document.getElementById("storesHint").textContent = multi
+              ? "Business · up to " +
+                maxStores +
+                " stores. Each row is one API key; MRR combines across all of them."
+              : "Your " +
+                tier +
+                " plan includes 1 store. Add another store requires Business.";
 
             storeRows = [];
             window.__prevStores = s.stores || {};
-            if (multi) {
-              SOURCE_OPTS.forEach(function (o) {
-                var list = (s.stores && s.stores[o.id]) || [];
-                list.forEach(function (st) {
-                  storeRows.push({
-                    id: st.id,
-                    source: o.id,
-                    label: st.label,
-                    hasKey: !!st.hasKey,
-                  });
+            var anyConnected = false;
+            SOURCE_OPTS.forEach(function (o) {
+              var list = (s.stores && s.stores[o.id]) || [];
+              list.forEach(function (st) {
+                if (st.hasKey) anyConnected = true;
+                storeRows.push({
+                  id: st.id,
+                  source: o.id,
+                  label: st.label,
+                  hasKey: !!st.hasKey,
                 });
               });
-              if (!storeRows.length) {
-                storeRows.push({
-                  id: "default",
-                  source: "lemon_squeezy",
-                  label: "Default",
-                  hasKey: false,
-                });
-              }
+            });
+
+            if (multi) {
               renderStoresEditor();
+            } else {
+              document.getElementById("singleEmpty").style.display = anyConnected
+                ? "none"
+                : "block";
             }
 
             var html = "";
@@ -357,7 +507,14 @@
                 return x.hasKey;
               });
               var detail = on
-                ? list.length + " store" + (list.length === 1 ? "" : "s")
+                ? list
+                    .filter(function (x) {
+                      return x.hasKey;
+                    })
+                    .map(function (x) {
+                      return x.label;
+                    })
+                    .join(", ")
                 : "Not connected";
               html +=
                 '<div class="src"><div><b>' +
@@ -371,7 +528,8 @@
                 "</span></div>";
             });
             document.getElementById("sourceStatus").innerHTML = html;
-            if (s.lastSyncAt) setStatus("Last sync: " + s.lastSyncAt + (s.demoMode ? " (example data)" : ""), "ok");
+            if (s.lastSyncAt)
+              setStatus("Last sync: " + s.lastSyncAt + (s.demoMode ? " (example data)" : ""), "ok");
           })
           .withFailureHandler(function (e) {
             setStatus(String(e), "err");
@@ -380,6 +538,7 @@
       }
 
       function save() {
+        hideUpgradePrompt();
         setStatus("Saving…");
         var payload = {
           licenseKey: document.getElementById("license").value,
@@ -400,7 +559,19 @@
         }
         google.script.run
           .withSuccessHandler(function (msg) {
-            setStatus(msg, "ok");
+            var kind = msg.indexOf("Upgrade at") >= 0 ? "err" : "ok";
+            if (msg.indexOf("Upgrade at ") >= 0) {
+              var url = msg.split("Upgrade at ").pop();
+              setStatusHtml(
+                msg.replace(
+                  /Upgrade at (\S+)/,
+                  '<a href="$1" target="_blank" rel="noopener">Upgrade at $1</a>',
+                ),
+                kind,
+              );
+            } else {
+              setStatus(msg, kind);
+            }
             load();
           })
           .withFailureHandler(function (e) {

@@ -1,6 +1,7 @@
 import { CONFIG, getLicenseApiBase } from "./config";
 import { fetchJson, fetchJsonSync } from "./http";
 import { getConnectedSources, getLicenseKey } from "./properties";
+import { sourceLimitReachedMessage } from "./upgrade";
 
 /** Matches the Next.js site's Tier union. */
 export type LicenseTier = "free" | "pro" | "business" | "unknown";
@@ -190,6 +191,6 @@ export function enforceSourceLimit(
   return {
     allowed,
     blocked,
-    message: `Free tier allows ${license.maxSources} source(s). Upgrade to sync: ${blocked.join(", ")}.`,
+    message: sourceLimitReachedMessage(license.maxSources, blocked),
   };
 }

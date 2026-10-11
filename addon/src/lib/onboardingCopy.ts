@@ -97,5 +97,6 @@ export const EMPTY_CHART_COPY =
 export const SYNCING_CHART_COPY =
   "Charts draw once the backfill finishes, so the history isn't half a picture. Large stores can take a few syncs.";
 
+/** @deprecated Prefer scheduleNeedsPaidMessage() from ./upgrade (includes /pricing). */
 export const SCHEDULE_NEEDS_LICENSE =
-  "Paste your license key in the sidebar (License & display).";
+  "Scheduled refresh needs Pro or Business · paste your key in License & display.";

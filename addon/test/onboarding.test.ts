@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   EMPTY_STATUS_LEFT,
-  SCHEDULE_NEEDS_LICENSE,
   progressBarLabel,
   progressPctForSource,
   statusLabel,
   syncingStatusLeft,
   syncingStatusRight,
 } from "../src/lib/onboardingCopy";
+import { scheduleNeedsPaidMessage } from "../src/lib/upgrade";
 
 describe("onboarding copy helpers", () => {
   it("builds a 28-char progress bar plus percent", () => {
@@ -56,11 +56,13 @@ describe("onboarding copy helpers", () => {
     );
   });
 
-  it("keeps empty-state and schedule error copy stable", () => {
+  it("keeps empty-state copy stable", () => {
     assert.ok(EMPTY_STATUS_LEFT.includes("NOT CONNECTED"));
-    assert.equal(
-      SCHEDULE_NEEDS_LICENSE,
-      "Paste your license key in the sidebar (License & display).",
-    );
+  });
+
+  it("points schedule upgrade at /pricing", () => {
+    const msg = scheduleNeedsPaidMessage();
+    assert.ok(msg.includes("Pro or Business"));
+    assert.ok(msg.includes("/pricing"));
   });
 });
