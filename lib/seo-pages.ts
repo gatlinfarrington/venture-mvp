@@ -25,7 +25,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "What “analytics” means here",
         paragraphs: [
-          "Not another hosted chart product. You get an Orders tab with product, purchaser email, amount, and refund status, plus Dashboard tiles that roll Gumroad net revenue alongside Polar or Lemon Squeezy when those sources are connected.",
+          "Not another hosted chart product. You get an Orders tab with product, purchaser email, amount, and refund status, plus Dashboard tiles that roll Gumroad net revenue alongside Polar or Lemon Squeezy when those sources are connected. Memberships count toward MRR, normalized monthly; one-time sales go to net revenue.",
         ],
         bullets: [
           "Full sales history backfill on first connect",
@@ -37,6 +37,12 @@ export const seoPages: SeoPage[] = [
         h2: "Compared to CSV exports and Zapier",
         paragraphs: [
           "CSV exports go stale the day after you paste. Zapier can append new sales but rarely rebuilds history cleanly. An importer built for Sheets walks Gumroad’s API once, then keeps the sheet current on Free (manual) or Pro (scheduled).",
+        ],
+      },
+      {
+        h2: "How to connect",
+        paragraphs: [
+          `Once you install ${brand.name} (at launch), open the sidebar, choose Gumroad, and paste an access token from Settings › Advanced (create an application, then Generate access token). The add-on only reads; it never creates, edits, or refunds.`,
         ],
       },
       {
@@ -81,7 +87,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "How to connect",
         paragraphs: [
-          `Install ${brand.name}, open the sidebar, choose Stripe, and paste a restricted key with read access to charges, subscriptions, customers, and refunds. Run Backfill once, then enable scheduled refresh on Pro or Business. For stores without an API, use CSV import in the sidebar.`,
+          `Once you install ${brand.name} (at launch), open the sidebar, choose Stripe, and paste a restricted key with read access to charges, subscriptions, customers, and refunds. The add-on only reads; it never creates, edits, or refunds. Run Backfill once, then enable scheduled refresh on Pro or Business. For stores without an API, use CSV import in the sidebar.`,
         ],
       },
     ],
@@ -92,7 +98,7 @@ export const seoPages: SeoPage[] = [
     description:
       "Polar.sh analytics in Google Sheets: orders, subscriptions, refunds, and an MRR dashboard that stacks Polar with Lemon Squeezy or Gumroad.",
     h1: "Polar analytics without leaving your spreadsheet",
-    lede: `Polar’s product UI is built for shipping. ${brand.name} is built for the operators who still open a Sheet every Monday, backfilling Polar history into named tabs and keeping MRR honest across orgs and marketplaces.`,
+    lede: `Polar’s product UI is built for shipping. ${brand.name} is built for the operators who still open a Sheet every Monday, backfilling Polar history into named tabs and keeping MRR honest across marketplaces. Multiple Polar orgs need separate tokens and Business (up to 20 stores).`,
     ogEyebrow: "Polar.sh",
     ogTitle: "Polar analytics in Google Sheets",
     sections: [
@@ -116,7 +122,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "How to connect",
         paragraphs: [
-          `Install ${brand.name}, open the sidebar, choose Polar, and paste an organization access token with read access to orders and subscriptions. Run Backfill once, then enable scheduled refresh on Pro or Business.`,
+          `Once you install ${brand.name} (at launch), open the sidebar, choose Polar, and paste an organization access token with read access to orders and subscriptions. The add-on only reads; it never creates, edits, or refunds. Run Backfill once, then enable scheduled refresh on Pro or Business.`,
         ],
       },
     ],
@@ -134,18 +140,18 @@ export const seoPages: SeoPage[] = [
       {
         h2: "Importer details",
         paragraphs: [
-          "Connect with a Lemon Squeezy API key scoped to the store you want. The first run backfills historical orders; later syncs are incremental. Refunds and subscription state changes update existing rows by id.",
+          "Connect with a Lemon Squeezy API key. Lemon Squeezy keys are account-level: their docs do not offer read-only or single-store limits. Name the key RevenueSheet so you can delete it anytime. The first run backfills historical orders; later syncs are incremental. Refunds and subscription state changes update existing rows by id. The add-on only reads; it never creates, edits, or refunds.",
         ],
         bullets: [
           "One store on Free/Pro; up to 20 stores on Business, one combined MRR",
           "Dashboard series color for Lemon Squeezy is ink",
-          "Compatible with Lemon Squeezy API changes as long as the API remains",
+          "Compatible with Lemon Squeezy API changes as long as the API remains available",
         ],
       },
       {
         h2: "MRR from Lemon Squeezy subscriptions",
         paragraphs: [
-          "Active subscriptions contribute to the Dashboard MRR tile. Past-due and canceled states feed churn. One-time purchases land in net revenue without inflating MRR.",
+          "Active subscriptions contribute to the Dashboard MRR tile. Logo churn uses cancellations over a trailing window (default 30 days) divided by how many subscriptions were active at the start of that window; see How we calculate MRR and churn. One-time purchases land in net revenue without inflating MRR.",
         ],
       },
       {

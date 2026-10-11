@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { InstallCta } from "@/components/InstallCta";
+import { LaunchAvailabilityNote } from "@/components/LaunchAvailabilityNote";
 import { getSeoPage, seoPages } from "@/lib/seo-pages";
 import { siteConfig } from "@/lib/site";
 
@@ -39,6 +40,7 @@ export default async function SeoMarketingPage({ params }: Props) {
     <main className="seo-page container">
       <p className="eyebrow">Guide</p>
       <h1>{page.h1}</h1>
+      <LaunchAvailabilityNote />
       <p className="body-lg muted" style={{ maxWidth: "62ch", marginBottom: "var(--space-8)" }}>
         {page.lede}
       </p>

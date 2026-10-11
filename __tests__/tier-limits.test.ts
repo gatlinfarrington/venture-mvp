@@ -39,6 +39,10 @@ describe("pricing", () => {
       "Up to 20 stores per source, one combined MRR",
     );
     expect(pricing.pro.features).toContain("All four sources plus CSV import");
+    expect(pricing.pro.features).toContain(
+      "MRR, churn, and revenue by product and source",
+    );
+    expect(pricing.pro.features).not.toContain("Revenue by product and source");
   });
 
   it("Pro and Business share the same refresh cadence copy", () => {

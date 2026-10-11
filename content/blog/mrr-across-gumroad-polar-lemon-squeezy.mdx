@@ -35,7 +35,7 @@ Every platform offers some kind of export in its dashboard, and those menus move
 |---|---|---|
 | Lemon Squeezy | `GET https://api.lemonsqueezy.com/v1/subscriptions` | An API key from your Lemon Squeezy settings |
 | Polar | `GET https://api.polar.sh/v1/subscriptions/` | An organization access token with the `subscriptions:read` scope (Polar dashboard, organization Settings, Developers, New Token) |
-| Gumroad | `GET https://api.gumroad.com/v2/products/:id/subscribers`, once per membership product | An access token (Settings, Advanced, create an application, then Generate access token) |
+| Gumroad | `GET https://api.gumroad.com/v2/products/:id/subscribers`, once per membership product | An access token (Settings › Advanced: create an application named RevenueSheet, then Generate access token) |
 
 One detail that trips people up: **all three APIs return money in cents.** A $9.00 plan comes back as `900`. Divide by 100 when you write it to the sheet.
 

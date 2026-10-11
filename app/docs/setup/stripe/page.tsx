@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LaunchAvailabilityNote } from "@/components/LaunchAvailabilityNote";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
@@ -14,10 +15,12 @@ export default function StripeSetupPage() {
     <main className="docs-page">
       <p className="eyebrow">Setup</p>
       <h1>Stripe</h1>
+      <LaunchAvailabilityNote />
       <div className="prose">
         <p>
-          Stripe connects with a <strong>restricted API key</strong> scoped to read-only access. Do
-          not paste a secret key that can write charges or change account settings.
+          Use this guide once you install {brand.name} (at launch). Stripe connects with a{" "}
+          <strong>restricted API key</strong> scoped to read-only access. Do not paste a secret key
+          that can write charges or change account settings.
         </p>
         <h2>Create a restricted key</h2>
         <ol>
@@ -34,6 +37,10 @@ export default function StripeSetupPage() {
           </li>
           <li>Save the key in your password manager before you paste it.</li>
         </ol>
+        <p>
+          The add-on only reads; it never creates, edits, or refunds. It calls Stripe with GET
+          requests only.
+        </p>
         <h2>Connect in {brand.name}</h2>
         <p>
           In your Google Sheet, open{" "}

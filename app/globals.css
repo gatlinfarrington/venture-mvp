@@ -1840,6 +1840,41 @@ a.chip[aria-current="page"] {
   margin-bottom: 0;
 }
 
+.launch-availability-note {
+  margin: var(--space-3) 0 0;
+}
+
+.docs-page > .launch-availability-note + .prose,
+.seo-page > .launch-availability-note + .body-lg,
+.seo-page > .launch-availability-note + .page-lede {
+  margin-top: var(--space-6);
+}
+
+.docs-page .docs-footnote {
+  margin: var(--space-8) 0;
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--c-hairline);
+}
+
+.docs-page .docs-footnote summary {
+  cursor: pointer;
+  font-weight: 500;
+  list-style: none;
+}
+
+.docs-page .docs-footnote summary::-webkit-details-marker {
+  display: none;
+}
+
+.docs-page .docs-footnote[open] summary {
+  margin-bottom: var(--space-3);
+}
+
+.docs-page .docs-footnote p {
+  color: var(--c-ink-muted);
+  font-size: var(--t-body-size);
+}
+
 
 /* /success onboarding (hides site chrome) */
 body:has(.success-shell) .site-header,

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LaunchAvailabilityNote } from "@/components/LaunchAvailabilityNote";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
@@ -9,25 +10,42 @@ export const metadata: Metadata = {
   alternates: { canonical: `${siteConfig.url}/docs/setup/gumroad` },
 };
 
+/** Token path aligned with https://gumroad.com/help/article/280-create-application-api and the MRR blog. */
+export const gumroadTokenSteps = [
+  <>
+    Sign in to Gumroad and open <code className="ui-chip">Settings › Advanced</code>.
+  </>,
+  <>
+    Create an application. Name it <code className="ui-chip">RevenueSheet</code>. For your own
+    account, Redirect URI can be <code className="ui-chip">http://127.0.0.1</code>.
+  </>,
+  <>
+    Open the application and click <strong>Generate access token</strong>. Copy it and treat it like
+    a password.
+  </>,
+] as const;
+
 export default function GumroadSetupPage() {
   return (
     <main className="docs-page">
       <p className="eyebrow">Setup</p>
       <h1>Gumroad</h1>
+      <LaunchAvailabilityNote />
       <div className="prose">
         <p>
-          Gumroad uses an access token with sales read permission. One-time products contribute net
-          revenue; subscription-style products on other sources still drive MRR on the Dashboard.
+          Use this guide once you install {brand.name} (at launch). Memberships count toward MRR,
+          normalized monthly; one-time sales go to net revenue.
         </p>
         <h2>Create an access token</h2>
         <ol>
-          <li>
-            Sign in to Gumroad and open{" "}
-            <code className="ui-chip">Settings › Advanced › Application tokens</code>.
-          </li>
-          <li>Create a token that can read sales.</li>
-          <li>Copy it into a password manager before pasting into the add-on.</li>
+          {gumroadTokenSteps.map((step, i) => (
+            <li key={i}>{step}</li>
+          ))}
         </ol>
+        <p>
+          The add-on only reads; it never creates, edits, or refunds. It calls Gumroad with GET
+          requests only.
+        </p>
         <h2>Connect and backfill</h2>
         <p>
           Open the {brand.name} sidebar, choose Gumroad, paste the token, then press Backfill. Sales
