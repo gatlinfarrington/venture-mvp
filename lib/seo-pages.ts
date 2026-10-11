@@ -137,7 +137,7 @@ export const seoPages: SeoPage[] = [
           "Connect with a Lemon Squeezy API key scoped to the store you want. The first run backfills historical orders; later syncs are incremental. Refunds and subscription state changes update existing rows by id.",
         ],
         bullets: [
-          "One store on Free/Pro; multiple stores on Business",
+          "One API key slot per source on every plan",
           "Dashboard series color for Lemon Squeezy is ink",
           "Compatible with Lemon Squeezy API changes as long as the API remains",
         ],

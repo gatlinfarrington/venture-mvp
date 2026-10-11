@@ -253,7 +253,7 @@ export function Comparison() {
   const rows = [
     { feature: "Full history backfill", rs: true, zapier: false, csv: false },
     { feature: "MRR dashboard tab", rs: true, zapier: false, csv: "Manual" },
-    { feature: "Multi-store (Business)", rs: true, zapier: "Extra Zaps", csv: false },
+    { feature: "Multi-source (Pro+)", rs: true, zapier: "Extra Zaps", csv: false },
     { feature: "Scheduled refresh", rs: true, zapier: true, csv: false },
     { feature: "Data stays in your Sheet", rs: true, zapier: true, csv: true },
   ];
@@ -265,7 +265,8 @@ export function Comparison() {
           <p className="eyebrow">Compare</p>
           <h2 className="h2">Append-only tools stop at new rows.</h2>
           <p className="muted body-lg">
-            Zapier, Make, and API Connector can stream events. They do not backfill years of history or build an MRR tab.
+            Zapier, Make, and API Connector can stream events. They have no built-in history
+            backfill or MRR tab.
           </p>
         </Reveal>
         <Reveal className="compare-wrap">
