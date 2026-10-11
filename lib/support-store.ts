@@ -1,7 +1,11 @@
 import { randomBytes } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import { Redis } from "@upstash/redis";
+import {
+  assertDurableStore,
+  getRedis,
+  redisConfigured,
+} from "@/lib/redis-env";
 
 export type SupportSubmission = {
   id: string;
@@ -16,17 +20,6 @@ export type SupportSubmission = {
 const DATA_DIR = path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "support.json");
 const REDIS_LIST_KEY = "support:submissions";
-
-function redisConfigured() {
-  return Boolean(
-    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
-  );
-}
-
-function getRedis() {
-  if (!redisConfigured()) return null;
-  return Redis.fromEnv();
-}
 
 async function readFileStore(): Promise<SupportSubmission[]> {
   try {
@@ -50,6 +43,7 @@ export function newSupportId(): string {
 export async function saveSupportSubmission(
   input: Omit<SupportSubmission, "id" | "createdAt"> & { id?: string },
 ): Promise<SupportSubmission> {
+  assertDurableStore("support-store");
   const record: SupportSubmission = {
     id: input.id ?? newSupportId(),
     email: input.email,

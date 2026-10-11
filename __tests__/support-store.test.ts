@@ -17,6 +17,9 @@ describe("support store", () => {
   it("persists and lists submissions on the filesystem backend", async () => {
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+    delete process.env.VERCEL;
 
     const saved = await saveSupportSubmission({
       email: "founder@example.com",

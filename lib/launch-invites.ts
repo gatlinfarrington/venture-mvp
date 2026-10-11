@@ -1,6 +1,10 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { Redis } from "@upstash/redis";
+import {
+  assertDurableStore,
+  getRedis,
+  redisConfigured,
+} from "@/lib/redis-env";
 
 export type LaunchInvite = {
   email: string;
@@ -12,17 +16,6 @@ const DATA_DIR = path.join(process.cwd(), ".data");
 const DATA_FILE = path.join(DATA_DIR, "launch-invites.json");
 const REDIS_SET_KEY = "launch:invites";
 const REDIS_META_PREFIX = "launch:invite:";
-
-function redisConfigured() {
-  return Boolean(
-    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
-  );
-}
-
-function getRedis() {
-  if (!redisConfigured()) return null;
-  return Redis.fromEnv();
-}
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -48,6 +41,7 @@ export async function saveLaunchInvite(
   emailRaw: string,
   source?: string,
 ): Promise<SaveInviteResult> {
+  assertDurableStore("launch-invites");
   const email = normalizeEmail(emailRaw);
   const redis = getRedis();
 
@@ -104,6 +98,7 @@ export async function listLaunchInvites(limit = 200): Promise<LaunchInvite[]> {
 
 /** One-click / List-Unsubscribe removal. Idempotent. */
 export async function removeLaunchInvite(emailRaw: string): Promise<boolean> {
+  assertDurableStore("launch-invites");
   const email = normalizeEmail(emailRaw);
   const redis = getRedis();
   if (redis) {
@@ -116,4 +111,8 @@ export async function removeLaunchInvite(emailRaw: string): Promise<boolean> {
   delete store[email];
   await writeFileStore(store);
   return true;
+}
+
+export function launchInviteStorageBackend(): "upstash" | "filesystem" {
+  return redisConfigured() ? "upstash" : "filesystem";
 }

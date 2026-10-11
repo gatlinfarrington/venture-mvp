@@ -1,3 +1,4 @@
+import { redisConfigured } from "@/lib/redis-env";
 import { checkoutEnabled } from "@/lib/site";
 import { PRICE_LOOKUP_KEYS } from "@/lib/stripe-catalog";
 
@@ -68,12 +69,12 @@ export function getStripeEnvReport(): {
     });
   }
 
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  if (!redisConfigured()) {
     issues.push({
-      level: "warn",
+      level: "error",
       code: "missing_redis",
       message:
-        "Upstash Redis is not set — license storage falls back to local .data/ (not durable on Vercel).",
+        "Redis is not set (need UPSTASH_REDIS_REST_URL/TOKEN or Vercel KV aliases KV_REST_API_URL/TOKEN). License writes fail on Vercel without them.",
     });
   }
 

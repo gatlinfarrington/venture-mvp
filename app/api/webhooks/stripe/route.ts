@@ -1,73 +1,25 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { issueLicenseFromCheckoutSession } from "@/lib/issue-license";
 import {
-  generateLicenseKey,
   getLicenseBySubscription,
-  saveLicense,
   updateLicenseStatus,
 } from "@/lib/licenses";
-import {
-  getStripe,
-  intervalFromPriceId,
-  tierFromPriceId,
-} from "@/lib/stripe";
-import type { Tier } from "@/lib/site";
+import { getStripe, tierFromPriceId } from "@/lib/stripe";
 
 export const runtime = "nodejs";
 
 /**
  * Stripe webhook endpoint: POST /api/webhooks/stripe
  *
- * Subscribe to these events in the Stripe Dashboard (or CLI):
+ * Uses the raw request body + STRIPE_WEBHOOK_SECRET for signature verification
+ * (required for live whsec_… secrets).
+ *
+ * Subscribe to:
  * - checkout.session.completed
  * - customer.subscription.updated
  * - customer.subscription.deleted
  */
-async function issueFromSession(session: Stripe.Checkout.Session) {
-  const stripe = getStripe();
-  const subscriptionId =
-    typeof session.subscription === "string"
-      ? session.subscription
-      : session.subscription?.id;
-
-  if (!subscriptionId) return null;
-
-  const existing = await getLicenseBySubscription(subscriptionId);
-  if (existing) return existing;
-
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-  const priceId = subscription.items.data[0]?.price.id ?? "";
-  const tier =
-    (await tierFromPriceId(priceId)) ??
-    ((session.metadata?.tier as Exclude<Tier, "free"> | undefined) || "pro");
-  const interval =
-    (await intervalFromPriceId(priceId)) ||
-    ((session.metadata?.interval as "month" | "year" | undefined) ?? "month");
-
-  const email =
-    session.customer_details?.email ||
-    session.customer_email ||
-    "unknown@example.com";
-
-  const key = generateLicenseKey(tier);
-  const now = new Date().toISOString();
-
-  return saveLicense({
-    key,
-    tier,
-    email,
-    interval,
-    stripeCustomerId:
-      typeof session.customer === "string"
-        ? session.customer
-        : session.customer?.id,
-    stripeSubscriptionId: subscriptionId,
-    status: "active",
-    createdAt: now,
-    updatedAt: now,
-  });
-}
-
 export async function POST(request: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret || secret.includes("REPLACE_ME")) {
@@ -83,6 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
 
+  // Raw body required for constructEvent; do not parse JSON first.
   const payload = await request.text();
 
   let event: Stripe.Event;
@@ -98,7 +51,7 @@ export async function POST(request: Request) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.mode === "subscription") {
-          await issueFromSession(session);
+          await issueLicenseFromCheckoutSession(session);
         }
         break;
       }
@@ -131,6 +84,7 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Webhook handler failed";
+    console.error("[webhooks/stripe]", event.type, message);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
