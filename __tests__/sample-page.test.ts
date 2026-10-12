@@ -48,24 +48,48 @@ describe("/sample acceptance data", () => {
       (sum, o) => sum + o.amount,
       0,
     );
+    const active = SAMPLE_SUBS.filter((s) => s.status === "active").length;
+    const count = (src: string) => SAMPLE_ORDERS.filter((o) => o.source === src).length;
     expect(DASHBOARD.mrr).toBe("$11.7k");
     expect(DASHBOARD.mrrDelta).toBe("▲ 1.7% MoM");
     expect(DASHBOARD.netRevenue).toBe(`$${paidNet.toLocaleString("en-US")}`);
-    expect(DASHBOARD.activeSubs).toBe("342");
+    expect(DASHBOARD.netDelta).toMatch(/excerpt/i);
+    expect(DASHBOARD.activeSubs).toBe(String(active));
+    expect(DASHBOARD.activeDelta).toBe(`of ${SAMPLE_SUBS.length} in excerpt`);
     expect(DASHBOARD.churn).toBe("1.9%");
-    expect(DASHBOARD.sources.find((s) => s.name === "Polar")?.detail).toBe("412 orders");
-    expect(DASHBOARD.sources.find((s) => s.name === "Lemon Squeezy")?.detail).toBe(
-      "1,284 orders",
+    expect(DASHBOARD.pastDueLine).toMatch(/^Past due \d+/);
+    expect(DASHBOARD.sources.find((s) => s.name === "Polar")?.detail).toBe(
+      `${count("Polar")} in excerpt`,
     );
-    expect(DASHBOARD.sources.find((s) => s.name === "Gumroad")?.detail).toBe("903 sales");
-    expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.state).toBe("Backfilling 62%");
+    expect(DASHBOARD.sources.find((s) => s.name === "Lemon Squeezy")?.detail).toBe(
+      `${count("Lemon Squeezy")} in excerpt`,
+    );
+    expect(DASHBOARD.sources.find((s) => s.name === "Gumroad")?.detail).toBe(
+      `${count("Gumroad")} in excerpt`,
+    );
+    expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.detail).toBe(
+      `${count("Stripe")} in excerpt`,
+    );
+    expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.state).toBe("Synced");
   });
 
-  it("sample caption is buyer-facing with no Marketplace screenshot claim", async () => {
-    const { SAMPLE_CAPTION } = await import("@/lib/sample-data");
+  it("sample caption is buyer-facing with a realistic example.com address", async () => {
+    const { SAMPLE_CAPTION, SAMPLE_ORDERS_CAPTION, SAMPLE_SUBS_CAPTION } = await import(
+      "@/lib/sample-data"
+    );
     expect(SAMPLE_CAPTION).toMatch(/Example data/i);
-    expect(SAMPLE_CAPTION).toContain("@example.com");
+    expect(SAMPLE_CAPTION).toContain("alex@example.com");
+    expect(SAMPLE_CAPTION).not.toMatch(/customer###/);
     expect(SAMPLE_CAPTION).not.toMatch(/Marketplace screenshots/i);
+    expect(SAMPLE_ORDERS_CAPTION).toMatch(/Excerpt/i);
+    expect(SAMPLE_SUBS_CAPTION).toMatch(/Excerpt/i);
+  });
+
+  it("canceled subscriptions never have created dates after cancel", () => {
+    for (const s of SAMPLE_SUBS) {
+      if (!s.cancelled) continue;
+      expect(s.created <= s.cancelled).toBe(true);
+    }
   });
 
   it("orders are one ORDERS continuum shared with the hero final state", async () => {

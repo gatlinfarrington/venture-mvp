@@ -22,14 +22,15 @@ import {
 } from "@/lib/hero-demo-sequence";
 import { HERO_SEED } from "@/lib/sample-data";
 
-const PRIOR_BARS = [52, 55, 58, 57, 61, 64, 66, 70, 73, 76, 80];
+/** Prior months on the cropped axis; current month grows 62% → 92% over the loop. */
+const PRIOR_BARS = [30, 33, 35, 36, 39, 42, 44, 47, 50, 54, 58];
 const GAP_MS = 1100;
 const FLY_MS = 900;
 const START_DELAY_MS = 600;
 const REST_MS = 2400;
 const RESET_MS = 720;
 const ROW_SPRING_MS = 360;
-const ROW_H = 36;
+const PULSE_MS = 600;
 
 function prefersReducedMotion() {
   return (
@@ -52,23 +53,21 @@ function deltaLabel(mrr: number) {
   return `+${(capped * 100).toFixed(1)}%`;
 }
 
-/** Cropped sparkline: baseline at 60% of START_MRR. */
+/** Current-month bar: 62% at START_MRR → 92% at FINAL_MRR (readable growth). */
 function barPct(mrr: number) {
-  const lo = 0.6 * START_MRR;
-  const hi = FINAL_MRR;
-  return Math.max(4, Math.min(100, ((mrr - lo) / (hi - lo)) * 100));
+  const span = FINAL_MRR - START_MRR;
+  const progress = span <= 0 ? 1 : (mrr - START_MRR) / span;
+  return 62 + 30 * Math.max(0, Math.min(1, progress));
 }
 
-function priorBarPct(raw: number) {
-  // Map legacy 40–84 display heights onto the cropped axis as static ink bars.
-  const n = (raw - 40) / (84 - 40);
-  return 20 + n * 55;
+function formatMrr(n: number) {
+  return `$${Math.round(n).toLocaleString("en-US")}`;
 }
 
 type DigitCell = { kind: "d"; ch: string; pos: number } | { kind: "s"; ch: string };
 
 function splitMrr(n: number): DigitCell[] {
-  const text = `$${Math.round(n).toLocaleString("en-US")}`;
+  const text = formatMrr(n);
   const digits = [...text].filter((c) => c >= "0" && c <= "9");
   let di = 0;
   return [...text].map((ch) => {
@@ -112,22 +111,27 @@ export function HeroDemo() {
   const packetPathRef = useRef("M 150 138 C 230 138, 250 160, 330 175");
   const mrrRef = useRef(FINAL_MRR);
   const transitioning = useRef(false);
+  const rowsRef = useRef<HeroRow[]>(buildFinalRows());
   // First paint matches /sample Orders (HERO_FINAL). The loop crossfades to seed.
   const [mrr, setMrr] = useState(FINAL_MRR);
   const [delta, setDelta] = useState<string | null>(() => deltaLabel(FINAL_MRR));
   const [deltaKey, setDeltaKey] = useState(0);
   const [rows, setRows] = useState<HeroRow[]>(() => buildFinalRows());
+  const [ghost, setGhost] = useState<HeroRow[] | null>(null);
   const [enteringId, setEnteringId] = useState<string | null>(null);
   /** 'from' = new at -1 / others at prior slots; 'to' = settled indices. */
   const [enterPhase, setEnterPhase] = useState<"from" | "to">("to");
   const [instant, setInstant] = useState(false);
-  const [fading, setFading] = useState(false);
   const [activeStores, setActiveStores] = useState([true, true, true, true]);
   const [pulseStore, setPulseStore] = useState<number | null>(null);
   const [packets, setPackets] = useState<
     Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
   >([]);
   const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    rowsRef.current = rows;
+  }, [rows]);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach((id) => window.clearTimeout(id));
@@ -137,18 +141,22 @@ export function HeroDemo() {
   const computePacketPath = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    const store = stage.querySelector<HTMLElement>(".hero-store");
+    // Aim at the active store when possible; path ends above the table header
+    // so the +$N pill never covers order IDs.
+    const stores = stage.querySelectorAll<HTMLElement>(".hero-store");
+    const store = stores[0] ?? null;
     const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
     const head = sheet?.querySelector<HTMLElement>("thead");
-    const body = sheet?.querySelector<HTMLElement>("tbody");
-    if (!store || !sheet || !head || !body) return;
+    if (!store || !sheet || !head) return;
     const stageRect = stage.getBoundingClientRect();
     const storeRect = store.getBoundingClientRect();
-    const bodyRect = body.getBoundingClientRect();
+    const headRect = head.getBoundingClientRect();
+    const sheetRect = sheet.getBoundingClientRect();
     const startX = storeRect.right - stageRect.left + 8;
     const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    const endX = bodyRect.left - stageRect.left + 48;
-    const endY = head.getBoundingClientRect().bottom - stageRect.top + ROW_H / 2;
+    // Land just above the thead, centered on the sheet (outside the row area).
+    const endX = sheetRect.left - stageRect.left + sheetRect.width * 0.35;
+    const endY = headRect.top - stageRect.top - 10;
     const midX = startX + (endX - startX) * 0.55;
     packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
   }, []);
@@ -177,10 +185,27 @@ export function HeroDemo() {
         return next;
       });
       setPulseStore(s);
-      timers.current.push(window.setTimeout(() => setPulseStore(null), 600));
+      timers.current.push(window.setTimeout(() => setPulseStore(null), PULSE_MS));
 
       const spawnPacket = packetsAllowed();
       if (spawnPacket) {
+        // Recompute from the active store so the path starts on the right pill.
+        const stage = stageRef.current;
+        const storeEl = stage?.querySelectorAll<HTMLElement>(".hero-store")[s];
+        const sheet = stage?.querySelector<HTMLElement>(".hero-sheet");
+        const head = sheet?.querySelector<HTMLElement>("thead");
+        if (stage && storeEl && sheet && head) {
+          const stageRect = stage.getBoundingClientRect();
+          const storeRect = storeEl.getBoundingClientRect();
+          const headRect = head.getBoundingClientRect();
+          const sheetRect = sheet.getBoundingClientRect();
+          const startX = storeRect.right - stageRect.left + 8;
+          const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
+          const endX = sheetRect.left - stageRect.left + sheetRect.width * 0.35;
+          const endY = headRect.top - stageRect.top - 10;
+          const midX = startX + (endX - startX) * 0.55;
+          packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
+        }
         const pid = `p-${index}`;
         setPackets([{ id: pid, amount, path: packetPathRef.current }]);
         timers.current.push(
@@ -239,31 +264,22 @@ export function HeroDemo() {
       clearTimers();
       setPackets([]);
       setPulseStore(null);
-      // Settle any in-flight row spring instantly before the crossfade.
+      // Ghost-layer crossfade: freeze final rows on top, seed underneath, no blank frames.
+      const frozen = trimOutgoing(rowsRef.current).map((r) => ({ ...r, fresh: false }));
+      setGhost(frozen);
       setInstant(true);
       setEnteringId(null);
       setEnterPhase("to");
-      setRows((prev) => trimOutgoing(prev).map((r) => ({ ...r, fresh: false })));
+      setRows(HERO_SEED.map((o) => toHeroRow(o)));
+      rowsRef.current = HERO_SEED.map((o) => toHeroRow(o));
       transitioning.current = false;
-      setFading(true);
-      // Fade out, swap to seed at opacity 0, fade in, roll MRR down.
-      timers.current.push(
-        window.setTimeout(() => {
-          setInstant(true);
-          setRows(HERO_SEED.map((o) => toHeroRow(o)));
-          setEnteringId(null);
-          setEnterPhase("to");
-          setActiveStores([false, false, false, false]);
-          mrrRef.current = START_MRR;
-          setMrr(START_MRR);
-          setDelta(null);
-          requestAnimationFrame(() => {
-            setInstant(false);
-            setFading(false);
-          });
-          timers.current.push(window.setTimeout(thenRun, RESET_MS / 2));
-        }, RESET_MS / 2),
-      );
+      setActiveStores([false, false, false, false]);
+      mrrRef.current = START_MRR;
+      setMrr(START_MRR);
+      setDelta(null);
+      requestAnimationFrame(() => setInstant(false));
+      timers.current.push(window.setTimeout(() => setGhost(null), RESET_MS / 2));
+      timers.current.push(window.setTimeout(thenRun, RESET_MS));
     },
     [clearTimers],
   );
@@ -303,10 +319,12 @@ export function HeroDemo() {
       mrrRef.current = FINAL_MRR;
       setMrr(FINAL_MRR);
       setDelta(deltaLabel(FINAL_MRR));
-      setRows(buildFinalRows());
+      const finalRows = buildFinalRows();
+      setRows(finalRows);
+      rowsRef.current = finalRows;
+      setGhost(null);
       setActiveStores([true, true, true, true]);
       setEnteringId(null);
-      setFading(false);
       return;
     }
 
@@ -315,7 +333,9 @@ export function HeroDemo() {
       mrrRef.current = START_MRR;
       setMrr(START_MRR);
       setDelta(null);
-      setRows(buildSeedRows());
+      const seed = buildSeedRows();
+      setRows(seed);
+      rowsRef.current = seed;
       setActiveStores([false, false, false, false]);
       scheduleLoopRef.current();
     });
@@ -347,32 +367,21 @@ export function HeroDemo() {
         return;
       }
       if (startTimer != null) return;
+      // Short delay so phone viewports autoplay without waiting on Replay.
       startTimer = window.setTimeout(() => {
         started = true;
-        // Hold final (matches /sample), crossfade to seed, then landings.
+        startTimer = null;
         clearTimers();
-        setFading(true);
-        timers.current.push(
-          window.setTimeout(() => {
-            setInstant(true);
-            setEnteringId(null);
-            setEnterPhase("to");
-            setRows(buildSeedRows());
-            setActiveStores([false, false, false, false]);
-            mrrRef.current = START_MRR;
-            setMrr(START_MRR);
-            setDelta(null);
-            requestAnimationFrame(() => {
-              setInstant(false);
-              setFading(false);
-              scheduleLoopRef.current();
-            });
-          }, RESET_MS / 2),
-        );
-      }, 1200);
+        resetAndRestart(() => scheduleLoopRef.current());
+      }, 400);
     };
 
     const stop = () => {
+      // Once the loop has started, keep it running (pause only via visibility).
+      if (started) {
+        if (!pageVisible) clearTimers();
+        return;
+      }
       if (startTimer != null) {
         window.clearTimeout(startTimer);
         startTimer = null;
@@ -386,7 +395,8 @@ export function HeroDemo() {
         if (visible && pageVisible) scheduleStart();
         else stop();
       },
-      { threshold: 0.2 },
+      // threshold 0: phone layouts often never reach 0.2 while the hero is on screen.
+      { threshold: 0, rootMargin: "0px 0px -8% 0px" },
     );
     io.observe(stage);
 
@@ -423,7 +433,7 @@ export function HeroDemo() {
             ].map((s, i) => (
               <div
                 key={s.name}
-                className={`hero-store${activeStores[i] ? " on" : ""}${pulseStore === i ? " is-pulse" : ""}`}
+                className={`hero-store${activeStores[i] ? " on" : ""}${pulseStore === i ? " pulse" : ""}`}
               >
                 <span>
                   {s.name}
@@ -442,20 +452,22 @@ export function HeroDemo() {
           role="img"
           aria-label="Animated example: orders from Lemon Squeezy, Polar, Gumroad and Stripe land in a Google Sheet and the MRR total updates. Example data."
         >
-          <div className={`hero-sheet${fading ? " is-fading" : ""}`} aria-hidden="true">
+          <div className="hero-sheet" aria-hidden="true">
             <div className="hero-sheet-top">
               <div className="eyebrow">MRR · all sources · example</div>
               <div className="hero-mrr">
                 <b className="hero-mrr-num">
+                  <span className="visually-hidden">{formatMrr(mrr)}</span>
                   {digits.map((c, i) =>
                     c.kind === "s" ? (
-                      <span key={`s-${i}`} className="s">
+                      <span key={`s-${i}`} className="s" aria-hidden="true">
                         {c.ch}
                       </span>
                     ) : (
                       <span
                         key={`d-${i}`}
                         className="d"
+                        aria-hidden="true"
                         style={
                           {
                             "--v": Number(c.ch),
@@ -464,11 +476,11 @@ export function HeroDemo() {
                           } as CSSProperties
                         }
                       >
-                        <i>
+                        <span className="d-strip">
                           {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                             <span key={n}>{n}</span>
                           ))}
-                        </i>
+                        </span>
                       </span>
                     ),
                   )}
@@ -481,7 +493,7 @@ export function HeroDemo() {
               </div>
               <div className="hero-bars" data-baseline>
                 {PRIOR_BARS.map((h, i) => (
-                  <i key={i} style={{ height: `${priorBarPct(h)}%` }} />
+                  <i key={i} style={{ height: `${h}%` }} />
                 ))}
                 <i className="signal" style={{ height: `${lastBar}%` }} />
               </div>
@@ -506,12 +518,13 @@ export function HeroDemo() {
                       key={r.id}
                       data-row-id={r.id}
                       className={[
+                        "hero-row",
                         r.fresh ? "new" : "",
                         entering && enterPhase === "from" ? "is-enter" : "",
                         instant ? "is-instant" : "",
                       ]
                         .filter(Boolean)
-                        .join(" ") || undefined}
+                        .join(" ")}
                       style={{ "--i": iVar } as CSSProperties}
                     >
                       <td className="mono">{r.id}</td>
@@ -522,6 +535,22 @@ export function HeroDemo() {
                   );
                 })}
               </tbody>
+              {ghost ? (
+                <tbody className="hero-rows hero-rows-ghost" aria-hidden="true">
+                  {ghost.map((r, i) => (
+                    <tr
+                      key={`g-${r.id}`}
+                      className="hero-row"
+                      style={{ "--i": i } as CSSProperties}
+                    >
+                      <td className="mono">{r.id}</td>
+                      <td>{r.source}</td>
+                      <td className="hero-col-product">{r.product}</td>
+                      <td className="n">${r.amount}.00</td>
+                    </tr>
+                  ))}
+                </tbody>
+              ) : null}
             </table>
           </div>
         </div>

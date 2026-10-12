@@ -33,16 +33,26 @@ test.describe("/sample acceptance", () => {
       "Sample RevenueSheet spreadsheet, read only, example data",
     );
     await expect(page.locator(".sample-example-pill")).toHaveText("EXAMPLE DATA");
-    await expect(page.locator(".sample-caption")).toContainText("@example.com");
+    await expect(page.locator(".sample-caption")).toContainText("alex@example.com");
 
     await expect(page.getByText("$11.7k")).toBeVisible();
     await expect(page.getByText(DASHBOARD.netRevenue)).toBeVisible();
-    await expect(page.getByText("342", { exact: true })).toBeVisible();
+    await expect(
+      page.locator(".sample-kv", { hasText: new RegExp(`^${DASHBOARD.activeSubs}$`) }),
+    ).toBeVisible();
     await expect(page.getByText("1.9%")).toBeVisible();
-    await expect(page.getByText("412 orders")).toBeVisible();
-    await expect(page.getByText("1,284 orders")).toBeVisible();
-    await expect(page.getByText("903 sales")).toBeVisible();
-    await expect(page.getByText("Backfilling 62%")).toBeVisible();
+    await expect(page.getByText("▲ 1.7% MoM")).toBeVisible();
+    await expect(page.getByText(DASHBOARD.pastDueLine)).toBeVisible();
+    for (const src of DASHBOARD.sources) {
+      if (!src.detail) continue;
+      const name = page.locator(".sample-src-name", {
+        hasText: new RegExp(`^${src.name}$`),
+      });
+      await expect(name).toBeVisible();
+      const row = page.locator("tr").filter({ has: name });
+      await expect(row.locator(".sample-num.muted")).toHaveText(src.detail);
+      await expect(row.locator(".sample-num").last()).toHaveText(src.state);
+    }
 
     const scroll = page.locator(".sample-scroll");
     const dashOverflow = await scroll.evaluate((el) => el.scrollWidth - el.clientWidth);
