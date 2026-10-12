@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { brand, siteHostname } from "@/lib/brand";
 import { REFUND_LINE } from "@/lib/copy";
-import { siteConfig } from "@/lib/site";
+import { checkoutEnabled, siteConfig } from "@/lib/site";
 import { privacyEmail } from "@/lib/support";
 
 export const metadata: Metadata = {
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   const privacy = privacyEmail();
+  const paidOpen = checkoutEnabled;
   return (
     <main className="legal container">
       <h1>Terms of service</h1>
@@ -28,8 +29,10 @@ export default function TermsPage() {
           {brand.name} syncs commerce data from supported sources (Lemon Squeezy, Polar, Gumroad,
           and Stripe) into Google Sheets and builds an MRR-oriented dashboard tab. Features and
           source coverage may change. Free, Pro, and Business tiers are described on the{" "}
-          <Link href="/pricing">pricing</Link> page. Paid plans open with the Google Workspace
-          Marketplace listing; the add-on is not listed yet (pending Google review).
+          <Link href="/pricing">pricing</Link> page.{" "}
+          {paidOpen
+            ? "Paid plans can be purchased on this site. The add-on is not listed on the Google Workspace Marketplace yet (pending Google review)."
+            : "Paid plans open with the Google Workspace Marketplace listing; the add-on is not listed yet (pending Google review)."}
         </p>
 
         <h2>Accounts and eligibility</h2>
@@ -70,7 +73,9 @@ export default function TermsPage() {
 
         <h2>Billing and licenses</h2>
         <p>
-          When paid plans are on sale, Pro and Business are billed monthly through Stripe Checkout.
+          {paidOpen
+            ? "Paid plans (Pro and Business) are sold on this site and billed monthly through Stripe Checkout."
+            : "When paid plans are on sale, Pro and Business are billed monthly through Stripe Checkout."}{" "}
           Cancel anytime; access continues through the paid period unless a refund is issued.
           License keys are personal to you (or your organization on Business) and may not be resold.
         </p>
