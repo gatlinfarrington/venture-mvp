@@ -54,8 +54,19 @@ describe("/sample acceptance data", () => {
   it("sample-dataset.json sha256 matches the design pin", () => {
     const buf = readFileSync(join(process.cwd(), "lib/sample-dataset/sample-dataset.json"));
     expect(createHash("sha256").update(buf).digest("hex")).toBe(
-      "ec5ea25bb52c352614f6c0b1288f86bc7c8a284ef30764ce9602c39eeb5ea255",
+      "7142e2ccb44d578e112ea85d67f4c58de6c0ec203a048534278b9b63d4793558",
     );
+  });
+
+  it("uses short product names (no Example Course Membership)", () => {
+    for (const o of ORDERS) {
+      expect(o.product).not.toMatch(/Example Course Membership/i);
+      expect(o.product.length).toBeLessThanOrEqual(14);
+    }
+    for (const s of SAMPLE_SUBS) {
+      expect(s.product).not.toMatch(/Example Course Membership/i);
+      expect(s.product.length).toBeLessThanOrEqual(14);
+    }
   });
 
   it("Dashboard KPIs match the reconciled headline (not the excerpt)", () => {

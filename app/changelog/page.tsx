@@ -67,7 +67,7 @@ export default function ChangelogPage() {
         </section>
       ))}
       <aside className="blog-launch-rail">
-        <h2 className="h3">Subscribe: get the launch email</h2>
+        <h2 className="h3">Get the launch email</h2>
         <LaunchInvite source="changelog" />
       </aside>
     </main>

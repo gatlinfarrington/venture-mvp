@@ -9,7 +9,11 @@ const PRIOR_BARS = [18, 20, 21, 22, 24, 26, 27, 29, 31, 33, 36];
 /** Match live demo start (START_MRR / seed), not final — avoids SSR→hydrate snap. */
 function HeroDemoFallback({ final = false }: { final?: boolean }) {
   const value = final ? FINAL_MRR : START_MRR;
-  const mrr = `$${Math.round(value).toLocaleString("en-US")}`;
+  const cents = Math.round(value * 100) / 100;
+  const mrr = `$${cents.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
   const delta = final ? MOM_DELTA_LABEL : null;
   const digits = [...mrr];
   return (

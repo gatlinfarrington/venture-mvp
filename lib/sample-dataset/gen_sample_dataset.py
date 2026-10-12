@@ -8,9 +8,10 @@ SOURCES = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"]
 STORE = {"Lemon Squeezy": "example-store", "Polar": "example-org", "Gumroad": "example-seller", "Stripe": "example-acct"}
 SRC_W = [0.30, 0.34, 0.16, 0.20]
 # Subscription plans: (product, monthly price, yearly price = 10x monthly). All $9 to $49.
-PLANS = [("Demo SaaS · Pro", 19), ("Demo SaaS · Team", 49), ("Icon Pack Updates", 9), ("Course Membership", 15)]
+# Short names so the hero Product column fits without a 25ch floor.
+PLANS = [("SaaS Pro", 19), ("SaaS Team", 49), ("Icon Updates", 9), ("Course", 15)]
 PLAN_W = [0.42, 0.14, 0.26, 0.18]
-ONE_TIME = [("Template Kit", 29), ("Sample Icon Pack", 12), ("Example Course", 49), ("Notion Starter", 19)]
+ONE_TIME = [("Template Kit", 29), ("Icon Pack", 12), ("Course Kit", 49), ("Notion Starter", 19)]
 COUNTRIES = ["US", "US", "US", "GB", "DE", "CA", "AU", "NL", "FR", "SE"]
 def pick(seq, w): return random.choices(seq, w)[0]
 def mo(p, interval): return p if interval == "month" else round(p * 10 / 12, 2)
