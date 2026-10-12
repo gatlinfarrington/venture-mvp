@@ -37,7 +37,9 @@ test.describe("/sample acceptance", () => {
 
     await expect(page.getByText("$11.7k")).toBeVisible();
     await expect(page.getByText(DASHBOARD.netRevenue)).toBeVisible();
-    await expect(page.getByText(DASHBOARD.activeSubs, { exact: true })).toBeVisible();
+    await expect(
+      page.locator(".sample-kv", { hasText: new RegExp(`^${DASHBOARD.activeSubs}$`) }),
+    ).toBeVisible();
     await expect(page.getByText("1.9%")).toBeVisible();
     await expect(page.getByText("▲ 1.7% MoM")).toBeVisible();
     for (const src of DASHBOARD.sources) {
