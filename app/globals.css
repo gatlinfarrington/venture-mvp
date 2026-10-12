@@ -1225,9 +1225,19 @@ tr.reveal.reveal-rise {
   }
 }
 
+/* Reserved row under the number so chip appear/dissolve never yanks the table. */
+.hero-mrr-chip-slot {
+  position: relative;
+  min-height: 22px;
+  width: 100%;
+  z-index: 3;
+}
+
 /* In-place just below the MRR number: fade/scale, never over digits, badge, or table. */
 .hero-packet {
-  position: relative;
+  position: absolute;
+  left: 0;
+  top: 0;
   height: 22px;
   margin-top: 0;
   padding: 0 var(--space-2);
@@ -1331,6 +1341,7 @@ tr.reveal.reveal-rise {
     margin-left: 0;
   }
 
+  .hero-mrr-chip-slot,
   .hero-packet {
     display: none;
   }

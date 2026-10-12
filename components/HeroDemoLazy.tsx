@@ -43,6 +43,7 @@ function HeroDemoFallback({ final = false }: { final?: boolean }) {
                 </b>
                 {delta ? <span className="hero-delta">{delta}</span> : null}
               </div>
+              <div className="hero-mrr-chip-slot" aria-hidden="true" />
             </div>
             <div className="hero-bars" data-baseline>
               {PRIOR_BARS.map((h, i) => (
