@@ -42,11 +42,17 @@ test.describe("/sample acceptance", () => {
     ).toBeVisible();
     await expect(page.getByText("1.9%")).toBeVisible();
     await expect(page.getByText("▲ 1.7% MoM")).toBeVisible();
+    await expect(page.getByText(DASHBOARD.pastDueLine)).toBeVisible();
     for (const src of DASHBOARD.sources) {
       if (!src.detail) continue;
-      await expect(page.getByText(src.detail)).toBeVisible();
+      const name = page.locator(".sample-src-name", {
+        hasText: new RegExp(`^${src.name}$`),
+      });
+      await expect(name).toBeVisible();
+      const row = page.locator("tr").filter({ has: name });
+      await expect(row.locator(".sample-num.muted")).toHaveText(src.detail);
+      await expect(row.locator(".sample-num").last()).toHaveText(src.state);
     }
-    await expect(page.getByText("Synced").first()).toBeVisible();
 
     const scroll = page.locator(".sample-scroll");
     const dashOverflow = await scroll.evaluate((el) => el.scrollWidth - el.clientWidth);
