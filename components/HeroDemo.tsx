@@ -5,36 +5,31 @@ import {
   useEffect,
   useRef,
   useState,
+  type CSSProperties,
 } from "react";
 import {
   BASE_MRR,
   FINAL_MRR,
-  FINAL_ROWS,
-  LANDING_SPECS,
+  HERO_LANDINGS,
   MAX_DELTA,
   START_MRR,
   applyLanding,
+  buildFinalRows,
   buildSeedRows,
+  toHeroRow,
+  trimOutgoing,
   type HeroRow,
 } from "@/lib/hero-demo-sequence";
+import { HERO_SEED } from "@/lib/sample-data";
 
-const BASE_BARS = [52, 55, 58, 57, 61, 64, 66, 70, 73, 76, 80, 84];
-
-/** One landing every gapMs after the first; fly completes before the next insert. */
+const PRIOR_BARS = [52, 55, 58, 57, 61, 64, 66, 70, 73, 76, 80];
 const GAP_MS = 1100;
 const FLY_MS = 900;
 const START_DELAY_MS = 600;
-const SETTLE_PAD_MS = 400;
-
-function fmt(v: number) {
-  return `$${Math.round(v).toLocaleString("en-US")}`;
-}
-
-function deltaLabel(mrr: number) {
-  const raw = mrr / BASE_MRR - 1;
-  const capped = Math.min(MAX_DELTA, Math.max(0, raw));
-  return `+${(capped * 100).toFixed(1)}%`;
-}
+const REST_MS = 2400;
+const RESET_MS = 720;
+const ROW_SPRING_MS = 360;
+const ROW_H = 36;
 
 function prefersReducedMotion() {
   return (
@@ -51,7 +46,48 @@ function packetsAllowed() {
   );
 }
 
-function DemoFoot({ onReplay }: { onReplay: () => void }) {
+function deltaLabel(mrr: number) {
+  const raw = mrr / BASE_MRR - 1;
+  const capped = Math.min(MAX_DELTA, Math.max(0, raw));
+  return `+${(capped * 100).toFixed(1)}%`;
+}
+
+/** Cropped sparkline: baseline at 60% of START_MRR. */
+function barPct(mrr: number) {
+  const lo = 0.6 * START_MRR;
+  const hi = FINAL_MRR;
+  return Math.max(4, Math.min(100, ((mrr - lo) / (hi - lo)) * 100));
+}
+
+function priorBarPct(raw: number) {
+  // Map legacy 40–84 display heights onto the cropped axis as static ink bars.
+  const n = (raw - 40) / (84 - 40);
+  return 20 + n * 55;
+}
+
+type DigitCell = { kind: "d"; ch: string; pos: number } | { kind: "s"; ch: string };
+
+function splitMrr(n: number): DigitCell[] {
+  const text = `$${Math.round(n).toLocaleString("en-US")}`;
+  const digits = [...text].filter((c) => c >= "0" && c <= "9");
+  let di = 0;
+  return [...text].map((ch) => {
+    if (ch >= "0" && ch <= "9") {
+      const pos = digits.length - 1 - di;
+      di += 1;
+      return { kind: "d" as const, ch, pos };
+    }
+    return { kind: "s" as const, ch };
+  });
+}
+
+function sourceIndex(name: string): number {
+  const list = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"];
+  return Math.max(0, list.indexOf(name));
+}
+
+function DemoFoot({ onReplay, hidden }: { onReplay: () => void; hidden?: boolean }) {
+  if (hidden) return null;
   return (
     <div className="hero-demo-foot">
       <button type="button" className="btn btn-secondary btn-sm hero-replay" onClick={onReplay}>
@@ -73,106 +109,79 @@ function DemoFoot({ onReplay }: { onReplay: () => void }) {
 export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
-  const raf = useRef<number | null>(null);
+  const packetPathRef = useRef("M 150 138 C 230 138, 250 160, 330 175");
   const mrrRef = useRef(START_MRR);
+  const transitioning = useRef(false);
   const [mrr, setMrr] = useState(START_MRR);
   const [delta, setDelta] = useState<string | null>(null);
+  const [deltaKey, setDeltaKey] = useState(0);
   const [rows, setRows] = useState<HeroRow[]>(() => buildSeedRows());
+  const [enteringId, setEnteringId] = useState<string | null>(null);
+  /** 'from' = new at -1 / others at prior slots; 'to' = settled indices. */
+  const [enterPhase, setEnterPhase] = useState<"from" | "to">("to");
+  const [instant, setInstant] = useState(false);
+  const [fading, setFading] = useState(false);
   const [activeStores, setActiveStores] = useState([false, false, false, false]);
-  const [barHeights, setBarHeights] = useState(
-    () => BASE_BARS.map((h) => (h - 40) * 2),
-  );
+  const [pulseStore, setPulseStore] = useState<number | null>(null);
   const [packets, setPackets] = useState<
     Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
   >([]);
-  const packetBusy = useRef(false);
-
-  function packetPath(storeIndex: number): string {
-    const stage = stageRef.current;
-    if (!stage) {
-      return "M 150 138 C 230 138, 250 160, 330 175";
-    }
-    const stageRect = stage.getBoundingClientRect();
-    const store = stage.querySelectorAll<HTMLElement>(".hero-store")[storeIndex];
-    const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
-    const table = sheet?.querySelector<HTMLElement>("table");
-    const thead = sheet?.querySelector<HTMLElement>("thead");
-    if (!store || !sheet || !table || !thead) {
-      return "M 150 138 C 230 138, 250 160, 330 175";
-    }
-    const storeRect = store.getBoundingClientRect();
-    const tableRect = table.getBoundingClientRect();
-    const headRect = thead.getBoundingClientRect();
-    const startX = storeRect.right - stageRect.left + 8;
-    const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    const firstRow = sheet.querySelector<HTMLElement>("tbody tr");
-    const rowH = firstRow?.getBoundingClientRect().height ?? 36;
-    const endX = tableRect.left - stageRect.left + 12;
-    const endY = headRect.bottom - stageRect.top + rowH / 2;
-    const midX = startX + (endX - startX) * 0.55;
-    return `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
-  }
+  const [reduced, setReduced] = useState(false);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach((id) => window.clearTimeout(id));
     timers.current = [];
-    if (raf.current != null) {
-      cancelAnimationFrame(raf.current);
-      raf.current = null;
-    }
   }, []);
 
-  const tickMrr = useCallback((to: number, ms: number) => {
-    if (raf.current != null) {
-      cancelAnimationFrame(raf.current);
-      raf.current = null;
-    }
+  const computePacketPath = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const store = stage.querySelector<HTMLElement>(".hero-store");
+    const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
+    const head = sheet?.querySelector<HTMLElement>("thead");
+    const body = sheet?.querySelector<HTMLElement>("tbody");
+    if (!store || !sheet || !head || !body) return;
+    const stageRect = stage.getBoundingClientRect();
+    const storeRect = store.getBoundingClientRect();
+    const bodyRect = body.getBoundingClientRect();
+    const startX = storeRect.right - stageRect.left + 8;
+    const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
+    const endX = bodyRect.left - stageRect.left + 48;
+    const endY = head.getBoundingClientRect().bottom - stageRect.top + ROW_H / 2;
+    const midX = startX + (endX - startX) * 0.55;
+    packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
+  }, []);
 
-    const target = Math.min(FINAL_MRR, Math.max(START_MRR, to));
-
-    if (prefersReducedMotion()) {
-      mrrRef.current = target;
-      setMrr(target);
-      setDelta(deltaLabel(target));
-      return;
-    }
-
-    const from = mrrRef.current;
-    let t0: number | null = null;
-    const step = (t: number) => {
-      if (t0 === null) t0 = t;
-      const k = Math.min(1, Math.max(0, (t - t0) / ms));
-      const e = 1 - Math.pow(1 - k, 4);
-      const next = from + (target - from) * e;
-      mrrRef.current = next;
-      setMrr(next);
-      setDelta(deltaLabel(next));
-      if (k < 1) raf.current = requestAnimationFrame(step);
-      else raf.current = null;
-    };
-    raf.current = requestAnimationFrame(step);
+  const finishInstant = useCallback(() => {
+    setInstant(true);
+    setEnteringId(null);
+    setEnterPhase("to");
+    setRows((prev) => trimOutgoing(prev).map((r) => ({ ...r, fresh: false })));
+    transitioning.current = false;
+    requestAnimationFrame(() => setInstant(false));
   }, []);
 
   const landOrder = useCallback(
     (index: number) => {
-      const spec = LANDING_SPECS[index]!;
-      const s = spec.source;
-      const amount = spec.amount;
-      const reduced = prefersReducedMotion();
+      const order = HERO_LANDINGS[index];
+      if (!order) return;
+      const s = sourceIndex(order.source);
+      const amount = order.amount;
+
+      if (transitioning.current) finishInstant();
 
       setActiveStores((prev) => {
         const next = [...prev];
         next[s] = true;
         return next;
       });
+      setPulseStore(s);
+      timers.current.push(window.setTimeout(() => setPulseStore(null), 600));
 
-      const dissolveMs = 160;
-      const spawnPacket = packetsAllowed() && !packetBusy.current;
+      const spawnPacket = packetsAllowed();
       if (spawnPacket) {
-        packetBusy.current = true;
-        const pid = `p-${index}-${Date.now()}`;
-        const path = packetPath(s);
-        setPackets([{ id: pid, amount, path }]);
+        const pid = `p-${index}`;
+        setPackets([{ id: pid, amount, path: packetPathRef.current }]);
         timers.current.push(
           window.setTimeout(() => {
             setPackets((prev) =>
@@ -181,78 +190,145 @@ export function HeroDemo() {
           }, FLY_MS),
         );
         timers.current.push(
-          window.setTimeout(() => {
-            setPackets([]);
-            packetBusy.current = false;
-          }, FLY_MS + dissolveMs + 20),
+          window.setTimeout(() => setPackets([]), FLY_MS + 160 + 20),
         );
       }
 
+      const insertDelay = spawnPacket ? FLY_MS : 0;
       timers.current.push(
-        window.setTimeout(
-          () => {
-            // Keyed insert at top; drop last row. IDs never collide with seed/landings.
-            setRows((prev) => applyLanding(prev, index));
-            tickMrr(mrrRef.current + amount, 700);
-            setBarHeights((heights) => {
-              const next = [...heights];
-              const last = next.length - 1;
-              next[last] = Math.min(98, (next[last] ?? 0) + 1.2);
-              return next;
-            });
-            timers.current.push(
-              window.setTimeout(() => {
-                setRows((prev) => prev.map((r) => (r.fresh ? { ...r, fresh: false } : r)));
-              }, 1200),
-            );
-          },
-          reduced ? 0 : spawnPacket ? FLY_MS : 0,
-        ),
+        window.setTimeout(() => {
+          transitioning.current = true;
+          const newId = order.id;
+          // Mount at prior slots (new at -1, others at 0..8), then spring to 0..9.
+          setInstant(true);
+          setEnteringId(newId);
+          setEnterPhase("from");
+          setRows((prev) => applyLanding(trimOutgoing(prev), index));
+
+          mrrRef.current = Math.min(FINAL_MRR, mrrRef.current + amount);
+          setMrr(mrrRef.current);
+          setDelta(deltaLabel(mrrRef.current));
+          setDeltaKey((k) => k + 1);
+
+          requestAnimationFrame(() => {
+            setInstant(false);
+            setEnterPhase("to");
+          });
+
+          timers.current.push(
+            window.setTimeout(() => {
+              setEnteringId(null);
+              setRows((prev) => trimOutgoing(prev).map((r) => ({ ...r, fresh: false })));
+              transitioning.current = false;
+            }, ROW_SPRING_MS + 40),
+          );
+        }, insertDelay),
       );
     },
-    [tickMrr],
+    [finishInstant],
   );
 
-  const run = useCallback(() => {
+  const scheduleLoopRef = useRef<() => void>(() => {});
+
+  const resetAndRestart = useCallback(
+    (thenRun: () => void) => {
+      clearTimers();
+      setPackets([]);
+      setPulseStore(null);
+      // Settle any in-flight row spring instantly before the crossfade.
+      setInstant(true);
+      setEnteringId(null);
+      setEnterPhase("to");
+      setRows((prev) => trimOutgoing(prev).map((r) => ({ ...r, fresh: false })));
+      transitioning.current = false;
+      setFading(true);
+      // Fade out, swap to seed at opacity 0, fade in, roll MRR down.
+      timers.current.push(
+        window.setTimeout(() => {
+          setInstant(true);
+          setRows(HERO_SEED.map((o) => toHeroRow(o)));
+          setEnteringId(null);
+          setEnterPhase("to");
+          setActiveStores([false, false, false, false]);
+          mrrRef.current = START_MRR;
+          setMrr(START_MRR);
+          setDelta(null);
+          requestAnimationFrame(() => {
+            setInstant(false);
+            setFading(false);
+          });
+          timers.current.push(window.setTimeout(thenRun, RESET_MS / 2));
+        }, RESET_MS / 2),
+      );
+    },
+    [clearTimers],
+  );
+
+  const scheduleLoop = useCallback(() => {
     clearTimers();
-    mrrRef.current = START_MRR;
-    setMrr(START_MRR);
-    setDelta(null);
-    setRows(buildSeedRows());
-    setActiveStores([false, false, false, false]);
-    setBarHeights(BASE_BARS.map((h) => (h - 40) * 2));
-    setPackets([]);
-    packetBusy.current = false;
-
-    const reduced = prefersReducedMotion();
-    if (reduced) {
-      mrrRef.current = FINAL_MRR;
-      setMrr(FINAL_MRR);
-      setDelta(deltaLabel(FINAL_MRR));
-      setRows(FINAL_ROWS);
-      setActiveStores([true, true, true, true]);
-      setBarHeights(BASE_BARS.map((h) => Math.min(98, (h - 40) * 2 + 14)));
-      return;
-    }
-
-    for (let i = 0; i < LANDING_SPECS.length; i++) {
+    for (let i = 0; i < HERO_LANDINGS.length; i++) {
       timers.current.push(
         window.setTimeout(() => landOrder(i), START_DELAY_MS + i * GAP_MS),
       );
     }
-    const settleAt = START_DELAY_MS + LANDING_SPECS.length * GAP_MS + SETTLE_PAD_MS;
+    const restAt = START_DELAY_MS + HERO_LANDINGS.length * GAP_MS + REST_MS;
     timers.current.push(
       window.setTimeout(() => {
-        setRows(FINAL_ROWS);
-        setPackets([]);
-        packetBusy.current = false;
-      }, settleAt),
+        resetAndRestart(() => scheduleLoopRef.current());
+      }, restAt),
     );
-  }, [clearTimers, landOrder]);
+  }, [clearTimers, landOrder, resetAndRestart]);
 
+  useEffect(() => {
+    scheduleLoopRef.current = scheduleLoop;
+  }, [scheduleLoop]);
+
+  const run = useCallback(() => {
+    clearTimers();
+    setPackets([]);
+    setPulseStore(null);
+    setInstant(true);
+    setEnteringId(null);
+    setEnterPhase("to");
+    setRows((prev) => trimOutgoing(prev).map((r) => ({ ...r, fresh: false })));
+    transitioning.current = false;
+    requestAnimationFrame(() => setInstant(false));
+
+    if (prefersReducedMotion()) {
+      setReduced(true);
+      mrrRef.current = FINAL_MRR;
+      setMrr(FINAL_MRR);
+      setDelta(deltaLabel(FINAL_MRR));
+      setRows(buildFinalRows());
+      setActiveStores([true, true, true, true]);
+      setEnteringId(null);
+      setFading(false);
+      return;
+    }
+
+    setReduced(false);
+    resetAndRestart(() => {
+      mrrRef.current = START_MRR;
+      setMrr(START_MRR);
+      setDelta(null);
+      setRows(buildSeedRows());
+      setActiveStores([false, false, false, false]);
+      scheduleLoopRef.current();
+    });
+  }, [clearTimers, resetAndRestart]);
+
+  // First paint: seed (or final under reduced motion), then start.
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
+
+    setReduced(prefersReducedMotion());
+    computePacketPath();
+    const onResize = () => {
+      window.clearTimeout((onResize as unknown as { t?: number }).t);
+      (onResize as unknown as { t?: number }).t = window.setTimeout(computePacketPath, 150);
+    };
+    window.addEventListener("resize", onResize);
 
     let visible = true;
     let pageVisible = document.visibilityState === "visible";
@@ -269,7 +345,14 @@ export function HeroDemo() {
       if (startTimer != null) return;
       startTimer = window.setTimeout(() => {
         started = true;
-        run();
+        // First run: seed already showing; start loop without reset flash.
+        clearTimers();
+        mrrRef.current = START_MRR;
+        setMrr(START_MRR);
+        setDelta(null);
+        setRows(buildSeedRows());
+        setActiveStores([false, false, false, false]);
+        scheduleLoop();
       }, 600);
     };
 
@@ -302,9 +385,14 @@ export function HeroDemo() {
     return () => {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("resize", onResize);
       stop();
     };
-  }, [clearTimers, run]);
+  }, [clearTimers, computePacketPath, run, scheduleLoop]);
+
+  const digits = splitMrr(mrr);
+  const lastBar = barPct(mrr);
+  const digitMs = reduced ? 0 : typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 420 : 560;
 
   return (
     <div className="hero-demo">
@@ -319,7 +407,7 @@ export function HeroDemo() {
             ].map((s, i) => (
               <div
                 key={s.name}
-                className={`hero-store${activeStores[i] ? " on" : ""}`}
+                className={`hero-store${activeStores[i] ? " on" : ""}${pulseStore === i ? " is-pulse" : ""}`}
               >
                 <span>
                   {s.name}
@@ -330,7 +418,7 @@ export function HeroDemo() {
               </div>
             ))}
           </div>
-          <DemoFoot onReplay={run} />
+          <DemoFoot onReplay={run} hidden={reduced} />
         </div>
 
         <div
@@ -338,21 +426,48 @@ export function HeroDemo() {
           role="img"
           aria-label="Animated example: orders from Lemon Squeezy, Polar, Gumroad and Stripe land in a Google Sheet and the MRR total updates. Example data."
         >
-          <div className="hero-sheet" aria-hidden="true">
+          <div className={`hero-sheet${fading ? " is-fading" : ""}`} aria-hidden="true">
             <div className="hero-sheet-top">
               <div className="eyebrow">MRR · all sources · example</div>
               <div className="hero-mrr">
-                <b>{fmt(mrr)}</b>
-                {delta ? <span className="hero-delta">{delta}</span> : null}
+                <b className="hero-mrr-num">
+                  {digits.map((c, i) =>
+                    c.kind === "s" ? (
+                      <span key={`s-${i}`} className="s">
+                        {c.ch}
+                      </span>
+                    ) : (
+                      <span
+                        key={`d-${i}`}
+                        className="d"
+                        style={
+                          {
+                            "--v": Number(c.ch),
+                            "--p": c.pos,
+                            "--digit-ms": `${digitMs}ms`,
+                          } as CSSProperties
+                        }
+                      >
+                        <i>
+                          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                            <span key={n}>{n}</span>
+                          ))}
+                        </i>
+                      </span>
+                    ),
+                  )}
+                </b>
+                {delta ? (
+                  <span key={deltaKey} className="hero-delta">
+                    {delta}
+                  </span>
+                ) : null}
               </div>
-              <div className="hero-bars">
-                {barHeights.map((h, i) => (
-                  <i
-                    key={i}
-                    style={{ height: `${h}%` }}
-                    className={i === barHeights.length - 1 ? "signal" : undefined}
-                  />
+              <div className="hero-bars" data-baseline>
+                {PRIOR_BARS.map((h, i) => (
+                  <i key={i} style={{ height: `${priorBarPct(h)}%` }} />
                 ))}
+                <i className="signal" style={{ height: `${lastBar}%` }} />
               </div>
             </div>
             <table>
@@ -364,19 +479,32 @@ export function HeroDemo() {
                   <th style={{ textAlign: "right" }}>Amount</th>
                 </tr>
               </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr
-                    key={r.id}
-                    data-row-id={r.id}
-                    className={r.fresh ? "new" : undefined}
-                  >
-                    <td className="mono">{r.id}</td>
-                    <td>{r.source}</td>
-                    <td className="hero-col-product">{r.product}</td>
-                    <td className="n">${r.amount}.00</td>
-                  </tr>
-                ))}
+              <tbody className="hero-rows">
+                {rows.map((r, i) => {
+                  const entering = enteringId === r.id;
+                  // from: new at -1, others at i-1 (prior slots). to: index i.
+                  const iVar =
+                    enterPhase === "from" ? (entering ? -1 : i - 1) : i;
+                  return (
+                    <tr
+                      key={r.id}
+                      data-row-id={r.id}
+                      className={[
+                        r.fresh ? "new" : "",
+                        entering && enterPhase === "from" ? "is-enter" : "",
+                        instant ? "is-instant" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ") || undefined}
+                      style={{ "--i": iVar } as CSSProperties}
+                    >
+                      <td className="mono">{r.id}</td>
+                      <td>{r.source}</td>
+                      <td className="hero-col-product">{r.product}</td>
+                      <td className="n">${r.amount}.00</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

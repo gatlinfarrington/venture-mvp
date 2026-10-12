@@ -68,18 +68,15 @@ describe("/sample acceptance data", () => {
     expect(SAMPLE_CAPTION).not.toMatch(/Marketplace screenshots/i);
   });
 
-  it("orders share the hero continuum; row 2 is EX-10457 Sample Icon Pack", async () => {
-    const { HERO_ORDERS, EXAMPLE_ORDER_SPECS } = await import("@/lib/sample-data");
-    expect(SAMPLE_ORDERS[0]?.id).toBe("EX-10458");
-    expect(SAMPLE_ORDERS[1]?.id).toBe("EX-10457");
-    expect(SAMPLE_ORDERS[1]?.source).toBe("Lemon Squeezy");
-    expect(SAMPLE_ORDERS[1]?.product).toBe("Sample Icon Pack");
-    expect(SAMPLE_ORDERS[1]?.amount).toBe(12);
-    expect(HERO_ORDERS[0]?.id).toBe("EX-10457");
-    expect(HERO_ORDERS[0]?.product).toBe(EXAMPLE_ORDER_SPECS[0]?.product);
-    expect(HERO_ORDERS[0]?.amount).toBe(SAMPLE_ORDERS[1]?.amount);
-    expect(SAMPLE_ORDERS[2]?.id).toBe(HERO_ORDERS[1]?.id);
-    expect(SAMPLE_ORDERS.length).toBeGreaterThanOrEqual(20);
+  it("orders are one ORDERS continuum shared with the hero final state", async () => {
+    const { ORDERS, HERO_FINAL, HERO_LANDINGS } = await import("@/lib/sample-data");
+    expect(SAMPLE_ORDERS).toBe(ORDERS);
+    expect(SAMPLE_ORDERS).toHaveLength(24);
+    expect(SAMPLE_ORDERS[0]?.id).toBe("EX-10470");
+    expect(HERO_FINAL[0]?.id).toBe(SAMPLE_ORDERS[0]?.id);
+    expect(HERO_FINAL[0]?.amount).toBe(SAMPLE_ORDERS[0]?.amount);
+    expect(HERO_LANDINGS[0]?.id).toBe("EX-10457");
+    expect(SAMPLE_ORDERS[13]?.id).toBe("EX-10457");
   });
 
   it("subscriptions start at EXS-2241 with 20+ rows", () => {

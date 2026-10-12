@@ -1,12 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import { LANDING_SPECS } from "../lib/hero-demo-sequence";
+import { HERO_LANDINGS } from "../lib/hero-demo-sequence";
 
 const GAP_MS = 1100;
 const START_DELAY_MS = 600;
-const SETTLE_PAD_MS = 400;
-const LOOP_MS = START_DELAY_MS + LANDING_SPECS.length * GAP_MS + SETTLE_PAD_MS + 800;
+const REST_MS = 2400;
+const LOOP_MS = START_DELAY_MS + HERO_LANDINGS.length * GAP_MS + REST_MS + 800;
 const FRAME_MS = 500;
 
 const WIDTHS = [
@@ -18,32 +18,37 @@ const WIDTHS = [
 async function assertTableHealthy(page: Page) {
   const sheet = page.locator("[data-hero-demo] .hero-sheet tbody");
   await expect(sheet).toBeVisible();
-  const report = await sheet.evaluate((tbody) => {
-    const rows = [...tbody.querySelectorAll<HTMLElement>("tr[data-row-id]")];
-    const ids = rows.map((tr) => tr.dataset.rowId ?? "");
-    const unique = new Set(ids);
-    const boxes = rows.map((tr) => {
-      const r = tr.getBoundingClientRect();
-      return { id: tr.dataset.rowId, top: r.top, bottom: r.bottom, height: r.height };
-    });
+  const report = await page.locator(".hero-sheet").evaluate((sheet) => {
+    const tbody = sheet.querySelector("tbody")!;
+    const head = sheet.querySelector("thead")!.getBoundingClientRect();
+    const clip = (sheet.closest(".hero-sheet-wrap") || sheet).getBoundingClientRect();
+    const rows = [...tbody.querySelectorAll<HTMLElement>("tr[data-row-id]")]
+      .map((tr) => {
+        const r = tr.getBoundingClientRect();
+        const o = +getComputedStyle(tr).opacity;
+        return {
+          id: tr.dataset.rowId ?? "",
+          top: r.top,
+          bottom: r.bottom,
+          o,
+        };
+      })
+      .filter((r) => r.o > 0.05 && r.bottom > head.bottom + 1 && r.top < clip.bottom - 1);
+    const ids = rows.map((r) => r.id);
     const overlaps: string[] = [];
-    for (let i = 0; i < boxes.length; i++) {
-      for (let j = i + 1; j < boxes.length; j++) {
-        const a = boxes[i]!;
-        const b = boxes[j]!;
-        if (a.bottom > b.top + 0.5 && b.bottom > a.top + 0.5) {
-          overlaps.push(`${a.id}|${b.id}`);
-        }
-      }
+    const s = [...rows].sort((a, b) => a.top - b.top);
+    for (let i = 1; i < s.length; i++) {
+      const d = s[i]!.top - s[i - 1]!.bottom;
+      if (d < -1.5) overlaps.push(`${s[i - 1]!.id}|${s[i]!.id}`);
     }
     return {
       count: rows.length,
       ids,
-      uniqueCount: unique.size,
+      uniqueCount: new Set(ids).size,
       overlaps,
     };
   });
-  expect(report.count, "hero table should show 9 rows").toBe(9);
+  expect(report.count, "hero table should show 9 visible rows").toBe(9);
   expect(report.uniqueCount, `duplicate IDs: ${report.ids.join(",")}`).toBe(report.count);
   expect(report.overlaps, "overlapping row boxes").toEqual([]);
 }
@@ -99,7 +104,7 @@ test.describe("hero demo table integrity", () => {
       const ids = await page
         .locator("[data-hero-demo] .hero-sheet tbody tr[data-row-id]")
         .evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.rowId));
-      expect(ids[0]).toBe("EX-10457");
+      expect(ids[0]).toBe("EX-10470");
       expect(new Set(ids).size).toBe(9);
     });
   }

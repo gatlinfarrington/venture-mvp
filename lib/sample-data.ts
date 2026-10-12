@@ -60,41 +60,48 @@ const PRODUCTS = [
 ] as const;
 const COUNTRIES = ["US", "GB", "DE", "CA", "AU", "NL", "FR", "SE"] as const;
 
-/**
- * Shared example order content for the hero table and /sample Orders tab.
- * Hero rows use IDs EX-10457 downward. /sample prepends EX-10458 so row 2 is
- * the hero top row (EX-10457 Lemon Squeezy Sample Icon Pack $12).
- */
-export type ExampleOrderSpec = {
+type OrderSeed = {
   source: (typeof SOURCES)[number];
   product: (typeof PRODUCTS)[number];
   amount: number;
 };
 
-export const EXAMPLE_ORDER_SPECS: ExampleOrderSpec[] = (() => {
-  const firstNine: ExampleOrderSpec[] = [
-    { source: "Lemon Squeezy", product: "Sample Icon Pack", amount: 12 },
-    { source: "Gumroad", product: "Demo SaaS · Pro", amount: 19 },
-    { source: "Polar", product: "Demo SaaS · Team", amount: 29 },
-    { source: "Stripe", product: "Template Kit", amount: 9 },
-    { source: "Lemon Squeezy", product: "Example Course", amount: 49 },
-    { source: "Gumroad", product: "Sample Icon Pack", amount: 12 },
-    { source: "Polar", product: "Demo SaaS · Pro", amount: 29 },
-    { source: "Stripe", product: "Demo SaaS · Team", amount: 79 },
-    { source: "Lemon Squeezy", product: "Template Kit", amount: 19 },
-  ];
-  const rows: ExampleOrderSpec[] = [...firstNine];
-  for (let i = firstNine.length; i < 24; i++) {
-    rows.push({
-      source: SOURCES[i % SOURCES.length]!,
-      product: PRODUCTS[i % PRODUCTS.length]!,
-      amount: [29, 19, 12, 49, 9, 79][i % 6]!,
-    });
-  }
-  return rows;
-})();
+/**
+ * 14 landings in time order (first → last). Amounts sum to 251 → +6% on $4,180.
+ * Stored in ORDERS[13]…ORDERS[0] so HERO_LANDINGS = ORDERS.slice(0,14).reverse().
+ */
+const LANDING_SEEDS: OrderSeed[] = [
+  { source: "Lemon Squeezy", product: "Demo SaaS · Pro", amount: 29 },
+  { source: "Polar", product: "Example Course", amount: 19 },
+  { source: "Gumroad", product: "Sample Icon Pack", amount: 12 },
+  { source: "Stripe", product: "Demo SaaS · Team", amount: 9 },
+  { source: "Polar", product: "Template Kit", amount: 29 },
+  { source: "Gumroad", product: "Demo SaaS · Pro", amount: 19 },
+  { source: "Lemon Squeezy", product: "Sample Icon Pack", amount: 12 },
+  { source: "Stripe", product: "Example Course", amount: 9 },
+  { source: "Gumroad", product: "Demo SaaS · Team", amount: 29 },
+  { source: "Lemon Squeezy", product: "Template Kit", amount: 19 },
+  { source: "Polar", product: "Sample Icon Pack", amount: 12 },
+  { source: "Stripe", product: "Demo SaaS · Pro", amount: 9 },
+  { source: "Lemon Squeezy", product: "Example Course", amount: 29 },
+  { source: "Polar", product: "Demo SaaS · Team", amount: 15 },
+];
 
-function orderFromSpec(seed: ExampleOrderSpec, idNum: number, i: number): SampleOrder {
+/** 9 seed rows + 1 older filler for the 24-order continuum. */
+const SEED_AND_TAIL: OrderSeed[] = [
+  { source: "Lemon Squeezy", product: "Sample Icon Pack", amount: 12 },
+  { source: "Gumroad", product: "Demo SaaS · Pro", amount: 19 },
+  { source: "Polar", product: "Demo SaaS · Team", amount: 29 },
+  { source: "Stripe", product: "Template Kit", amount: 9 },
+  { source: "Lemon Squeezy", product: "Example Course", amount: 49 },
+  { source: "Gumroad", product: "Sample Icon Pack", amount: 12 },
+  { source: "Polar", product: "Demo SaaS · Pro", amount: 29 },
+  { source: "Stripe", product: "Demo SaaS · Team", amount: 79 },
+  { source: "Lemon Squeezy", product: "Template Kit", amount: 19 },
+  { source: "Gumroad", product: "Example Course", amount: 49 },
+];
+
+function orderFromSeed(seed: OrderSeed, idNum: number, i: number): SampleOrder {
   const day = 9 - Math.floor(i / 3);
   const hour = 16 - (i % 8);
   const min = (i * 7) % 60;
@@ -110,16 +117,40 @@ function orderFromSpec(seed: ExampleOrderSpec, idNum: number, i: number): Sample
   };
 }
 
-/** Continuum shared with the hero: EX-10457 = Sample Icon Pack $12, then older. */
-function buildHeroContinuum(): SampleOrder[] {
-  return EXAMPLE_ORDER_SPECS.map((seed, i) => orderFromSpec(seed, 10457 - i, i));
-}
+/**
+ * One shared continuum: EX-10470…EX-10447 (24 unique IDs).
+ * - HERO_SEED = ORDERS.slice(14, 23) → EX-10456…EX-10448
+ * - HERO_LANDINGS = ORDERS.slice(0, 14).reverse() → EX-10457…EX-10470 in time order
+ * - Final hero = ORDERS.slice(0, 9) → EX-10470…EX-10462
+ * - /sample Orders = ORDERS in full
+ */
+export const ORDERS: SampleOrder[] = (() => {
+  const seeds: OrderSeed[] = [];
+  // Indices 0..13: reverse of landings (newest first in the array).
+  for (let i = LANDING_SEEDS.length - 1; i >= 0; i--) {
+    seeds.push(LANDING_SEEDS[i]!);
+  }
+  // Indices 14..23: seed rows + one older tail.
+  for (const s of SEED_AND_TAIL) seeds.push(s);
+  return seeds.map((seed, i) => orderFromSeed(seed, 10470 - i, i));
+})();
+
+export const HERO_SEED = ORDERS.slice(14, 23);
+export const HERO_LANDINGS = ORDERS.slice(0, 14).reverse();
+export const HERO_FINAL = ORDERS.slice(0, 9);
+
+/** @deprecated Prefer HERO_FINAL; kept for any lingering imports. */
+export const HERO_ORDERS = HERO_FINAL;
+
+export const SAMPLE_ORDERS = ORDERS;
+
+export const LANDING_TOTAL = HERO_LANDINGS.reduce((s, o) => s + o.amount, 0);
 
 function buildSubs(): SampleSub[] {
   const rows: SampleSub[] = [];
   for (let i = 0; i < 24; i++) {
     const id = `EXS-${2241 - i}`;
-    const source = SOURCES[i % 3]!; // Polar / LS / Gumroad heavy
+    const source = SOURCES[i % 3]!;
     const product = PRODUCTS[i % PRODUCTS.length]!;
     const mrr = [29, 79, 19, 49, 12][i % 5]!;
     const canceled = i % 9 === 0;
@@ -140,28 +171,6 @@ function buildSubs(): SampleSub[] {
   }
   return rows;
 }
-
-/** Hero table final rows - shared continuum, IDs EX-10457 downward. */
-export const HERO_ORDERS = buildHeroContinuum().slice(0, 9);
-
-/**
- * /sample Orders: one newer row (EX-10458), then the same hero continuum so
- * row 2 is EX-10457 Lemon Squeezy Sample Icon Pack $12.
- */
-export const SAMPLE_ORDERS: SampleOrder[] = (() => {
-  const continuum = buildHeroContinuum();
-  const newer: SampleOrder = {
-    id: "EX-10458",
-    created: "2026-10-09 17:04",
-    source: "Polar",
-    product: "Demo SaaS · Pro",
-    email: "customer099@example.com",
-    amount: 29,
-    status: "paid",
-    country: "US",
-  };
-  return [newer, ...continuum].slice(0, 24);
-})();
 
 export const SAMPLE_SUBS = buildSubs();
 

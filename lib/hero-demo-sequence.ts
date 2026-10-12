@@ -1,16 +1,16 @@
-import { HERO_ORDERS } from "@/lib/sample-data";
-
-export const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"] as const;
+import {
+  HERO_FINAL,
+  HERO_LANDINGS,
+  HERO_SEED,
+  LANDING_TOTAL,
+  type SampleOrder,
+} from "@/lib/sample-data";
 
 export const BASE_MRR = 4180;
 export const START_MRR = BASE_MRR;
 export const MAX_DELTA = 0.06;
 export const ROW_COUNT = 9;
-
-/** Seed IDs sit well below landing IDs so React keys never collide mid-loop. */
-export const SEED_ID_START = 10398;
-/** Landing inserts use EX-10500… — never overlaps seed or final HERO_ORDERS. */
-export const LANDING_ID_START = 10500;
+export const FINAL_MRR = START_MRR + LANDING_TOTAL;
 
 export type HeroRow = {
   id: string;
@@ -20,90 +20,43 @@ export type HeroRow = {
   fresh: boolean;
 };
 
-export type OrderSpec = {
-  source: 0 | 1 | 2 | 3;
-  product: string;
-  amount: number;
-};
-
-/** 14 landings; amounts sum to 251 → final MRR $4,431 (+6.0%). */
-export const LANDING_SPECS: OrderSpec[] = [
-  { source: 0, product: "Demo SaaS · Pro", amount: 29 },
-  { source: 1, product: "Example Course", amount: 19 },
-  { source: 2, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Demo SaaS · Team", amount: 9 },
-  { source: 1, product: "Template Kit", amount: 29 },
-  { source: 2, product: "Demo SaaS · Pro", amount: 19 },
-  { source: 0, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Example Course", amount: 9 },
-  { source: 2, product: "Demo SaaS · Team", amount: 29 },
-  { source: 0, product: "Template Kit", amount: 19 },
-  { source: 1, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Demo SaaS · Pro", amount: 9 },
-  { source: 0, product: "Example Course", amount: 29 },
-  { source: 1, product: "Demo SaaS · Team", amount: 15 },
-];
-
-export const LANDING_TOTAL = LANDING_SPECS.reduce((s, o) => s + o.amount, 0);
-export const FINAL_MRR = START_MRR + LANDING_TOTAL;
-
-export const FINAL_ROWS: HeroRow[] = HERO_ORDERS.map((o) => ({
-  id: o.id,
-  source: o.source,
-  product: o.product,
-  amount: o.amount,
-  fresh: false,
-}));
-
-const SEED_CONTENT: OrderSpec[] = [
-  { source: 0, product: "Demo SaaS · Pro", amount: 29 },
-  { source: 1, product: "Example Course", amount: 49 },
-  { source: 2, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Demo SaaS · Team", amount: 19 },
-  { source: 1, product: "Template Kit", amount: 9 },
-  { source: 2, product: "Demo SaaS · Pro", amount: 29 },
-  { source: 0, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Example Course", amount: 19 },
-  { source: 2, product: "Demo SaaS · Team", amount: 9 },
-];
-
-export function rowFromSpec(spec: OrderSpec, id: string, fresh: boolean): HeroRow {
+export function toHeroRow(o: SampleOrder, fresh = false): HeroRow {
   return {
-    id,
-    source: SOURCES[spec.source]!,
-    product: spec.product,
-    amount: spec.amount,
+    id: o.id,
+    source: o.source,
+    product: o.product,
+    amount: o.amount,
     fresh,
   };
 }
 
-/** Initial 9 rows — IDs EX-10398…EX-10390, disjoint from landings and finals. */
 export function buildSeedRows(): HeroRow[] {
-  return SEED_CONTENT.map((spec, i) =>
-    rowFromSpec(spec, `EX-${SEED_ID_START - i}`, false),
-  );
+  return HERO_SEED.map((o) => toHeroRow(o));
 }
 
-/** Insert landing at top; drop the last row. Always unique IDs. */
+export function buildFinalRows(): HeroRow[] {
+  return HERO_FINAL.map((o) => toHeroRow(o));
+}
+
+/** Insert landing at top; keep up to 10 (9 visible + outgoing). */
 export function applyLanding(rows: HeroRow[], landingIndex: number): HeroRow[] {
-  const spec = LANDING_SPECS[landingIndex];
-  if (!spec) return rows;
-  const id = `EX-${LANDING_ID_START + landingIndex}`;
-  return [rowFromSpec(spec, id, true), ...rows.map((r) => ({ ...r, fresh: false }))].slice(
-    0,
-    ROW_COUNT,
-  );
+  const order = HERO_LANDINGS[landingIndex];
+  if (!order) return rows;
+  return [toHeroRow(order, true), ...rows.map((r) => ({ ...r, fresh: false }))].slice(0, 10);
 }
 
-/** Every table state across a full loop (seed + each landing + final settle). */
+export function trimOutgoing(rows: HeroRow[]): HeroRow[] {
+  return rows.slice(0, ROW_COUNT);
+}
+
 export function heroLoopFrames(): HeroRow[][] {
   const frames: HeroRow[][] = [buildSeedRows()];
   let cur = buildSeedRows();
-  for (let i = 0; i < LANDING_SPECS.length; i++) {
-    cur = applyLanding(cur, i);
+  for (let i = 0; i < HERO_LANDINGS.length; i++) {
+    cur = trimOutgoing(applyLanding(cur, i));
     frames.push(cur);
   }
-  frames.push(FINAL_ROWS);
+  frames.push(buildFinalRows());
   return frames;
 }
 
@@ -117,3 +70,5 @@ export function assertUniqueIds(rows: HeroRow[]): string[] {
   }
   return dupes;
 }
+
+export { HERO_LANDINGS, HERO_SEED, HERO_FINAL, LANDING_TOTAL };
