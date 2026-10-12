@@ -52,6 +52,7 @@
   --space-12:48px;
   --space-14:56px; /* Prose H2 top margin */
   --space-16:64px;
+  --space-24:96px;
   --layout-hero-sheet-left:212px; /* Mobile hero sheet inset beside store pills */
   --layout-docs-nav-top:calc(72px + var(--space-4)); /* Sticky docs nav below header */
   --layout-page-top:var(--space-16); /* Shared top padding for inner pages */

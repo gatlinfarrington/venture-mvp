@@ -91,7 +91,10 @@ export function Pricing({ variant = "section" }: Props) {
             const body = (
               <>
                 <div className="price-card-top">
-                  <p className="eyebrow">{plan.name}</p>
+                  <p className="eyebrow">
+                    {plan.name}
+                    {featured ? <span className="price-badge mono">Recommended</span> : null}
+                  </p>
                   <p className="price-amount">
                     ${amount}
                     <span>{plan.tier === "free" ? " forever" : "/mo"}</span>
@@ -155,8 +158,8 @@ export function Pricing({ variant = "section" }: Props) {
             return (
               <Reveal
                 key={plan.tier}
-                className={cardClass}
-                delay={Math.min(i, 4) * 60}
+                className={`${cardClass} reveal-rise`}
+                delay={Math.min(i, 4) * 40}
               >
                 {body}
               </Reveal>

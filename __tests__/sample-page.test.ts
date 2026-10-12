@@ -64,15 +64,16 @@ describe("/sample acceptance data", () => {
     expect(SAMPLE_CAPTION).not.toMatch(/Marketplace screenshots/i);
   });
 
-  it("orders start at EX-10456 and include the hero first rows", () => {
+  it("orders start at EX-10456 and share content with the hero table", async () => {
+    const { HERO_ORDERS, EXAMPLE_ORDER_SPECS } = await import("@/lib/sample-data");
     expect(SAMPLE_ORDERS[0]?.id).toBe("EX-10456");
     expect(SAMPLE_ORDERS[0]?.source).toBe("Lemon Squeezy");
     expect(SAMPLE_ORDERS[0]?.product).toBe("Sample Icon Pack");
     expect(SAMPLE_ORDERS[0]?.amount).toBe(12);
     expect(SAMPLE_ORDERS[1]?.id).toBe("EX-10455");
-    expect(SAMPLE_ORDERS[1]?.source).toBe("Gumroad");
-    expect(SAMPLE_ORDERS[1]?.product).toBe("Demo SaaS · Pro");
-    expect(SAMPLE_ORDERS[1]?.amount).toBe(19);
+    expect(HERO_ORDERS[0]?.id).toBe("EX-10457");
+    expect(HERO_ORDERS[0]?.product).toBe(EXAMPLE_ORDER_SPECS[0]?.product);
+    expect(HERO_ORDERS[0]?.amount).toBe(SAMPLE_ORDERS[0]?.amount);
     expect(SAMPLE_ORDERS.length).toBeGreaterThanOrEqual(20);
   });
 

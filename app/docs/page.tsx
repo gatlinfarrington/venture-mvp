@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Reveal } from "@/components/Reveal";
 import { brand } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
@@ -95,45 +96,53 @@ export default function DocsIndexPage() {
         Setup for each source, API key handling, FAQ, and fixes when sync stalls.
       </p>
 
-      <section className="docs-start">
-        <h2 className="h3">Start here</h2>
-        <ol className="docs-quickstart">
-          {quickstart.map((step) => (
-            <li key={step.n}>
-              <Link href={step.href}>
-                <span className="docs-quickstart-n mono">{step.n}</span>
-                <span className="docs-card-title">{step.title}</span>
-                <span className="muted">{step.body}</span>
-              </Link>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <div className="docs-groups">
-        <section>
-          <h2 className="docs-group-label mono">Setup</h2>
-          <ul className="docs-card-list">
-            {setup.map((card) => (
-              <li key={card.href}>
-                <Link href={card.href}>
-                  <span className="docs-card-title">{card.title}</span>
-                  <span className="muted">{card.body}</span>
+      <div className="docs-top">
+        <section className="docs-start">
+          <h2 className="h3">Start here</h2>
+          <ol className="docs-quickstart">
+            {quickstart.map((step) => (
+              <li key={step.n}>
+                <Link href={step.href}>
+                  <span className="docs-quickstart-n mono">{step.n}</span>
+                  <span className="docs-card-title">{step.title}</span>
+                  <span className="muted">{step.body}</span>
                 </Link>
               </li>
             ))}
-          </ul>
+          </ol>
         </section>
+
         <section>
-          <h2 className="docs-group-label mono">Help</h2>
+          <div className="docs-mrr-card">
+            <h2 className="docs-card-title">How we calculate MRR</h2>
+            <p>Yearly plans count as amount ÷ 12. Only active subscriptions count by default.</p>
+            <Link href="/docs/mrr-and-churn">Read the method →</Link>
+          </div>
+          <h2 className="docs-group-label mono">Setup</h2>
           <ul className="docs-card-list">
-            {help.map((card) => (
-              <li key={card.href}>
+            {setup.map((card, i) => (
+              <Reveal as="li" key={card.href} className="reveal-rise" delay={i * 40}>
                 <Link href={card.href}>
                   <span className="docs-card-title">{card.title}</span>
                   <span className="muted">{card.body}</span>
                 </Link>
-              </li>
+              </Reveal>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <div className="docs-groups">
+        <section>
+          <h2 className="docs-group-label mono">Help</h2>
+          <ul className="docs-card-list">
+            {help.map((card, i) => (
+              <Reveal as="li" key={card.href} className="reveal-rise" delay={i * 40}>
+                <Link href={card.href}>
+                  <span className="docs-card-title">{card.title}</span>
+                  <span className="muted">{card.body}</span>
+                </Link>
+              </Reveal>
             ))}
           </ul>
         </section>

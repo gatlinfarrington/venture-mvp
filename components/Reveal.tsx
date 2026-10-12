@@ -5,7 +5,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 type Props = {
   children: ReactNode;
   className?: string;
-  as?: "div" | "section" | "li";
+  as?: "div" | "section" | "li" | "tr";
   delay?: number;
 };
 
