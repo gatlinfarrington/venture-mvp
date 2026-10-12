@@ -159,7 +159,7 @@ Copy these across 12 columns with `M1` moving a month each time, and you have a 
 
 The method above works, and if you only check your numbers once a quarter it may be all you need. The cost is the paste: every refresh means three exports or three scripts, the same cleanup, and the same chance to forget the cents.
 
-RevenueSheet is a Google Sheets add-on that does that part. You paste one key per store, and it pulls the full history from Lemon Squeezy, Polar and Gumroad into Orders, Subscriptions, Customers and Refunds tabs with a layout much like the one above, then builds a Dashboard tab with MRR, churn and revenue by product. The paid plan refreshes every hour. The tabs come with named ranges (`rs_orders`, `rs_subs`, `rs_mrr_monthly`), so the formulas in this guide can point straight at them.
+RevenueSheet is a Google Sheets add-on that does that part. You paste one key per store, and it pulls the full history from Lemon Squeezy, Polar and Gumroad into Orders, Subscriptions, Customers and Refunds tabs with a layout much like the one above, then builds a Dashboard tab with MRR, churn and revenue by product. Paid plans refresh hourly, every 6 hours, daily or weekly. The tabs come with named ranges (`rs_orders`, `rs_subs`, `rs_mrr_monthly`), so the formulas in this guide can point straight at them.
 
 It uses the same defaults as this guide: quarterly, six-month and yearly plans are normalized to monthly, and MRR counts active subscriptions; trials and past-due are shown separately.
 
