@@ -22,7 +22,7 @@ function HeroDemoFallback({ final = true }: { final?: boolean }) {
             <div className="eyebrow">MRR · all sources · example</div>
             <div className="hero-mrr">
               <b className="hero-mrr-num">
-                <span className="visually-hidden">{mrr}</span>
+                <span className="sr-only">{mrr}</span>
                 {digits.map((ch, i) =>
                   ch >= "0" && ch <= "9" ? (
                     <span

@@ -368,11 +368,26 @@ export function HeroDemo() {
       }
       if (startTimer != null) return;
       // Short delay so phone viewports autoplay without waiting on Replay.
+      // First start swaps to seed with no ghost (ghost is only for mid-loop reset).
       startTimer = window.setTimeout(() => {
         started = true;
         startTimer = null;
         clearTimers();
-        resetAndRestart(() => scheduleLoopRef.current());
+        setGhost(null);
+        setInstant(true);
+        setEnteringId(null);
+        setEnterPhase("to");
+        const seed = buildSeedRows();
+        setRows(seed);
+        rowsRef.current = seed;
+        setActiveStores([false, false, false, false]);
+        mrrRef.current = START_MRR;
+        setMrr(START_MRR);
+        setDelta(null);
+        requestAnimationFrame(() => {
+          setInstant(false);
+          scheduleLoopRef.current();
+        });
       }, 400);
     };
 
@@ -457,7 +472,7 @@ export function HeroDemo() {
               <div className="eyebrow">MRR · all sources · example</div>
               <div className="hero-mrr">
                 <b className="hero-mrr-num">
-                  <span className="visually-hidden">{formatMrr(mrr)}</span>
+                  <span className="sr-only">{formatMrr(mrr)}</span>
                   {digits.map((c, i) =>
                     c.kind === "s" ? (
                       <span key={`s-${i}`} className="s" aria-hidden="true">
@@ -507,7 +522,7 @@ export function HeroDemo() {
                   <th style={{ textAlign: "right" }}>Amount</th>
                 </tr>
               </thead>
-              <tbody className="hero-rows">
+              <tbody className={`hero-rows${ghost ? " is-crossfade-in" : ""}`}>
                 {rows.map((r, i) => {
                   const entering = enteringId === r.id;
                   // from: new at -1, others at i-1 (prior slots). to: index i.

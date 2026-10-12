@@ -368,6 +368,7 @@ a.badge {
   display: block;
 }
 
+.sr-only,
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -1063,14 +1064,32 @@ tr.reveal.reveal-rise {
   bottom: 0;
   height: calc(9 * 36px);
   background: var(--c-surface);
+  opacity: 1;
   animation: hero-ghost-out 360ms var(--ease-standard) forwards;
   pointer-events: none;
   z-index: 2;
 }
 
+/* Live layer fades in under the ghost so both are never at full opacity. */
+.hero-sheet tbody.hero-rows.is-crossfade-in {
+  animation: hero-live-in 360ms var(--ease-standard) forwards;
+}
+
 @keyframes hero-ghost-out {
+  from {
+    opacity: 1;
+  }
   to {
     opacity: 0;
+  }
+}
+
+@keyframes hero-live-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -1293,6 +1312,11 @@ tr.reveal.reveal-rise {
 
   .hero-rows-ghost {
     display: none;
+  }
+
+  .hero-sheet tbody.hero-rows.is-crossfade-in {
+    animation: none !important;
+    opacity: 1;
   }
 
   .hero-sheet tbody tr {
@@ -1890,11 +1914,27 @@ html:not(.motion) .pricing-grid-reveal .pricing-grid > .price-card {
   transform: none;
 }
 
+/* Featured Pro lift must win over the reveal's transform: none (and any flatten). */
+@media (min-width: 1024px) {
+  .pricing-grid-reveal.is-visible .pricing-grid > .price-card.is-featured,
+  html:not(.motion) .pricing-grid-reveal .pricing-grid > .price-card.is-featured,
+  .price-card.is-featured {
+    transform: translateY(-8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pricing-grid-reveal .pricing-grid > .price-card {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  @media (min-width: 1024px) {
+    .pricing-grid-reveal .pricing-grid > .price-card.is-featured,
+    .price-card.is-featured {
+      transform: translateY(-8px);
+    }
   }
 }
 
