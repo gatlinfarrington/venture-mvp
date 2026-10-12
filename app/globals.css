@@ -600,7 +600,7 @@ tr.reveal.reveal-rise {
   display: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1079px) {
   .nav-links {
     display: none;
   }
@@ -930,8 +930,10 @@ tr.reveal.reveal-rise {
   display: inline-flex;
   align-items: flex-start;
   user-select: none;
+
   /* Integer px slot so translateY never lands on a half-glyph (esp. 375). */
   --digit-h: 40px;
+
   line-height: var(--digit-h);
   height: var(--digit-h);
 }
@@ -970,7 +972,8 @@ tr.reveal.reveal-rise {
 .hero-mrr-num .s {
   display: inline-block;
   line-height: var(--digit-h);
-  width: 0.55ch;
+  width: auto;
+  padding-right: 0.02em;
   text-align: center;
 }
 
@@ -1044,8 +1047,8 @@ tr.reveal.reveal-rise {
 
 .hero-sheet thead tr {
   display: grid;
-  /* Amount col fits $150.00 (7ch mono) without clipping at 375/1280. */
-  grid-template-columns: 5.5rem minmax(0, 0.85fr) minmax(0, 1.25fr) 5.75rem;
+  /* Fixed tracks: Order 92 / Source 112 / Product flex / Amount 84 ($150.00). */
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 30px;
   background: var(--c-surface-2);
   border-bottom: 1px solid var(--c-border);
@@ -1076,7 +1079,7 @@ tr.reveal.reveal-rise {
   width: 100%;
 }
 
-/* Ghost overlay only — not a live .hero-rows layer (avoids 18-row DOM counts). */
+/* Ghost overlay only: not a live .hero-rows layer (avoids 18-row DOM counts). */
 .hero-sheet tbody.hero-rows-ghost {
   display: block;
   position: absolute;
@@ -1086,14 +1089,14 @@ tr.reveal.reveal-rise {
   height: calc(9 * 36px);
   background: var(--c-surface);
   opacity: 1;
-  animation: hero-ghost-out 360ms var(--ease-standard) forwards;
+  animation: hero-ghost-out 160ms var(--ease-standard) forwards;
   pointer-events: none;
   z-index: 2;
 }
 
 .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 0.85fr) minmax(0, 1.25fr) 5.75rem;
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1105,9 +1108,9 @@ tr.reveal.reveal-rise {
   background: var(--c-surface);
 }
 
-/* Live layer fades in under the ghost so both are never at full opacity. */
-.hero-sheet tbody.hero-rows.is-crossfade-in {
-  animation: hero-live-in 360ms var(--ease-standard) forwards;
+/* Sequential reset: ghost out first, then live in (no double text). */
+.hero-sheet tbody.hero-rows.after-reset {
+  animation: hero-rows-in 220ms var(--ease-out) 140ms both;
 }
 
 @keyframes hero-ghost-out {
@@ -1119,7 +1122,7 @@ tr.reveal.reveal-rise {
   }
 }
 
-@keyframes hero-live-in {
+@keyframes hero-rows-in {
   from {
     opacity: 0;
   }
@@ -1130,7 +1133,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet tbody tr {
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 0.85fr) minmax(0, 1.25fr) 5.75rem;
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1167,19 +1170,30 @@ tr.reveal.reveal-rise {
   text-overflow: ellipsis;
 }
 
+.hero-sheet th:nth-child(1),
+.hero-sheet td:nth-child(1) {
+  width: 92px;
+}
+
+.hero-sheet th:nth-child(2),
+.hero-sheet td:nth-child(2) {
+  width: 112px;
+}
+
+.hero-sheet th:last-child,
 .hero-sheet td.n {
+  width: 84px;
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  /* Stay inside the amount track; tbody overflow:hidden would clip overflow:visible. */
-  overflow: hidden;
+  overflow: visible;
   text-overflow: clip;
   padding-left: var(--space-2);
 }
 
 .hero-sheet td.hero-col-product {
   overflow: hidden;
-  text-overflow: clip;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1248,18 +1262,12 @@ tr.reveal.reveal-rise {
   }
 }
 
-@media (max-width: 980px) {
+/* Stack copy + demo before form overlaps source pills (clears at 1120). */
+@media (max-width: 1119px) {
   .hero-grid {
     grid-template-columns: 1fr;
   }
 
-  .hero-sheet-wrap {
-    max-width: none;
-  }
-}
-
-/* One column through tablet so Join / email never spill over source pills. */
-@media (max-width: 900px) {
   .hero-stage {
     height: auto;
     display: flex;
@@ -1308,7 +1316,7 @@ tr.reveal.reveal-rise {
 
   .hero-sheet-wrap {
     width: 100%;
-    max-width: 100%;
+    max-width: none;
     margin-left: 0;
   }
 
@@ -1323,7 +1331,7 @@ tr.reveal.reveal-rise {
   .hero-sheet thead tr,
   .hero-sheet tbody tr,
   .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
-    grid-template-columns: 5.5rem minmax(0, 1fr) 5.75rem;
+    grid-template-columns: 92px minmax(0, 1fr) 84px;
   }
 
   .hero-mrr {
@@ -1341,6 +1349,13 @@ tr.reveal.reveal-rise {
 
   .hero-bars i.signal {
     transition-duration: 420ms;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-sheet th:nth-child(2),
+  .hero-sheet td:nth-child(2) {
+    width: auto;
   }
 }
 
@@ -1372,7 +1387,7 @@ tr.reveal.reveal-rise {
     display: none;
   }
 
-  .hero-sheet tbody.hero-rows.is-crossfade-in {
+  .hero-sheet tbody.hero-rows.after-reset {
     animation: none !important;
     opacity: 1;
   }

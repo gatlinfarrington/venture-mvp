@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -47,8 +48,8 @@ function packetsAllowed() {
   return (
     typeof window !== "undefined" &&
     !prefersReducedMotion() &&
-    // Match one-column hero breakpoint (≤900 hides the flying chip).
-    window.matchMedia("(min-width: 901px)").matches
+    // Match one-column hero breakpoint (≤1119 hides the flying chip).
+    window.matchMedia("(min-width: 1120px)").matches
   );
 }
 
@@ -113,25 +114,40 @@ export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
   const packetPathRef = useRef("M 150 138 C 230 138, 250 160, 330 175");
-  const mrrRef = useRef(FINAL_MRR);
+  const mrrRef = useRef(START_MRR);
   const transitioning = useRef(false);
-  const rowsRef = useRef<HeroRow[]>(buildFinalRows());
-  // First paint matches /sample Orders (HERO_FINAL). The loop crossfades to seed.
-  const [mrr, setMrr] = useState(FINAL_MRR);
-  const [delta, setDelta] = useState<string | null>(() => deltaLabel());
+  const rowsRef = useRef<HeroRow[]>(buildSeedRows());
+  // First paint is START_MRR + seed so the first motion is counting up, not a drop.
+  const [mrr, setMrr] = useState(START_MRR);
+  const [delta, setDelta] = useState<string | null>(null);
   const [deltaKey, setDeltaKey] = useState(0);
-  const [rows, setRows] = useState<HeroRow[]>(() => buildFinalRows());
+  const [rows, setRows] = useState<HeroRow[]>(() => buildSeedRows());
   const [ghost, setGhost] = useState<HeroRow[] | null>(null);
   const [enteringId, setEnteringId] = useState<string | null>(null);
   /** 'from' = new at -1 / others at prior slots; 'to' = settled indices. */
   const [enterPhase, setEnterPhase] = useState<"from" | "to">("to");
   const [instant, setInstant] = useState(false);
-  const [activeStores, setActiveStores] = useState([true, true, true, true]);
+  const [activeStores, setActiveStores] = useState([false, false, false, false]);
   const [pulseStore, setPulseStore] = useState<number | null>(null);
   const [packets, setPackets] = useState<
     Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
   >([]);
   const [reduced, setReduced] = useState(false);
+
+  // Before paint: reduced-motion visitors must land on FINAL, never see START→FINAL drop.
+  useLayoutEffect(() => {
+    if (!prefersReducedMotion()) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional first-paint sync for a11y */
+    setReduced(true);
+    mrrRef.current = FINAL_MRR;
+    setMrr(FINAL_MRR);
+    setDelta(deltaLabel());
+    const finalRows = buildFinalRows();
+    setRows(finalRows);
+    rowsRef.current = finalRows;
+    setActiveStores([true, true, true, true]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
 
   useEffect(() => {
     rowsRef.current = rows;
@@ -142,27 +158,17 @@ export function HeroDemo() {
     timers.current = [];
   }, []);
 
-  /** Land the +$ chip inside the MRR card, to the right of the number (not over digits/bar). */
+  /** Land the +$ chip on row 1's Order cell (below header) — never on digits/bar/SOURCE. */
   const packetEnd = useCallback((stage: HTMLElement, sheet: HTMLElement, storeEl: HTMLElement) => {
     const stageRect = stage.getBoundingClientRect();
     const storeRect = storeEl.getBoundingClientRect();
-    const num = sheet.querySelector<HTMLElement>(".hero-mrr-num");
-    const mrrRow = sheet.querySelector<HTMLElement>(".hero-mrr");
-    const top = sheet.querySelector<HTMLElement>(".hero-sheet-top");
-    const numRect = (num ?? mrrRow)?.getBoundingClientRect();
-    const topRect = top?.getBoundingClientRect();
+    const sheetRect = sheet.getBoundingClientRect();
+    const head = sheet.querySelector<HTMLElement>("thead");
+    const headRect = head?.getBoundingClientRect() ?? sheetRect;
     const startX = storeRect.right - stageRect.left + 8;
     const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    // Slot: right of the MRR digits, vertically centered on the number, inside the card top.
-    const endX = numRect
-      ? Math.min(
-          numRect.right - stageRect.left + 12,
-          (topRect?.right ?? numRect.right) - stageRect.left - 36,
-        )
-      : sheet.getBoundingClientRect().left - stageRect.left + sheet.getBoundingClientRect().width * 0.72;
-    const endY = numRect
-      ? numRect.top + numRect.height / 2 - stageRect.top
-      : startY;
+    const endX = sheetRect.left - stageRect.left + 56;
+    const endY = headRect.bottom - stageRect.top + 18;
     const midX = startX + (endX - startX) * 0.55;
     return { startX, startY, endX, endY, midX };
   }, []);
@@ -284,7 +290,7 @@ export function HeroDemo() {
       clearTimers();
       setPackets([]);
       setPulseStore(null);
-      // Ghost-layer crossfade: freeze final rows on top, seed underneath, no blank frames.
+      // Ghost out → live in (sequential). Digit strips roll START via CSS transition.
       const frozen = trimOutgoing(rowsRef.current).map((r) => ({ ...r, fresh: false }));
       setGhost(frozen);
       setInstant(true);
@@ -295,23 +301,11 @@ export function HeroDemo() {
       transitioning.current = false;
       setActiveStores([false, false, false, false]);
       setDelta(null);
-      // Roll MRR down over RESET_MS (digit strips animate); do not snap.
-      const from = mrrRef.current;
-      const steps = 14;
-      for (let i = 1; i <= steps; i++) {
-        timers.current.push(
-          window.setTimeout(() => {
-            const v =
-              i === steps
-                ? START_MRR
-                : Math.round(from + (START_MRR - from) * (i / steps));
-            mrrRef.current = v;
-            setMrr(v);
-          }, Math.round((RESET_MS * i) / steps)),
-        );
-      }
+      mrrRef.current = START_MRR;
+      setMrr(START_MRR);
       requestAnimationFrame(() => setInstant(false));
-      timers.current.push(window.setTimeout(() => setGhost(null), RESET_MS / 2));
+      // Ghost anim 160ms; live after-reset starts at 140ms for 220ms → clear after both.
+      timers.current.push(window.setTimeout(() => setGhost(null), 200));
       timers.current.push(window.setTimeout(thenRun, RESET_MS));
     },
     [clearTimers],
@@ -400,27 +394,11 @@ export function HeroDemo() {
         return;
       }
       if (startTimer != null) return;
-      // Short delay so phone viewports autoplay without waiting on Replay.
-      // First start swaps to seed with no ghost (ghost is only for mid-loop reset).
+      // Already on START_MRR + seed; short delay then count up (no drop).
       startTimer = window.setTimeout(() => {
         started = true;
         startTimer = null;
-        clearTimers();
-        setGhost(null);
-        setInstant(true);
-        setEnteringId(null);
-        setEnterPhase("to");
-        const seed = buildSeedRows();
-        setRows(seed);
-        rowsRef.current = seed;
-        setActiveStores([false, false, false, false]);
-        mrrRef.current = START_MRR;
-        setMrr(START_MRR);
-        setDelta(null);
-        requestAnimationFrame(() => {
-          setInstant(false);
-          scheduleLoopRef.current();
-        });
+        scheduleLoopRef.current();
       }, 400);
     };
 
@@ -556,7 +534,7 @@ export function HeroDemo() {
                 </tr>
               </thead>
               <tbody
-                className={`hero-rows${ghost ? " is-crossfade-in" : ""}`}
+                className={`hero-rows${ghost ? " after-reset" : ""}`}
                 data-hero-live-rows
               >
                 {rows.map((r, i) => {
