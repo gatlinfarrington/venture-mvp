@@ -229,7 +229,7 @@ export function WhySheet() {
                 <td className="num">$4,280</td>
               </tr>
               <tr>
-                <td>Pro annual</td>
+                <td>Pro monthly</td>
                 <td className="num">$2,160</td>
               </tr>
               <tr>

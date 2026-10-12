@@ -4142,11 +4142,9 @@ a.tag-pill:focus-visible {
   font-weight: 600;
 }
 
-.sample-grid th.sample-num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
+/* Beat .sample-grid tr.sample-hdr th:not(.sample-rn) text-align:left */
+.sample-grid th.sample-num,
+.sample-grid tr.sample-hdr th.sample-num,
 .sample-num {
   text-align: right;
   font-variant-numeric: tabular-nums;

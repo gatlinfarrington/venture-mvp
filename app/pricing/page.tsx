@@ -50,8 +50,8 @@ const compareRows = [
 
 const faq: Array<{ q: string; a: ReactNode }> = [
   {
-    q: "When do paid plans open?",
-    a: "With the Marketplace listing. Until then, join the launch list from any Join the launch list button.",
+    q: "Can I buy a paid plan now?",
+    a: "Yes. Pro and Business check out on this page through Stripe. The Google Sheets add-on is not on the Google Workspace Marketplace yet (pending Google review); join the launch list for install updates.",
   },
   {
     q: "How does billing work?",

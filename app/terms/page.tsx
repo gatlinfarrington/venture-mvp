@@ -17,7 +17,7 @@ export default function TermsPage() {
     <main className="legal container">
       <h1>Terms of service</h1>
       <div className="prose">
-        <p className="mono muted">Last updated: October 10, 2026</p>
+        <p className="mono muted">Last updated: October 12, 2026</p>
         <p>
           By installing {brand.name}, using {siteHostname()}, or purchasing a license, you agree to
           these terms. If you do not agree, do not use the add-on or website.
@@ -28,7 +28,8 @@ export default function TermsPage() {
           {brand.name} syncs commerce data from supported sources (Lemon Squeezy, Polar, Gumroad,
           and Stripe) into Google Sheets and builds an MRR-oriented dashboard tab. Features and
           source coverage may change. Free, Pro, and Business tiers are described on the{" "}
-          <Link href="/pricing">pricing</Link> page.
+          <Link href="/pricing">pricing</Link> page. Paid plans can be purchased on this site. The
+          add-on is not listed on the Google Workspace Marketplace yet (pending Google review).
         </p>
 
         <h2>Accounts and eligibility</h2>
@@ -69,9 +70,10 @@ export default function TermsPage() {
 
         <h2>Billing and licenses</h2>
         <p>
-          Paid plans are billed through Stripe. Cancel anytime; access continues through the paid
-          period unless a refund is issued. License keys are personal to you (or your organization on
-          Business) and may not be resold.
+          Paid plans (Pro and Business) are sold on this site and billed monthly through Stripe
+          Checkout. Cancel anytime; access continues through the paid period unless a refund is
+          issued. License keys are personal to you (or your organization on Business) and may not be
+          resold.
         </p>
 
         <h2>Refunds</h2>

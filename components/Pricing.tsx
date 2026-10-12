@@ -62,12 +62,12 @@ export function Pricing({ variant = "section" }: Props) {
         {variant === "page" ? (
           <header className="pricing-page-head">
             <p className="eyebrow">Pricing</p>
-            <h1>Free to start. Paid plans open at launch.</h1>
+            <h1>Free to start. Buy Pro or Business here.</h1>
           </header>
         ) : (
           <Reveal className="section-head">
             <p className="eyebrow">Pricing</p>
-            <h2 className="h2">Free to start. Paid plans open at launch.</h2>
+            <h2 className="h2">Free to start. Buy Pro or Business here.</h2>
           </Reveal>
         )}
 
