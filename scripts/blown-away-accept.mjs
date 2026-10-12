@@ -107,8 +107,34 @@ async function sampleHero(page) {
     { timeout: 60_000 },
   );
 
+  // Stabilize on START_MRR before measuring the beat (ignore SSR/hydrate snap).
+  const startLabel = fmtMrr(START_MRR);
+  await page.waitForFunction(
+    (label) => {
+      const el = document.querySelector("[data-hero-demo] .hero-mrr-num .sr-only");
+      return el?.textContent?.trim() === label;
+    },
+    startLabel,
+    { timeout: 60_000 },
+  );
+  // Two quiet frames at START so digit/bar baseline is post-hydrate.
+  let quiet = await sampleHero(page);
+  for (let i = 0; i < 6; i++) {
+    await page.waitForTimeout(50);
+    const next = await sampleHero(page);
+    if (
+      next.text === startLabel &&
+      next.digits === quiet.digits &&
+      Math.abs(next.barH - quiet.barH) < 0.4
+    ) {
+      quiet = next;
+      break;
+    }
+    quiet = next;
+  }
+
   const t0 = Date.now();
-  const frames = [];
+  const frames = [{ t: 0, ...quiet }];
   const sampleUntil = tickAtApprox + 2500;
   while (Date.now() - t0 < sampleUntil) {
     const t = Date.now() - t0;
@@ -124,12 +150,15 @@ async function sampleHero(page) {
   let barStart = null;
   for (const f of frames) {
     if (rowStart == null && f.topId === FIRST_TICK_ID) rowStart = f.t;
-    if (digitStart == null && f.digits !== baseline.digits) digitStart = f.t;
-    if (
-      barStart == null &&
-      (Math.abs(f.barH - baseline.barH) > 0.4 || f.barStyleH !== baseline.barStyleH)
-    ) {
-      barStart = f.t;
+    // Only count digit/bar moves at/after the tick row appears (same beat).
+    if (rowStart != null) {
+      if (digitStart == null && f.digits !== baseline.digits) digitStart = f.t;
+      if (
+        barStart == null &&
+        (Math.abs(f.barH - baseline.barH) > 0.4 || f.barStyleH !== baseline.barStyleH)
+      ) {
+        barStart = f.t;
+      }
     }
   }
   const starts = [rowStart, digitStart, barStart];
