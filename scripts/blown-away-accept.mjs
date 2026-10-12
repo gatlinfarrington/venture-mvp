@@ -1,5 +1,5 @@
 /**
- * blown-away-spec.md acceptance checks 2–7.
+ * blown-away-spec.md acceptance checks 2–8.
  * Usage: VIEWPORT_WIDTH=1280 node scripts/blown-away-accept.mjs [url]
  *
  * 2. Row insert, first digit move, and bar start within the same 100ms window.
@@ -8,8 +8,8 @@
  * 5. Reduced motion: zero running animations on the hero after load.
  * 6. +$ chip never intersects table cells/headers or the bar; stays in MRR card.
  *    Samples the whole chip lifetime (not only rest state).
- * 7. Every th/td lies within the sheet card bounds at 1280, 1440, 768, and 375.
- * 8. Sheet width ≥400px at 1024+; no cell with scrollWidth > clientWidth (clipped text).
+ * 7. Every th/td lies within the sheet card bounds; row lines span the full card.
+ * 8. Sheet ≥400px at 1024+; no clipped cells or badge (match hero-loop-test).
  */
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
@@ -94,14 +94,29 @@ async function measureCellBounds(page) {
   return page.evaluate(() => {
     const sheet = document.querySelector("[data-hero-demo] .hero-sheet");
     if (!sheet) {
-      return { ok: false, reason: "no-sheet", sheetWidth: 0, overflows: [], clipped: [] };
+      return {
+        ok: false,
+        reason: "no-sheet",
+        sheetWidth: 0,
+        overflows: [],
+        clipped: [],
+        badgeCut: false,
+        rowSpanOk: false,
+      };
     }
     const card = sheet.getBoundingClientRect();
+    const textOver = (el, box) => {
+      const rg = document.createRange();
+      rg.selectNodeContents(el);
+      const t = rg.getBoundingClientRect();
+      return t.width > 0 && (t.right > box.right + 0.5 || t.left < box.left - 0.5);
+    };
     const cells = [...sheet.querySelectorAll("th, td")];
     const inset = 0.5;
     const overflows = [];
     const clipped = [];
     for (const el of cells) {
+      if (el.closest(".hero-rows-ghost")) continue;
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
       const style = getComputedStyle(el);
@@ -120,20 +135,49 @@ async function measureCellBounds(page) {
           dyB: +(r.bottom - card.bottom).toFixed(1),
         });
       }
-      // Text clipped inside the cell (ellipsis / overflow hidden).
-      if (el.scrollWidth > el.clientWidth + 1) {
+      const txt = (el.textContent || "").trim();
+      if (
+        txt &&
+        (el.scrollWidth > el.clientWidth + 1 || textOver(el, r) || textOver(el, card))
+      ) {
         clipped.push({
-          text: (el.textContent || "").trim().slice(0, 28),
+          text: txt.slice(0, 28),
           scrollWidth: el.scrollWidth,
           clientWidth: el.clientWidth,
         });
       }
     }
+    const badge = document.querySelector("[data-hero-demo] .hero-delta");
+    let badgeCut = false;
+    if (badge && badge.innerText.trim() && +getComputedStyle(badge).opacity > 0.05) {
+      const br = badge.getBoundingClientRect();
+      badgeCut =
+        badge.scrollWidth > badge.clientWidth + 1 ||
+        textOver(badge, card) ||
+        br.right > card.right + 0.5;
+    }
+    let rowSpanOk = true;
+    for (const tr of sheet.querySelectorAll("tbody.hero-rows tr, thead tr")) {
+      if (tr.closest(".hero-rows-ghost")) continue;
+      if (+getComputedStyle(tr).opacity <= 0.05) continue;
+      const rr = tr.getBoundingClientRect();
+      if (rr.width < 1) continue;
+      if (Math.abs(rr.left - card.left) > 2 || Math.abs(rr.right - card.right) > 2) {
+        rowSpanOk = false;
+        break;
+      }
+    }
     return {
-      ok: overflows.length === 0 && clipped.length === 0,
+      ok:
+        overflows.length === 0 &&
+        clipped.length === 0 &&
+        !badgeCut &&
+        rowSpanOk,
       sheetWidth: +card.width.toFixed(1),
       overflows: overflows.slice(0, 12),
       clipped: clipped.slice(0, 12),
+      badgeCut,
+      rowSpanOk,
     };
   });
 }
@@ -371,14 +415,16 @@ async function measureCellBounds(page) {
   await context.close();
 }
 
-// —— Check 7: every cell within the sheet card at 1280 / 1440 / 768 / 375 ——
-// —— Check 8: sheet ≥400px wide at 1024+; no clipped cell text ——
+// —— Check 7/8 (match hero-loop-test): sheet ≥400px at 1024+, no clipped
+// cells/badge, row lines span the full card ——
 {
-  const BOUND_WIDTHS = [1280, 1440, 1024, 768, 375];
+  const BOUND_WIDTHS = [1440, 1280, 1024, 768, 375];
   const byWidth = {};
   let boundsOk = true;
   let widthOk = true;
   let clipOk = true;
+  let badgeOk = true;
+  let rowSpanOk = true;
   for (const w of BOUND_WIDTHS) {
     const h = w < 600 ? 812 : 900;
     const context = await browser.newContext({
@@ -398,23 +444,30 @@ async function measureCellBounds(page) {
     byWidth[w] = measured;
     if (measured.overflows?.length) boundsOk = false;
     if (measured.clipped?.length) clipOk = false;
+    if (measured.badgeCut) badgeOk = false;
+    if (measured.rowSpanOk === false) rowSpanOk = false;
     if (w >= 1024 && measured.sheetWidth < 400) widthOk = false;
     await context.close();
   }
   results.checks[7] = {
-    pass: boundsOk,
+    pass: boundsOk && rowSpanOk,
     byWidth,
-    note: "FAIL if any th/td extends past .hero-sheet bounds",
+    note: "FAIL if any th/td extends past .hero-sheet or row lines do not span the card",
   };
   results.checks[8] = {
-    pass: widthOk && clipOk,
+    pass: widthOk && clipOk && badgeOk,
     byWidth: Object.fromEntries(
       Object.entries(byWidth).map(([w, m]) => [
         w,
-        { sheetWidth: m.sheetWidth, clipped: m.clipped },
+        {
+          sheetWidth: m.sheetWidth,
+          clipped: m.clipped,
+          badgeCut: m.badgeCut,
+          rowSpanOk: m.rowSpanOk,
+        },
       ]),
     ),
-    note: "FAIL if .hero-sheet < 400px at 1024+ or any cell scrollWidth > clientWidth",
+    note: "FAIL if sheet < 400px at 1024+, any cell/badge clipped, or row lines truncated",
   };
 }
 

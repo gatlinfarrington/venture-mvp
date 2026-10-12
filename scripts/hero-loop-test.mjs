@@ -2,10 +2,9 @@
 // Samples the hero order table every 100ms over one full loop and checks:
 // no overlapping rows, no duplicate IDs, no blank band (gap > 2px between rows, or
 // empty space under the last visible row taller than 2px inside the clip box).
-// Also fails on any frame with zero visible rows (reset flash).
-// Rows inside `.hero-rows-ghost` (aria-hidden reset overlay) are ignored for
-// overlap/duplicate checks; they are only used as a fallback when the live
-// layer is still fading in during a crossfade.
+// Also fails if the sheet is under 400px wide at viewport >= 1024, or any cell or
+// the delta badge is cut off.
+// The reset ghost layer (.hero-rows-ghost) is excluded: it is a deliberate fade-out overlay.
 import { chromium } from "playwright-core";
 import fs from "fs";
 import { createRequire } from "module";
@@ -40,8 +39,7 @@ await p.locator("[data-hero-demo], .hero-stage, .hero-sheet").first().scrollInto
 // Let the hero entrance (~500ms) finish so it is not counted as a row jump.
 await p.waitForTimeout(START_WAIT);
 
-const hasHeroRow = Boolean(await p.$(".hero-sheet .hero-row"));
-
+const ROWSEL = (await p.$(".hero-sheet .hero-row")) ? ".hero-row" : "tbody tr";
 const sha = await p
   .evaluate(() =>
     fetch("/api/version")
@@ -65,94 +63,103 @@ while (Date.now() - t0 < LOOP_MS) {
       replayClicked = true;
     }
   }
-  const f = await p.evaluate((preferHeroRow) => {
+  const f = await p.evaluate((ROWSEL) => {
     const sheet = document.querySelector(".hero-sheet");
     if (!sheet) {
       return {
         rows: [],
         clipBottom: 0,
         headBottom: 0,
-        ghostPresent: false,
-        bothFullOpacity: false,
+        sheetW: 0,
+        vw: innerWidth,
+        clipped: [],
+        badgeCut: false,
+        rowSpanOk: true,
       };
     }
+
     const hd = sheet.querySelector("thead, .hero-head, .hero-rows-head");
-    const liveBody = sheet.querySelector(".hero-rows:not(.hero-rows-ghost)");
-    const ghostBody = sheet.querySelector(".hero-rows-ghost");
-    const clipEl = liveBody || sheet.closest(".hero-sheet-wrap") || sheet;
+    const body = sheet.querySelector(".hero-rows");
+    const clipEl = body || sheet.closest(".hero-sheet-wrap") || sheet;
     const head = hd
       ? hd.getBoundingClientRect()
-      : liveBody
-        ? { bottom: liveBody.getBoundingClientRect().top }
+      : body
+        ? { bottom: body.getBoundingClientRect().top }
         : sheet.getBoundingClientRect();
     const clip = clipEl.getBoundingClientRect();
-    const rowSel = preferHeroRow ? ".hero-row" : "tbody tr";
+    const rows = [...sheet.querySelectorAll(ROWSEL)]
+      .filter((tr) => !tr.closest(".hero-rows-ghost"))
+      .map((tr) => {
+        const r = tr.getBoundingClientRect();
+        const o = +getComputedStyle(tr).opacity;
+        return {
+          id: (tr.cells ? tr.cells[0] : tr.firstElementChild)?.innerText.trim(),
+          top: r.top,
+          bottom: r.bottom,
+          h: r.height,
+          o,
+        };
+      })
+      .filter((r) => r.o > 0.05 && r.bottom > head.bottom + 1 && r.top < clip.bottom - 1);
 
-    const mapRows = (root) =>
-      [...root.querySelectorAll(rowSel)]
-        .filter((tr) => {
-          // Never count ghost-layer rows for the primary live set.
-          if (tr.closest(".hero-rows-ghost")) return false;
-          return true;
-        })
-        .map((tr) => {
-          const r = tr.getBoundingClientRect();
-          const o = +getComputedStyle(tr).opacity;
-          const idEl = tr.cells ? tr.cells[0] : tr.firstElementChild;
-          return {
-            id: idEl?.textContent?.trim() ?? "",
-            top: r.top,
-            bottom: r.bottom,
-            h: r.height,
-            o,
-          };
-        })
-        .filter(
-          (r) => r.o > 0.05 && r.bottom > head.bottom + 1 && r.top < clip.bottom - 1,
-        );
-
-    const live = mapRows(liveBody || sheet);
-
-    // Ghost fallback only when live is still fading in (true crossfade).
-    let rows = live.filter((r) => r.top < clip.bottom - 1);
-    if (rows.length === 0 && ghostBody) {
-      rows = [...ghostBody.querySelectorAll(rowSel)]
-        .map((tr) => {
-          const r = tr.getBoundingClientRect();
-          const o = +getComputedStyle(tr).opacity * +getComputedStyle(ghostBody).opacity;
-          const idEl = tr.cells ? tr.cells[0] : tr.firstElementChild;
-          return {
-            id: idEl?.textContent?.trim() ?? "",
-            top: r.top,
-            bottom: r.bottom,
-            h: r.height,
-            o,
-          };
-        })
-        .filter(
-          (r) => r.o > 0.05 && r.bottom > head.bottom + 1 && r.top < clip.bottom - 1,
-        );
+    const card = sheet.getBoundingClientRect();
+    const textOver = (el, box) => {
+      const rg = document.createRange();
+      rg.selectNodeContents(el);
+      const t = rg.getBoundingClientRect();
+      return t.width > 0 && (t.right > box.right + 0.5 || t.left < box.left - 0.5);
+    };
+    const clipped = [];
+    for (const c of sheet.querySelectorAll("th, td")) {
+      if (c.closest(".hero-rows-ghost")) continue;
+      const tr = c.closest("tr");
+      if (tr && +getComputedStyle(tr).opacity <= 0.05) continue;
+      const style = getComputedStyle(c);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      const cr = c.getBoundingClientRect();
+      if (cr.width === 0 || cr.bottom < head.top || cr.top > clip.bottom) continue;
+      const txt = c.innerText.trim();
+      if (!txt) continue;
+      if (c.scrollWidth > c.clientWidth + 1 || textOver(c, cr) || textOver(c, card)) {
+        clipped.push(txt);
+      }
+    }
+    const badge = document.querySelector(".hero-delta");
+    let badgeCut = false;
+    if (badge && badge.innerText.trim() && +getComputedStyle(badge).opacity > 0.05) {
+      const br = badge.getBoundingClientRect();
+      badgeCut =
+        badge.scrollWidth > badge.clientWidth + 1 ||
+        textOver(badge, card) ||
+        br.right > card.right + 0.5;
     }
 
-    const liveOp = liveBody ? +getComputedStyle(liveBody).opacity : 1;
-    const ghostOp = ghostBody ? +getComputedStyle(ghostBody).opacity : 0;
-    const bothFullOpacity = Boolean(
-      ghostBody && liveOp > 0.95 && ghostOp > 0.95,
-    );
+    // Live row lines should span the full card (no blank band from fixed td widths).
+    let rowSpanOk = true;
+    for (const tr of sheet.querySelectorAll("tbody.hero-rows tr, thead tr")) {
+      if (tr.closest(".hero-rows-ghost")) continue;
+      if (+getComputedStyle(tr).opacity <= 0.05) continue;
+      const rr = tr.getBoundingClientRect();
+      if (rr.width < 1) continue;
+      if (Math.abs(rr.left - card.left) > 2 || Math.abs(rr.right - card.right) > 2) {
+        rowSpanOk = false;
+        break;
+      }
+    }
 
     return {
-      rows,
+      rows: rows.filter((r) => r.top < clip.bottom - 1),
       clipBottom: clip.bottom,
       headBottom: head.bottom,
-      ghostPresent: Boolean(ghostBody),
-      bothFullOpacity,
+      sheetW: card.width,
+      vw: innerWidth,
+      clipped,
+      badgeCut,
+      rowSpanOk,
     };
-  }, hasHeroRow);
+  }, ROWSEL);
 
   const issues = [];
-  if (f.bothFullOpacity) {
-    issues.push("ghost+live both full opacity (not a true crossfade)");
-  }
   if (f.rows.length === 0) issues.push("empty table (no visible rows)");
   const ids = f.rows.map((r) => r.id);
   const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
@@ -170,6 +177,14 @@ while (Date.now() - t0 < LOOP_MS) {
     const tail = f.clipBottom - s.at(-1).bottom;
     if (tail > 2) issues.push(`blank band at bottom ${tail.toFixed(1)}px`);
   }
+  if (f.vw >= 1024 && f.sheetW < 400) {
+    issues.push(`narrow sheet ${f.sheetW.toFixed(0)}px at ${f.vw}`);
+  }
+  if (f.clipped.length) {
+    issues.push("clipped " + [...new Set(f.clipped)].slice(0, 6).join("|"));
+  }
+  if (f.badgeCut) issues.push("badge cut");
+  if (f.rowSpanOk === false) issues.push("row lines not full width");
   const heights = [...new Set(f.rows.map((r) => Math.round(r.h)))];
   if (heights.length > 1) issues.push("row heights " + heights.join("/"));
   const prevF = frames.at(-1);
@@ -188,8 +203,6 @@ while (Date.now() - t0 < LOOP_MS) {
     t,
     ids,
     issues,
-    ghostPresent: f.ghostPresent,
-    bothFullOpacity: f.bothFullOpacity,
     pos: Object.fromEntries(f.rows.map((r) => [r.id, r.top])),
   });
   if (SAVE_ALL) {
@@ -210,8 +223,8 @@ while (Date.now() - t0 < LOOP_MS) {
   const wait = STEP - (Date.now() - t0 - t);
   if (wait > 0) await p.waitForTimeout(wait);
 }
-await b.close();
 
+await b.close();
 const kinds = {};
 for (const f of fails) {
   for (const i of f.issues) {
@@ -219,7 +232,6 @@ for (const f of fails) {
     kinds[k] = (kinds[k] || 0) + 1;
   }
 }
-const earlyGhost = frames.filter((f) => f.t < 500 && f.ghostPresent).length;
 const summary = {
   url: URL,
   sha,
@@ -229,7 +241,6 @@ const summary = {
   issueCounts: kinds,
   firstFails: fails.slice(0, 10),
   replayAt: REPLAY_AT,
-  earlyGhostFrames: earlyGhost,
 };
 fs.writeFileSync(`${OUT}/report.json`, JSON.stringify({ summary, frames }, null, 1));
 console.log(JSON.stringify(summary, null, 1));
