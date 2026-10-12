@@ -931,14 +931,15 @@ tr.reveal.reveal-rise {
   align-items: flex-start;
   user-select: none;
 
-  /* Integer px slot so translateY never lands on a half-glyph (esp. 375). */
-  --digit-h: 40px;
+  /* Glyph box = font-size (36px): no fractional em mid-roll half-glyphs. */
+  --digit-h: 36px;
 
   line-height: var(--digit-h);
   height: var(--digit-h);
 }
 
 .hero-mrr-num .d {
+  position: relative;
   display: inline-block;
   width: 1ch;
   height: var(--digit-h);
@@ -946,27 +947,29 @@ tr.reveal.reveal-rise {
   line-height: var(--digit-h);
   vertical-align: top;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
   text-align: center;
-  /* Isolate each strip so subpixel compositing cannot bleed half digits. */
-  contain: strict;
 }
 
-.hero-mrr-num .d-strip {
-  display: block;
-  font-style: normal;
-  transform: translateY(calc(var(--v) * -1 * var(--digit-h)));
-  transition: transform var(--digit-ms, 560ms) var(--ease-out);
-  transition-delay: calc(var(--p) * 40ms);
-  will-change: transform;
-}
-
-.hero-mrr-num .d-strip > span {
+/* Crossfade each digit face: never a half-glyph between strip positions. */
+.hero-mrr-num .d-face {
   display: block;
   width: 1ch;
   height: var(--digit-h);
   line-height: var(--digit-h);
   font-variant-numeric: tabular-nums;
   text-align: center;
+  animation: hero-digit-in var(--digit-ms, 280ms) var(--ease-out);
+}
+
+@keyframes hero-digit-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .hero-mrr-num .s {
@@ -1339,12 +1342,11 @@ tr.reveal.reveal-rise {
   }
 
   .hero-mrr-num {
-    /* Keep integer slot height when KPI size is unchanged on phone. */
-    --digit-h: 40px;
+    --digit-h: 36px;
   }
 
-  .hero-mrr-num .d-strip {
-    transition-duration: 420ms;
+  .hero-mrr-num .d-face {
+    animation-duration: 220ms;
   }
 
   .hero-bars i.signal {
@@ -1371,7 +1373,7 @@ tr.reveal.reveal-rise {
   .hero-sheet tbody tr,
   .hero-sheet tr.new td,
   .hero-store.pulse .st,
-  .hero-mrr-num .d-strip,
+  .hero-mrr-num .d-face,
   .hero-bars i.signal,
   .hero-delta,
   .hero-rows-ghost {
