@@ -21,8 +21,13 @@ import {
 } from "@/lib/hero-demo-sequence";
 import { HERO_SEED } from "@/lib/sample-data";
 
-/** Prior months on the cropped axis; current month grows 62% → 92% over the loop. */
-const PRIOR_BARS = [30, 33, 35, 36, 39, 42, 44, 47, 50, 54, 58];
+/**
+ * Prior months on the cropped axis (kept below BAR_START).
+ * Current month grows BAR_START → BAR_END so each mrrDelta tick is ≥~3px on a 72px track.
+ */
+const PRIOR_BARS = [18, 20, 21, 22, 24, 26, 27, 29, 31, 33, 36];
+const BAR_START = 40;
+const BAR_END = 92;
 const GAP_MS = 1100;
 const FLY_MS = 900;
 const START_DELAY_MS = 600;
@@ -51,11 +56,11 @@ function deltaLabel() {
   return MOM_DELTA_LABEL;
 }
 
-/** Current-month bar: 62% at START_MRR → 92% at FINAL_MRR (readable growth). */
+/** Current-month bar: BAR_START at START_MRR → BAR_END at FINAL_MRR (per-order readable). */
 function barPct(mrr: number) {
   const span = FINAL_MRR - START_MRR;
   const progress = span <= 0 ? 1 : (mrr - START_MRR) / span;
-  return 62 + 30 * Math.max(0, Math.min(1, progress));
+  return BAR_START + (BAR_END - BAR_START) * Math.max(0, Math.min(1, progress));
 }
 
 function formatMrr(n: number) {

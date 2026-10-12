@@ -802,9 +802,14 @@ tr.reveal.reveal-rise {
   background: var(--c-signal);
 }
 
+/* Spec: 1px ink ring for ~600ms + dot scale 1 → 1.6 → 1 over 360ms spring. */
 .hero-store.pulse {
   box-shadow: 0 0 0 1px var(--c-ink);
-  transition: box-shadow 140ms var(--ease-standard);
+  transition: box-shadow 0ms linear;
+}
+
+.hero-store:not(.pulse) {
+  transition: box-shadow 200ms var(--ease-standard);
 }
 
 .hero-store.pulse .st {
@@ -980,7 +985,8 @@ tr.reveal.reveal-rise {
   display: flex;
   align-items: flex-end;
   gap: var(--space-2);
-  height: 64px;
+  /* Taller track so each landing's mrrDelta reads as a visible height step. */
+  height: 72px;
   margin-top: var(--space-3);
   position: relative;
 }
