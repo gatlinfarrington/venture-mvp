@@ -60,46 +60,55 @@ const PRODUCTS = [
 ] as const;
 const COUNTRIES = ["US", "GB", "DE", "CA", "AU", "NL", "FR", "SE"] as const;
 
-/** First nine match hero/Marketplace table, IDs EX-10456 downward. */
-const HERO_FIRST_NINE: Array<{
+/**
+ * Shared example order content for the hero table and /sample Orders tab.
+ * /sample assigns IDs from EX-10456 downward; hero from EX-10457 downward.
+ */
+export type ExampleOrderSpec = {
   source: (typeof SOURCES)[number];
   product: (typeof PRODUCTS)[number];
   amount: number;
-}> = [
-  { source: "Lemon Squeezy", product: "Sample Icon Pack", amount: 12 },
-  { source: "Gumroad", product: "Demo SaaS · Pro", amount: 19 },
-  { source: "Polar", product: "Demo SaaS · Team", amount: 29 },
-  { source: "Stripe", product: "Template Kit", amount: 9 },
-  { source: "Lemon Squeezy", product: "Example Course", amount: 49 },
-  { source: "Gumroad", product: "Sample Icon Pack", amount: 12 },
-  { source: "Polar", product: "Demo SaaS · Pro", amount: 29 },
-  { source: "Stripe", product: "Demo SaaS · Team", amount: 79 },
-  { source: "Lemon Squeezy", product: "Template Kit", amount: 19 },
-];
+};
 
-function buildOrders(): SampleOrder[] {
-  const rows: SampleOrder[] = [];
-  for (let i = 0; i < 24; i++) {
-    const id = `EX-${10456 - i}`;
-    const seed = i < HERO_FIRST_NINE.length ? HERO_FIRST_NINE[i]! : null;
-    const source = seed?.source ?? SOURCES[i % SOURCES.length]!;
-    const product = seed?.product ?? PRODUCTS[i % PRODUCTS.length]!;
-    const amount = seed?.amount ?? [29, 19, 12, 49, 9, 79][i % 6]!;
-    const day = 9 - Math.floor(i / 3);
-    const hour = 16 - (i % 8);
-    const min = (i * 7) % 60;
+export const EXAMPLE_ORDER_SPECS: ExampleOrderSpec[] = (() => {
+  const firstNine: ExampleOrderSpec[] = [
+    { source: "Lemon Squeezy", product: "Sample Icon Pack", amount: 12 },
+    { source: "Gumroad", product: "Demo SaaS · Pro", amount: 19 },
+    { source: "Polar", product: "Demo SaaS · Team", amount: 29 },
+    { source: "Stripe", product: "Template Kit", amount: 9 },
+    { source: "Lemon Squeezy", product: "Example Course", amount: 49 },
+    { source: "Gumroad", product: "Sample Icon Pack", amount: 12 },
+    { source: "Polar", product: "Demo SaaS · Pro", amount: 29 },
+    { source: "Stripe", product: "Demo SaaS · Team", amount: 79 },
+    { source: "Lemon Squeezy", product: "Template Kit", amount: 19 },
+  ];
+  const rows: ExampleOrderSpec[] = [...firstNine];
+  for (let i = firstNine.length; i < 24; i++) {
     rows.push({
-      id,
-      created: `2026-10-${String(Math.max(1, day)).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`,
-      source,
-      product,
-      email: `customer${100 + i}@example.com`,
-      amount,
-      status: i === 11 || i === 19 ? "refunded" : "paid",
-      country: COUNTRIES[i % COUNTRIES.length]!,
+      source: SOURCES[i % SOURCES.length]!,
+      product: PRODUCTS[i % PRODUCTS.length]!,
+      amount: [29, 19, 12, 49, 9, 79][i % 6]!,
     });
   }
   return rows;
+})();
+
+function buildOrders(startId: number): SampleOrder[] {
+  return EXAMPLE_ORDER_SPECS.map((seed, i) => {
+    const day = 9 - Math.floor(i / 3);
+    const hour = 16 - (i % 8);
+    const min = (i * 7) % 60;
+    return {
+      id: `EX-${startId - i}`,
+      created: `2026-10-${String(Math.max(1, day)).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`,
+      source: seed.source,
+      product: seed.product,
+      email: `customer${100 + i}@example.com`,
+      amount: seed.amount,
+      status: (i === 11 || i === 19 ? "refunded" : "paid") as SampleOrder["status"],
+      country: COUNTRIES[i % COUNTRIES.length]!,
+    };
+  });
 }
 
 function buildSubs(): SampleSub[] {
@@ -128,7 +137,10 @@ function buildSubs(): SampleSub[] {
   return rows;
 }
 
-export const SAMPLE_ORDERS = buildOrders();
+/** /sample Orders tab - IDs EX-10456 downward. */
+export const SAMPLE_ORDERS = buildOrders(10456);
+/** Hero table final rows - same content, IDs EX-10457 downward. */
+export const HERO_ORDERS = buildOrders(10457).slice(0, 9);
 export const SAMPLE_SUBS = buildSubs();
 
 export const DASHBOARD = {

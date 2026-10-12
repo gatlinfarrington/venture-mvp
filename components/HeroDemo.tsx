@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { HERO_ORDERS } from "@/lib/sample-data";
 
 const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"] as const;
 const PRODUCTS = [
@@ -41,19 +42,6 @@ type OrderSpec = {
   amount: number;
 };
 
-/** Newest-first seed (EX-10449 … EX-10441): contiguous with inserts from EX-10450. */
-const SEED_SPECS: OrderSpec[] = [
-  { source: 0, product: "Demo SaaS · Pro", amount: 29 },
-  { source: 1, product: "Example Course", amount: 49 },
-  { source: 2, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Demo SaaS · Team", amount: 19 },
-  { source: 1, product: "Template Kit", amount: 9 },
-  { source: 2, product: "Demo SaaS · Pro", amount: 29 },
-  { source: 0, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Example Course", amount: 19 },
-  { source: 2, product: "Demo SaaS · Team", amount: 9 },
-];
-
 /** 14 landings; amounts sum to 251 → final MRR $4,431 (+6.0%). */
 const LANDING_SPECS: OrderSpec[] = [
   { source: 0, product: "Demo SaaS · Pro", amount: 29 },
@@ -87,9 +75,16 @@ function rowFromSpec(spec: OrderSpec, id: string, fresh: boolean): Row {
   };
 }
 
-const SEED_ROWS: Row[] = SEED_SPECS.map((spec, i) =>
-  rowFromSpec(spec, `EX-${10449 - i}`, false),
-);
+/** Shared with /sample (content from EXAMPLE_ORDER_SPECS; hero IDs start at EX-10457). */
+const SHARED_HERO_ROWS: Row[] = HERO_ORDERS.map((o) => ({
+  id: o.id,
+  source: o.source,
+  product: o.product,
+  amount: o.amount,
+  fresh: false,
+}));
+
+const SEED_ROWS: Row[] = SHARED_HERO_ROWS;
 
 function fmt(v: number) {
   return `$${Math.round(v).toLocaleString("en-US")}`;
@@ -120,6 +115,9 @@ function DemoFoot({ onReplay }: { onReplay: () => void }) {
   return (
     <div className="hero-demo-foot">
       <button type="button" className="btn btn-secondary btn-sm hero-replay" onClick={onReplay}>
+        <span className="hero-replay-icon" aria-hidden="true">
+          ↻
+        </span>
         Replay
       </button>
       <p className="hero-note mono">Example data · no real customers</p>
@@ -128,10 +126,7 @@ function DemoFoot({ onReplay }: { onReplay: () => void }) {
 }
 
 function finalRows(): Row[] {
-  const landed = LANDING_SPECS.map((spec, i) =>
-    rowFromSpec(spec, `EX-${10450 + i}`, false),
-  ).reverse();
-  return [...landed, ...SEED_ROWS].slice(0, 9);
+  return SHARED_HERO_ROWS;
 }
 
 export function HeroDemo() {
@@ -390,6 +385,13 @@ export function HeroDemo() {
         window.setTimeout(() => landOrder(i), 600 + i * gapMs),
       );
     }
+    // Settle on the shared example rows (same content as /sample, IDs from EX-10457).
+    const settleAt = 600 + LANDING_SPECS.length * gapMs + 400;
+    timers.current.push(
+      window.setTimeout(() => {
+        setRows(SHARED_HERO_ROWS);
+      }, settleAt),
+    );
   }, [clearTimers, landOrder]);
 
   useEffect(() => {

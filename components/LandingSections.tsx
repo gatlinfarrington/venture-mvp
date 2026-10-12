@@ -210,34 +210,8 @@ export function WhySheet() {
           <p className="eyebrow">Why a sheet</p>
           <h2 className="h2">A spreadsheet you control beats another login.</h2>
         </Reveal>
-        <Reveal className="why-artifact">
-          <pre className="why-formula" tabIndex={0}>
-            <code>
-              {`=QUERY(rs_orders, "select C, sum(F) where G = 'paid' group by C label sum(F) 'Revenue'")`}
-            </code>
-          </pre>
-          <table className="why-result">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Lifetime deal</td>
-                <td className="num">$4,280</td>
-              </tr>
-              <tr>
-                <td>Pro monthly</td>
-                <td className="num">$2,160</td>
-              </tr>
-              <tr>
-                <td>Starter monthly</td>
-                <td className="num">$890</td>
-              </tr>
-            </tbody>
-          </table>
+        <Reveal className="why-split">
+          <p className="why-split-lead mono">{"1 sheet.\n4 sources."}</p>
           <ul className="why-claims">
             {claims.map((c) => (
               <li key={c}>{c}</li>
@@ -258,11 +232,16 @@ export function Comparison() {
   }> = [
     { feature: "Full history backfill", rs: true, zapier: false, csv: false },
     { feature: "MRR dashboard tab", rs: true, zapier: false, csv: "Manual" },
-    { feature: "Multi-source (Pro+)", rs: true, zapier: "Extra Zaps", csv: false },
+    {
+      feature: "Combines every store in one MRR",
+      rs: true,
+      zapier: "Extra Zaps",
+      csv: false,
+    },
     {
       feature: "Scheduled refresh",
-      rs: "Hourly to weekly (Pro)",
-      zapier: true,
+      rs: "Hourly, 6h, daily or weekly. Rebuilds MRR each run",
+      zapier: "Per new event. No recompute",
       csv: false,
     },
     { feature: "Data stays in your Sheet", rs: true, zapier: true, csv: true },
@@ -279,7 +258,7 @@ export function Comparison() {
             Sheets&apos; API Connector has no MRR tab; you build the requests yourself.
           </p>
         </Reveal>
-        <Reveal className="compare-wrap">
+        <div className="compare-wrap">
           <table className="compare-table">
             <thead>
               <tr>
@@ -290,8 +269,8 @@ export function Comparison() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.feature}>
+              {rows.map((r, i) => (
+                <Reveal as="tr" key={r.feature} className="reveal-rise" delay={i * 40}>
                   <td>{r.feature}</td>
                   <td
                     data-label={brand.name}
@@ -311,11 +290,11 @@ export function Comparison() {
                   >
                     {r.csv === true ? "Yes" : r.csv === false ? "No" : r.csv}
                   </td>
-                </tr>
+                </Reveal>
               ))}
             </tbody>
           </table>
-        </Reveal>
+        </div>
         <p className="compare-more muted">
           Selling on Polar too?{" "}
           <Link href="/vs/polar-dashboard">RevenueSheet vs Polar’s dashboard →</Link>
