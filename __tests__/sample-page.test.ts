@@ -69,10 +69,12 @@ describe("/sample acceptance data", () => {
     expect(DASHBOARD.pastDueLine).toBe(
       "Past due 5 · $95 · MRR counts active subscriptions only",
     );
-    expect(DASHBOARD.sources.find((s) => s.name === "Polar")?.detail).toBe("94 orders");
-    expect(DASHBOARD.sources.find((s) => s.name === "Lemon Squeezy")?.detail).toBe("71 orders");
-    expect(DASHBOARD.sources.find((s) => s.name === "Gumroad")?.detail).toBe("38 orders");
-    expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.detail).toBe("58 orders");
+    expect(DASHBOARD.sources.find((s) => s.name === "Polar")?.detail).toBe("94 orders · 30D");
+    expect(DASHBOARD.sources.find((s) => s.name === "Lemon Squeezy")?.detail).toBe(
+      "71 orders · 30D",
+    );
+    expect(DASHBOARD.sources.find((s) => s.name === "Gumroad")?.detail).toBe("38 orders · 30D");
+    expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.detail).toBe("58 orders · 30D");
     expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.state).toBe("Synced");
     expect(SAMPLE_MRR_OCT).toBe(4476);
   });

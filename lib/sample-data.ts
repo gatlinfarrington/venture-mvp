@@ -168,22 +168,22 @@ export const DASHBOARD = {
   sources: [
     {
       name: "Polar",
-      detail: `${bySource.Polar.orders30d} orders`,
+      detail: `${bySource.Polar.orders30d} orders · 30D`,
       state: "Synced" as const,
     },
     {
       name: "Lemon Squeezy",
-      detail: `${bySource["Lemon Squeezy"].orders30d} orders`,
+      detail: `${bySource["Lemon Squeezy"].orders30d} orders · 30D`,
       state: "Synced" as const,
     },
     {
       name: "Gumroad",
-      detail: `${bySource.Gumroad.orders30d} orders`,
+      detail: `${bySource.Gumroad.orders30d} orders · 30D`,
       state: "Synced" as const,
     },
     {
       name: "Stripe",
-      detail: `${bySource.Stripe.orders30d} orders`,
+      detail: `${bySource.Stripe.orders30d} orders · 30D`,
       state: "Synced" as const,
     },
     { name: "CSV import", detail: "", state: "Not connected" as const },
