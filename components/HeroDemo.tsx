@@ -10,13 +10,6 @@ import {
 import { HERO_ORDERS } from "@/lib/sample-data";
 
 const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"] as const;
-const PRODUCTS = [
-  "Demo SaaS · Pro",
-  "Example Course",
-  "Sample Icon Pack",
-  "Demo SaaS · Team",
-  "Template Kit",
-] as const;
 
 /**
  * MOTION.md storyboard: frame 0 shows MRR $4,180 with 9 seeded rows.
@@ -38,7 +31,7 @@ type Row = {
 
 type OrderSpec = {
   source: 0 | 1 | 2 | 3;
-  product: (typeof PRODUCTS)[number];
+  product: string;
   amount: number;
 };
 

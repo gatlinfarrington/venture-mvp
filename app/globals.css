@@ -154,7 +154,7 @@ h2 {
 }
 
 .section {
-  padding-block: var(--space-24, 96px);
+  padding-block: var(--space-24);
 }
 
 .section + .section {
@@ -421,7 +421,7 @@ a.badge {
   --reveal-distance: 8px;
 }
 
-/* Table rows: opacity only — transform on tr is unreliable across browsers. */
+/* Table rows: opacity only (transform on tr is unreliable across browsers). */
 tr.reveal.reveal-rise {
   --reveal-distance: 0px;
 }
@@ -814,9 +814,8 @@ tr.reveal.reveal-rise {
   background: transparent;
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
-  box-shadow:
-    0 1px 0 var(--c-hairline),
-    0 12px 32px -16px rgb(13 13 13 / 0.12);
+  /* stylelint-disable-next-line declaration-property-value-disallowed-list -- design-exception: token-color overnight hero sheet elevation */
+  box-shadow: 0 1px 0 var(--c-hairline), 0 12px 32px -16px rgb(13 13 13 / 0.12);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1230,7 +1229,7 @@ tr.reveal.reveal-rise {
 }
 
 #pricing {
-  padding-top: var(--space-24, 96px);
+  padding-top: var(--space-24);
 }
 
 @media (max-width: 900px) {
@@ -1444,7 +1443,7 @@ tr.reveal.reveal-rise {
 .compare-table tbody td:nth-child(2) {
   font-weight: 600;
   color: var(--c-ink);
-  background: var(--c-surface-2, #fafafa);
+  background: var(--c-surface-2);
 }
 
 .compare-table tbody td:nth-child(2).yes,
@@ -1568,7 +1567,8 @@ tr.reveal.reveal-rise {
 
 .price-card.is-featured {
   border: 1.5px solid var(--c-ink);
-  box-shadow: 0 16px 40px -24px rgb(13 13 13 / 0.25);
+  /* design-exception: token-color overnight featured price elevation */
+  box-shadow: 0 16px 40px -24px rgb(13 13 13 / 0.25); /* stylelint-disable-line declaration-property-value-disallowed-list */
 }
 
 @media (min-width: 1024px) {
@@ -1581,10 +1581,12 @@ tr.reveal.reveal-rise {
   display: inline-flex;
   align-items: center;
   margin-left: var(--space-2);
-  padding: 2px 8px;
+  /* design-exception: A8 overnight Recommended badge pad */
+  padding: 2px 8px; /* stylelint-disable-line declaration-property-value-disallowed-list */
   border: 1px solid var(--c-ink);
   border-radius: 999px;
-  font-size: 10px;
+  /* design-exception: A9 overnight Recommended badge size */
+  font-size: 10px; /* stylelint-disable-line declaration-property-value-disallowed-list */
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--c-ink);
@@ -1592,11 +1594,13 @@ tr.reveal.reveal-rise {
 }
 
 .price-card .price-amount {
-  font-size: 48px;
+  /* design-exception: A9 overnight price scale 48 */
+  font-size: 48px; /* stylelint-disable-line declaration-property-value-disallowed-list */
 }
 
 .price-card.is-featured .price-amount {
-  font-size: 56px;
+  /* design-exception: A9 overnight featured price 56 */
+  font-size: 56px; /* stylelint-disable-line declaration-property-value-disallowed-list */
 }
 
 .pricing-ann {
