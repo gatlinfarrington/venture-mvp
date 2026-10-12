@@ -6,7 +6,8 @@ import { FINAL_MRR, MOM_DELTA_LABEL, START_MRR } from "@/lib/hero-demo-sequence"
 const PRIOR_BARS = [30, 33, 35, 36, 39, 42, 44, 47, 50, 54, 58];
 
 /** SSR-friendly placeholder matching the live sheet chromes (digit strip + bars). */
-function HeroDemoFallback({ final = true }: { final?: boolean }) {
+/** Match live demo start (START_MRR / seed), not final — avoids SSR→hydrate snap. */
+function HeroDemoFallback({ final = false }: { final?: boolean }) {
   const value = final ? FINAL_MRR : START_MRR;
   const mrr = `$${Math.round(value).toLocaleString("en-US")}`;
   const delta = final ? MOM_DELTA_LABEL : null;
