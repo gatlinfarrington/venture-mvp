@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { getStripe, priceIdFor } from "@/lib/stripe";
-import { siteConfig, type BillingInterval, type Tier } from "@/lib/site";
+import {
+  CHECKOUT_CLOSED_MESSAGE,
+  checkoutOpen,
+  siteConfig,
+  type BillingInterval,
+  type Tier,
+} from "@/lib/site";
 
 export const runtime = "nodejs";
 
@@ -10,7 +16,13 @@ type Body = {
   email?: string;
 };
 
+const BUYER_CHECKOUT_ERROR = "Checkout could not start. Try again in a moment.";
+
 export async function POST(request: Request) {
+  if (!checkoutOpen) {
+    return NextResponse.json({ error: CHECKOUT_CLOSED_MESSAGE }, { status: 403 });
+  }
+
   let body: Body;
   try {
     body = (await request.json()) as Body;
@@ -54,7 +66,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url, id: session.id });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Checkout failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[checkout] session create failed", error);
+    return NextResponse.json({ error: BUYER_CHECKOUT_ERROR }, { status: 500 });
   }
 }

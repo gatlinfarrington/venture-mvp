@@ -6,6 +6,7 @@ import { Reveal } from "@/components/Reveal";
 import { REFUND_LINE } from "@/lib/copy";
 import { marketplaceUrlClient } from "@/lib/marketplace-client";
 import {
+  CHECKOUT_CLOSED_MESSAGE,
   checkoutEnabled,
   pricing,
   type BillingInterval,
@@ -17,6 +18,8 @@ type Props = {
   variant?: "section" | "page";
 };
 
+const BUYER_CHECKOUT_ERROR = "Checkout could not start. Try again in a moment.";
+
 export function Pricing({ variant = "section" }: Props) {
   const interval: BillingInterval = "month";
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
@@ -27,6 +30,9 @@ export function Pricing({ variant = "section" }: Props) {
   const paidCheckoutReady = checkoutEnabled;
   const launchHref = variant === "page" ? "#launch" : "/#launch";
   const showLaunchCaption = !listing && !paidCheckoutReady;
+  const headline = paidCheckoutReady
+    ? "Free to start. Buy Pro or Business here."
+    : "Free to start. Paid plans open at launch.";
 
   async function startCheckout(tier: "pro" | "business", billing: BillingInterval) {
     if (!checkoutEnabled) return;
@@ -46,11 +52,15 @@ export function Pricing({ variant = "section" }: Props) {
         });
         return;
       }
-      setCheckoutMessage(
-        data.error ?? "Checkout could not start. Check Stripe env vars and try again.",
-      );
-    } catch {
-      setCheckoutMessage("Checkout could not start. Try again in a moment.");
+      if (res.status === 403) {
+        setCheckoutMessage(data.error ?? CHECKOUT_CLOSED_MESSAGE);
+        return;
+      }
+      if (data.error) console.error("[pricing] checkout failed", data.error);
+      setCheckoutMessage(BUYER_CHECKOUT_ERROR);
+    } catch (err) {
+      console.error("[pricing] checkout request failed", err);
+      setCheckoutMessage(BUYER_CHECKOUT_ERROR);
     } finally {
       setPendingTier(null);
     }
@@ -62,12 +72,12 @@ export function Pricing({ variant = "section" }: Props) {
         {variant === "page" ? (
           <header className="pricing-page-head">
             <p className="eyebrow">Pricing</p>
-            <h1>Free to start. Buy Pro or Business here.</h1>
+            <h1>{headline}</h1>
           </header>
         ) : (
           <Reveal className="section-head">
             <p className="eyebrow">Pricing</p>
-            <h2 className="h2">Free to start. Buy Pro or Business here.</h2>
+            <h2 className="h2">{headline}</h2>
           </Reveal>
         )}
 

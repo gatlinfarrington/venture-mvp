@@ -76,10 +76,9 @@ export default function SecurityPage() {
           are not uploaded to us for sync.
         </p>
         <p>
-          Separately, when you buy a paid plan on the website, Stripe Checkout and webhooks process
-          billing email and subscription state so we can issue a license. That is checkout, not the
-          revenue sync pipeline. Vercel may also retain standard HTTP logs for the marketing site
-          and APIs.
+          Separately, when paid plans are on sale, Stripe Checkout and webhooks process billing
+          email and subscription state so we can issue a license. That is checkout, not the revenue
+          sync pipeline. Vercel may also retain standard HTTP logs for the marketing site and APIs.
         </p>
 
         <h2>Encryption in transit</h2>

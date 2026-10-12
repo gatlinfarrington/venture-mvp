@@ -43,9 +43,10 @@ describe("/sample acceptance data", () => {
     ]);
   });
 
-  it("Dashboard numbers match the Marketplace screenshot set", () => {
+  it("Dashboard KPIs match the example stack and orders totals", () => {
     expect(DASHBOARD.mrr).toBe("$11.7k");
-    expect(DASHBOARD.netRevenue).toBe("$3,624");
+    expect(DASHBOARD.mrrDelta).toBe("▲ 1.7% MoM");
+    expect(DASHBOARD.netRevenue).toBe("$690");
     expect(DASHBOARD.activeSubs).toBe("342");
     expect(DASHBOARD.churn).toBe("1.9%");
     expect(DASHBOARD.sources.find((s) => s.name === "Polar")?.detail).toBe("412 orders");
@@ -54,6 +55,12 @@ describe("/sample acceptance data", () => {
     );
     expect(DASHBOARD.sources.find((s) => s.name === "Gumroad")?.detail).toBe("903 sales");
     expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.state).toBe("Backfilling 62%");
+  });
+
+  it("sample caption is buyer-facing with no Marketplace screenshot claim", async () => {
+    const { SAMPLE_CAPTION } = await import("@/lib/sample-data");
+    expect(SAMPLE_CAPTION).toMatch(/Example data/i);
+    expect(SAMPLE_CAPTION).not.toMatch(/Marketplace screenshots/i);
   });
 
   it("orders start at EX-10456 and include the hero first rows", () => {

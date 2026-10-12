@@ -19,13 +19,24 @@ export const siteConfig = {
 };
 
 /**
- * Paid Checkout UI is on when a real Stripe publishable key is set.
+ * Explicit launch gate. Must be the string "true" to sell paid plans.
+ * Stripe keys alone are not enough — prevents accidental live Checkout.
+ */
+export const checkoutOpen = process.env.CHECKOUT_OPEN === "true";
+
+/**
+ * Paid Checkout UI is on when CHECKOUT_OPEN=true and a real Stripe publishable key is set.
  * The Checkout API uses STRIPE_SECRET_KEY and resolves/creates prices server-side.
  */
 export const checkoutEnabled = Boolean(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
+  checkoutOpen &&
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
     !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.includes("REPLACE"),
 );
+
+/** Buyer-facing line when Checkout is gated closed. */
+export const CHECKOUT_CLOSED_MESSAGE =
+  "Paid plans open with the Marketplace listing. Join the launch list for updates.";
 
 export type Tier = "free" | "pro" | "business";
 
