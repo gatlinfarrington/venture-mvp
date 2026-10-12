@@ -494,16 +494,17 @@ export function HeroDemo() {
                     </span>
                   ) : null}
                 </div>
-                {chips.map((p) => (
-                  <span
-                    key={p.id}
-                    className={`hero-packet${p.dissolving ? " is-dissolving" : ""}`}
-                    data-hero-packet
-                    aria-hidden="true"
-                  >
-                    +${p.amount.toFixed(2)}
-                  </span>
-                ))}
+                <div className="hero-mrr-chip-slot" aria-hidden="true">
+                  {chips.map((p) => (
+                    <span
+                      key={p.id}
+                      className={`hero-packet${p.dissolving ? " is-dissolving" : ""}`}
+                      data-hero-packet
+                    >
+                      +${p.amount.toFixed(2)}
+                    </span>
+                  ))}
+                </div>
               </div>
               <div className="hero-bars" data-baseline>
                 {PRIOR_BARS.map((h, i) => (
