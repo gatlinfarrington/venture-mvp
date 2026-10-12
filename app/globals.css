@@ -643,8 +643,7 @@ tr.reveal.reveal-rise {
   position: relative;
   z-index: 1;
   display: grid;
-  /* Two columns from 980px so the sheet stays above the fold. */
-  grid-template-columns: minmax(0, 1fr) minmax(380px, 420px);
+  grid-template-columns: 5fr 7fr;
   gap: var(--space-8);
   align-items: center;
 }
@@ -734,7 +733,8 @@ tr.reveal.reveal-rise {
   background: transparent;
   border-radius: 0;
   overflow: visible;
-  display: flex;
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
   align-items: stretch;
   gap: var(--space-4);
 }
@@ -749,7 +749,6 @@ tr.reveal.reveal-rise {
   width: 168px;
   flex-shrink: 0;
   z-index: 2;
-  /* Stretch with the sheet column so Replay sits at the foot, not mid-air. */
   min-height: 400px;
 }
 
@@ -759,13 +758,16 @@ tr.reveal.reveal-rise {
   gap: var(--space-2);
 }
 
-.hero-stores-col .hero-demo-foot {
-  margin-top: var(--space-4);
+/* Caption + Replay span the full stage so they never run under the sheet. */
+.hero-stage > .hero-demo-foot {
+  grid-column: 1 / -1;
+  margin-top: 0;
   margin-bottom: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-  flex-shrink: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .hero-store {
@@ -1061,8 +1063,8 @@ tr.reveal.reveal-rise {
 
 .hero-sheet thead tr {
   display: grid;
-  /* Fixed tracks: Order 88 / Source 104 / Product flex / Amount 88 (sum fits the card). */
-  grid-template-columns: 88px 104px minmax(0, 1fr) 88px;
+  /* Fixed tracks: Order 92 / Source 112 / Product flex / Amount 84. */
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 30px;
   background: var(--c-surface-2);
   border-bottom: 1px solid var(--c-border);
@@ -1110,7 +1112,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
   display: grid;
-  grid-template-columns: 88px 104px minmax(0, 1fr) 88px;
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1147,7 +1149,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet tbody tr {
   display: grid;
-  grid-template-columns: 88px 104px minmax(0, 1fr) 88px;
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1186,21 +1188,21 @@ tr.reveal.reveal-rise {
 
 .hero-sheet th:nth-child(1),
 .hero-sheet td:nth-child(1) {
-  width: 88px;
+  width: 92px;
 }
 
 .hero-sheet th:nth-child(2),
 .hero-sheet td:nth-child(2) {
-  width: 104px;
+  width: 112px;
 }
 
 .hero-sheet th:last-child,
 .hero-sheet td.n {
-  width: 88px;
+  width: 84px;
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: clip;
   padding-left: var(--space-2);
 }
@@ -1283,8 +1285,8 @@ tr.reveal.reveal-rise {
   }
 }
 
-/* Phone / narrow: single column. Two-column grid resumes at 980px. */
-@media (max-width: 979px) {
+/* Single column through 1119 so form never overlaps source pills (1000-1100). */
+@media (max-width: 1119px) {
   .hero-grid {
     grid-template-columns: 1fr;
   }
@@ -1305,13 +1307,8 @@ tr.reveal.reveal-rise {
     min-height: 0;
   }
 
-  .hero-stores-col .hero-demo-foot {
+  .hero-stage > .hero-demo-foot {
     margin-top: var(--space-3);
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
     width: 100%;
   }
 
@@ -1353,7 +1350,7 @@ tr.reveal.reveal-rise {
   .hero-sheet thead tr,
   .hero-sheet tbody tr,
   .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
-    grid-template-columns: 88px minmax(0, 1fr) 88px;
+    grid-template-columns: 92px minmax(0, 1fr) 84px;
   }
 
   .hero-mrr-num {
@@ -1366,6 +1363,27 @@ tr.reveal.reveal-rise {
 
   .hero-bars i.signal {
     transition-duration: 420ms;
+  }
+}
+
+/* 980-1119: centered single column (not a crushed two-column sheet). */
+@media (min-width: 980px) and (max-width: 1119px) {
+  .hero-copy,
+  .hero-stage {
+    max-width: 720px;
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  .hero-stores {
+    grid-template-columns: repeat(4, max-content);
+    width: max-content;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+
+  .hero-store {
+    width: auto;
   }
 }
 
@@ -4620,7 +4638,7 @@ a.tag-pill:focus-visible {
 
 /* Fixed-layout table: set col width (td min-width is ignored). */
 .sample-dash col.sample-src-col {
-  width: 132px;
+  width: 140px;
 }
 
 .sample-dash td.sample-src-name {

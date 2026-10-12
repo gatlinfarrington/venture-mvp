@@ -9,6 +9,7 @@
  * 6. +$ chip never intersects table cells/headers or the bar; stays in MRR card.
  *    Samples the whole chip lifetime (not only rest state).
  * 7. Every th/td lies within the sheet card bounds at 1280, 1440, 768, and 375.
+ * 8. Sheet width ≥400px at 1024+; no cell with scrollWidth > clientWidth (clipped text).
  */
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
@@ -39,16 +40,12 @@ const GAP_MS = 1100;
 const CHIP_MS = 420;
 const CHIP_HOLD_MS = 520;
 const START_DELAY_MS = 600;
-// Match HeroDemo chipsAllowed (≥980 shows the +$ chip below the number).
-const packetsOn = WIDTH >= 980;
+// Match HeroDemo chipsAllowed (≥1120 shows the +$ chip below the number).
+const packetsOn = WIDTH >= 1120;
 const tickAtApprox = START_DELAY_MS + FIRST_TICK_INDEX * GAP_MS;
 
 function fmtMrr(n) {
-  const cents = Math.round(n * 100) / 100;
-  return `$${cents.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return `$${Math.round(n).toLocaleString("en-US")}`;
 }
 
 const results = {
@@ -96,11 +93,14 @@ async function sampleHero(page) {
 async function measureCellBounds(page) {
   return page.evaluate(() => {
     const sheet = document.querySelector("[data-hero-demo] .hero-sheet");
-    if (!sheet) return { ok: false, reason: "no-sheet", overflows: [] };
+    if (!sheet) {
+      return { ok: false, reason: "no-sheet", sheetWidth: 0, overflows: [], clipped: [] };
+    }
     const card = sheet.getBoundingClientRect();
     const cells = [...sheet.querySelectorAll("th, td")];
     const inset = 0.5;
     const overflows = [];
+    const clipped = [];
     for (const el of cells) {
       const r = el.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
@@ -120,8 +120,21 @@ async function measureCellBounds(page) {
           dyB: +(r.bottom - card.bottom).toFixed(1),
         });
       }
+      // Text clipped inside the cell (ellipsis / overflow hidden).
+      if (el.scrollWidth > el.clientWidth + 1) {
+        clipped.push({
+          text: (el.textContent || "").trim().slice(0, 28),
+          scrollWidth: el.scrollWidth,
+          clientWidth: el.clientWidth,
+        });
+      }
     }
-    return { ok: overflows.length === 0, overflows: overflows.slice(0, 12) };
+    return {
+      ok: overflows.length === 0 && clipped.length === 0,
+      sheetWidth: +card.width.toFixed(1),
+      overflows: overflows.slice(0, 12),
+      clipped: clipped.slice(0, 12),
+    };
   });
 }
 
@@ -359,10 +372,13 @@ async function measureCellBounds(page) {
 }
 
 // —— Check 7: every cell within the sheet card at 1280 / 1440 / 768 / 375 ——
+// —— Check 8: sheet ≥400px wide at 1024+; no clipped cell text ——
 {
-  const BOUND_WIDTHS = [1280, 1440, 768, 375];
+  const BOUND_WIDTHS = [1280, 1440, 1024, 768, 375];
   const byWidth = {};
-  let allOk = true;
+  let boundsOk = true;
+  let widthOk = true;
+  let clipOk = true;
   for (const w of BOUND_WIDTHS) {
     const h = w < 600 ? 812 : 900;
     const context = await browser.newContext({
@@ -380,20 +396,32 @@ async function measureCellBounds(page) {
     await page.waitForTimeout(200);
     const measured = await measureCellBounds(page);
     byWidth[w] = measured;
-    if (!measured.ok) allOk = false;
+    if (measured.overflows?.length) boundsOk = false;
+    if (measured.clipped?.length) clipOk = false;
+    if (w >= 1024 && measured.sheetWidth < 400) widthOk = false;
     await context.close();
   }
   results.checks[7] = {
-    pass: allOk,
+    pass: boundsOk,
     byWidth,
     note: "FAIL if any th/td extends past .hero-sheet bounds",
+  };
+  results.checks[8] = {
+    pass: widthOk && clipOk,
+    byWidth: Object.fromEntries(
+      Object.entries(byWidth).map(([w, m]) => [
+        w,
+        { sheetWidth: m.sheetWidth, clipped: m.clipped },
+      ]),
+    ),
+    note: "FAIL if .hero-sheet < 400px at 1024+ or any cell scrollWidth > clientWidth",
   };
 }
 
 await browser.close();
 
 fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify(results, null, 2));
-const allPass = [2, 3, 4, 5, 6, 7].every((k) => results.checks[k]?.pass);
+const allPass = [2, 3, 4, 5, 6, 7, 8].every((k) => results.checks[k]?.pass);
 console.log(JSON.stringify(results, null, 2));
 console.log(allPass ? "RESULT: PASS" : "RESULT: FAIL");
 process.exit(allPass ? 0 : 1);

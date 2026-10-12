@@ -50,8 +50,8 @@ function chipsAllowed() {
   return (
     typeof window !== "undefined" &&
     !prefersReducedMotion() &&
-    // Two-column hero from 980px; chip sits below the MRR number there.
-    window.matchMedia("(min-width: 980px)").matches
+    // Match two-column hero breakpoint (≥1120); chip sits below the MRR number.
+    window.matchMedia("(min-width: 1120px)").matches
   );
 }
 
@@ -67,13 +67,9 @@ function barPct(mrr: number) {
   return BAR_START + (BAR_END - BAR_START) * Math.max(0, Math.min(1, progress));
 }
 
-/** Carry cents in state; always show two decimals so +$12.50 steps match the chip. */
+/** Whole dollars only (chip still shows +$12.50). */
 function formatMrr(n: number) {
-  const cents = Math.round(n * 100) / 100;
-  return `$${cents.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  return `$${Math.round(n).toLocaleString("en-US")}`;
 }
 
 type DigitCell = { kind: "d"; ch: string; pos: number } | { kind: "s"; ch: string };
@@ -278,7 +274,7 @@ export function HeroDemo() {
             const v =
               i === steps
                 ? START_MRR
-                : Math.round((from + (START_MRR - from) * (i / steps)) * 100) / 100;
+                : Math.round(from + (START_MRR - from) * (i / steps));
             mrrRef.current = v;
             setMrr(v);
           }, Math.round((RESET_MS * i) / steps)),
@@ -448,7 +444,6 @@ export function HeroDemo() {
               </div>
             ))}
           </div>
-          <DemoFoot onReplay={run} hidden={reduced} />
         </div>
 
         <div
@@ -577,6 +572,7 @@ export function HeroDemo() {
           </div>
         </div>
 
+        <DemoFoot onReplay={run} hidden={reduced} />
       </div>
     </div>
   );
