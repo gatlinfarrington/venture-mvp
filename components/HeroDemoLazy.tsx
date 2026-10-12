@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import { FINAL_MRR, MAX_DELTA, START_MRR } from "@/lib/hero-demo-sequence";
 
+const PRIOR_BARS = [30, 33, 35, 36, 39, 42, 44, 47, 50, 54, 58];
+
 /** SSR-friendly placeholder matching the live sheet chromes (digit strip + bars). */
 function HeroDemoFallback({ final = true }: { final?: boolean }) {
   const value = final ? FINAL_MRR : START_MRR;
@@ -20,21 +22,23 @@ function HeroDemoFallback({ final = true }: { final?: boolean }) {
             <div className="eyebrow">MRR · all sources · example</div>
             <div className="hero-mrr">
               <b className="hero-mrr-num">
+                <span className="visually-hidden">{mrr}</span>
                 {digits.map((ch, i) =>
                   ch >= "0" && ch <= "9" ? (
                     <span
                       key={i}
                       className="d"
+                      aria-hidden="true"
                       style={{ ["--v" as string]: Number(ch), ["--p" as string]: 0 }}
                     >
-                      <span className="d-strip" aria-hidden="true">
+                      <span className="d-strip">
                         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                           <span key={n}>{n}</span>
                         ))}
                       </span>
                     </span>
                   ) : (
-                    <span key={i} className="s">
+                    <span key={i} className="s" aria-hidden="true">
                       {ch}
                     </span>
                   ),
@@ -43,10 +47,10 @@ function HeroDemoFallback({ final = true }: { final?: boolean }) {
               {delta ? <span className="hero-delta">{delta}</span> : null}
             </div>
             <div className="hero-bars" data-baseline>
-              {[52, 55, 58, 57, 61, 64, 66, 70, 73, 76, 80].map((h, i) => (
-                <i key={i} style={{ height: `${20 + ((h - 40) / 44) * 55}%` }} />
+              {PRIOR_BARS.map((h, i) => (
+                <i key={i} style={{ height: `${h}%` }} />
               ))}
-              <i className="signal" style={{ height: final ? "92%" : "87%" }} />
+              <i className="signal" style={{ height: final ? "92%" : "62%" }} />
             </div>
           </div>
         </div>

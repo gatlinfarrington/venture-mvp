@@ -2,6 +2,7 @@
 // Samples the hero order table every 100ms over one full loop and checks:
 // no overlapping rows, no duplicate IDs, no blank band (gap > 2px between rows, or
 // empty space under the last visible row taller than 2px inside the clip box).
+// Also fails on any frame with zero visible rows (reset flash).
 import { chromium } from "playwright-core";
 import fs from "fs";
 import { createRequire } from "module";
@@ -14,8 +15,10 @@ const URL = process.argv[2] || "https://www.revenuesheet.app/";
 const OUT = process.argv[3] || "/tmp/hero-loop-report";
 const LOOP_MS = Number(process.env.LOOP_MS || 19000);
 const STEP = 100;
-const WIDTH = Number(process.env.VIEWPORT_WIDTH || 1440);
-const HEIGHT = Number(process.env.VIEWPORT_HEIGHT || 900);
+const WIDTH = Number(process.env.VIEWPORT_WIDTH || process.env.WIDTH || 1440);
+const HEIGHT = Number(process.env.VIEWPORT_HEIGHT || (WIDTH < 600 ? 812 : 900));
+const START_WAIT = Number(process.env.START_WAIT || 700);
+const SAVE_ALL = Boolean(process.env.SAVE_ALL);
 const REPLAY_AT = process.env.REPLAY_AT ? Number(process.env.REPLAY_AT) : null;
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -26,9 +29,17 @@ const b = await chromium.launch({
 });
 const p = await b.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
 await p.emulateMedia({ reducedMotion: "no-preference" });
-await p.goto(URL, { waitUntil: "networkidle" });
-await p.waitForSelector(".hero-sheet tbody tr", { timeout: 60_000 });
-await p.locator("[data-hero-demo], .hero-stage").first().scrollIntoViewIfNeeded();
+await p.goto(URL, { waitUntil: "domcontentloaded" });
+await p.waitForSelector(".hero-sheet tbody tr, .hero-sheet .hero-row", {
+  timeout: 60_000,
+});
+await p.locator("[data-hero-demo], .hero-stage, .hero-sheet").first().scrollIntoViewIfNeeded();
+// Let the hero entrance (~500ms) finish so it is not counted as a row jump.
+await p.waitForTimeout(START_WAIT);
+
+const ROWSEL = (await p.$(".hero-sheet .hero-row"))
+  ? ".hero-rows:not(.hero-rows-ghost) .hero-row"
+  : "tbody.hero-rows:not(.hero-rows-ghost) tr";
 
 const sha = await p
   .evaluate(() =>
@@ -53,18 +64,25 @@ while (Date.now() - t0 < LOOP_MS) {
       replayClicked = true;
     }
   }
-  const f = await p.evaluate(() => {
+  const f = await p.evaluate((rowSel) => {
     const sheet = document.querySelector(".hero-sheet");
     if (!sheet) return { rows: [], clipBottom: 0, headBottom: 0 };
-    const tbody = sheet.querySelector("tbody");
-    const clip = (sheet.closest(".hero-sheet-wrap") || sheet).getBoundingClientRect();
-    const head = sheet.querySelector("thead").getBoundingClientRect();
-    const rows = [...tbody.querySelectorAll("tr")]
+    const hd = sheet.querySelector("thead, .hero-head, .hero-rows-head");
+    const body = sheet.querySelector(".hero-rows:not(.hero-rows-ghost)");
+    const clipEl = body || sheet.closest(".hero-sheet-wrap") || sheet;
+    const head = hd
+      ? hd.getBoundingClientRect()
+      : body
+        ? { bottom: body.getBoundingClientRect().top }
+        : sheet.getBoundingClientRect();
+    const clip = clipEl.getBoundingClientRect();
+    const rows = [...sheet.querySelectorAll(rowSel)]
       .map((tr) => {
         const r = tr.getBoundingClientRect();
         const o = +getComputedStyle(tr).opacity;
+        const idEl = tr.cells ? tr.cells[0] : tr.firstElementChild;
         return {
-          id: tr.cells[0]?.innerText.trim(),
+          id: idEl?.textContent?.trim() ?? "",
           top: r.top,
           bottom: r.bottom,
           h: r.height,
@@ -72,9 +90,15 @@ while (Date.now() - t0 < LOOP_MS) {
         };
       })
       .filter((r) => r.o > 0.05 && r.bottom > head.bottom + 1 && r.top < clip.bottom - 1);
-    return { rows, clipBottom: clip.bottom, headBottom: head.bottom };
-  });
+    return {
+      rows: rows.filter((r) => r.top < clip.bottom - 1),
+      clipBottom: clip.bottom,
+      headBottom: head.bottom,
+    };
+  }, ROWSEL);
+
   const issues = [];
+  if (f.rows.length === 0) issues.push("empty table (no visible rows)");
   const ids = f.rows.map((r) => r.id);
   const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
   if (dup.length) issues.push("duplicate " + [...new Set(dup)].join(","));
@@ -93,7 +117,30 @@ while (Date.now() - t0 < LOOP_MS) {
   }
   const heights = [...new Set(f.rows.map((r) => Math.round(r.h)))];
   if (heights.length > 1) issues.push("row heights " + heights.join("/"));
-  frames.push({ t, ids, issues });
+  const prevF = frames.at(-1);
+  if (prevF) {
+    for (const r of f.rows) {
+      const o = prevF.pos?.[r.id];
+      if (o != null && r.top - o < -2) {
+        issues.push(`jump-up ${r.id} ${(r.top - o).toFixed(1)}px`);
+      }
+      if (o != null && r.top - o > 40) {
+        issues.push(`jump ${r.id} +${(r.top - o).toFixed(1)}px`);
+      }
+    }
+  }
+  frames.push({
+    t,
+    ids,
+    issues,
+    pos: Object.fromEntries(f.rows.map((r) => [r.id, r.top])),
+  });
+  if (SAVE_ALL) {
+    await p
+      .locator(".hero-sheet")
+      .screenshot({ path: `${OUT}/frame-${String(t).padStart(5, "0")}.png` })
+      .catch(() => {});
+  }
   if (issues.length) {
     fails.push({ t, issues });
     if (fails.length <= 12) {
@@ -107,6 +154,7 @@ while (Date.now() - t0 < LOOP_MS) {
   if (wait > 0) await p.waitForTimeout(wait);
 }
 await b.close();
+
 const kinds = {};
 for (const f of fails) {
   for (const i of f.issues) {
