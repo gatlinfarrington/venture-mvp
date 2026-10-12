@@ -1,0 +1,96 @@
+---
+title: "Track Refunds and Chargebacks in Google Sheets"
+description: "Each platform records refunds differently. How to pull them into one tab, link each to its original order, and net them out of revenue correctly."
+date: "2026-10-12"
+tags: ["guides", "sheets"]
+draft: true
+---
+
+# Track Refunds and Chargebacks in Google Sheets
+
+Refunds are where homemade revenue sheets quietly go wrong. Gross sales are easy: every platform gives you a list of orders. Then a customer asks for their money back in a later month, the platform records it somewhere else, and your "revenue" column is now wrong by exactly that amount, forever, unless you go back and fix it.
+
+This page shows how each platform represents a refund, a single Refunds tab layout that works for all of them, and the one decision you have to make about which month a refund belongs to. If you'd rather have the tab filled for you, [RevenueSheet](/?utm_source=blog&utm_medium=seo&utm_campaign=refunds) does it for Lemon Squeezy, Polar, Gumroad and Stripe, free for one source. Once paid plans open, Pro unlocks the rest.
+
+## How each platform represents a refund
+
+There are two basic designs, and you'll meet both.
+
+**A flag on the sale.** The original order gets marked as refunded (fully or partly), sometimes with a refunded amount. There's no separate refund record with its own date and ID. Gumroad's sales and Lemon Squeezy's orders work roughly like this: the order's status or refund fields change after the fact.
+
+**A refund as its own object.** The refund is a separate record with its own ID, amount, date and a pointer back to the order or payment. Stripe works this way (refunds and disputes are their own objects), and so does Polar.
+
+Why it matters: with the flag design, the refund date can be hard to find. If you exported the order in March and it was refunded in April, your March export says nothing, and your April export may only show the order with a changed status. You have to re-pull old orders to catch refunds, or pull the platform's refund-specific data where it exists.
+
+Rule of thumb: whenever you refresh, re-pull at least the last 60 to 90 days of orders, not just new ones. Most refund windows sit inside that range.
+
+## A single Refunds tab layout
+
+One row per refund, from every store, in one tab:
+
+| Column | Example (example data) | Notes |
+|---|---|---|
+| Refund ID | re_3Px... or `GUM-<sale id>` | Make one up from the sale ID when the platform has no refund ID |
+| Created | 2026-04-06 | The date the money went back |
+| Source | Stripe | Lemon Squeezy, Polar, Gumroad, Stripe |
+| Order ID | the original order or payment ID | The link that makes everything else possible |
+| Order date | 2026-03-28 | Copied from the order, for the month decision below |
+| Amount | 29.00 | Positive number; subtract it in formulas |
+| Currency | USD | Don't mix currencies in one sum |
+| Status | refunded / partial / chargeback / chargeback_won | See the last section |
+
+The Order ID column is the important one. With it, a lookup brings the product name over from your Orders tab, so you can see refunds by product:
+
+```
+=XLOOKUP(D2, Orders!$A:$A, Orders!$C:$C, "not found")
+```
+
+"not found" rows are your to-do list. They usually mean an order older than your export window.
+
+## Netting refunds out of monthly revenue
+
+You have to pick which month a refund reduces: the month the money went back (refund month) or the month of the original sale (sale month). Both are defensible. Mixing them isn't.
+
+Same example data, both ways. March: $1,200 in sales. April: $1,000 in sales. One $100 order from March 28 is refunded on April 6.
+
+| | March net | April net |
+|---|---|---|
+| Refund month | 1,200 | 900 |
+| Sale month | 1,100 | 1,000 |
+
+**Refund month** matches your bank account and your payouts, and March never changes after March ends. It's the simpler choice, and usually what bookkeeping wants. Ask your accountant.
+
+**Sale month** tells you what each month's sales were really worth, which is better for judging a launch or a price change. The cost: closed months keep changing as late refunds arrive.
+
+Formulas for both, with month starts in column A of a `Monthly` tab:
+
+```
+Refund month:  =SUMIFS(Refunds!$F:$F, Refunds!$B:$B, ">="&A2, Refunds!$B:$B, "<"&EDATE(A2,1))
+Sale month:    =SUMIFS(Refunds!$F:$F, Refunds!$E:$E, ">="&A2, Refunds!$E:$E, "<"&EDATE(A2,1))
+```
+
+Net revenue is gross sales for the month minus whichever one you picked. Write the choice in a note at the top of the tab, so you still know in a year.
+
+## Chargebacks: why they need their own status
+
+A chargeback isn't a refund you agreed to. The customer's bank pulled the money, usually with a fee on top, and the outcome can change weeks later if you win the dispute.
+
+Give chargebacks their own Status values and keep them in the same tab:
+
+- `chargeback` when the dispute opens. Count the amount as gone.
+- `chargeback_won` if it's reversed in your favor. The money comes back, so stop subtracting it.
+- `chargeback_lost` when it's final.
+
+Track the dispute fee in a separate column. It's a cost, not a refund, and it's easy to miss because it often doesn't appear on the order at all.
+
+If you sell through a merchant of record (Lemon Squeezy, Polar, Gumroad), the platform handles the dispute. You'll still see the money leave, so the row still belongs in your tab. With Stripe directly, you handle disputes yourself, and the status column is how you remember which ones are still open.
+
+A monthly count of chargebacks is also an early warning. A few per month on a small store usually means a confusing statement descriptor or a fraud pattern, and both are worth fixing before a processor notices.
+
+## Let the sheet fill itself
+
+RevenueSheet is a Google Sheets add-on that pulls orders, subscriptions, customers and refunds from Lemon Squeezy, Polar, Gumroad and Stripe into named tabs, including a Refunds tab, and builds a Dashboard tab on top. The raw rows stay underneath so you can audit any number.
+
+For a full Gumroad walkthrough with a working Apps Script, see the [Gumroad sales spreadsheet guide](/blog/gumroad-sales-spreadsheet).
+
+[Install free](/?utm_source=blog&utm_medium=seo&utm_campaign=refunds-end). One store, full history, no time limit.

@@ -1,0 +1,128 @@
+---
+title: "Monthly Metrics Update Template for Indie SaaS"
+description: "The six numbers worth reporting every month (MRR, net new MRR, churn, ARPU, refunds, top product), how to calculate each in Google Sheets, and a template."
+date: "2026-10-12"
+tags: ["guides", "mrr", "sheets"]
+draft: true
+---
+
+# Monthly Metrics Update Template for Indie SaaS
+
+Whether it goes to investors, to your audience, or just to a note you reread next year, a monthly update is easier to write when the numbers are already sitting in a sheet. This guide picks six numbers, gives the Google Sheets formula for each, and ends with a short text template you can fill in.
+
+It builds on the subscriptions table from [How to track MRR across Gumroad, Polar and Lemon Squeezy](/blog/mrr-across-gumroad-polar-lemon-squeezy). If you haven't set that up yet, start there. We'll assume a `Subs` tab with these columns:
+
+| Column | Header |
+|---|---|
+| A | Source |
+| B | Customer email |
+| C | Product |
+| G | Started |
+| H | Ended (blank if still running) |
+| I | Monthly amount |
+| J | Bucket (active, trial, past_due, ended) |
+
+Put the first day of the month you're reporting in M1 (for example `2026-09-01`) and the first day of the next month in N1: `=EDATE(M1, 1)`.
+
+## The six numbers and their formulas
+
+**1. MRR.** Recurring revenue from active subscriptions, with longer plans divided down to a month.
+
+```
+=SUMIFS(Subs!I:I, Subs!J:J, "active")
+```
+
+This is MRR as of today. For a past month, keep last month's update and compare, or use the start-of-month formula below.
+
+**2. Net new MRR.** How much MRR changed this month. See the next section for the breakdown.
+
+**3. Churn.** Report logo churn (the share of subscribers who left) and revenue churn (the share of MRR that left). They can tell very different stories: losing two big customers barely moves logo churn but can be a large share of MRR.
+
+Subscribers active at the start of the month:
+
+```
+=SUMPRODUCT((Subs!G2:G<>"") * (Subs!G2:G<M1) * (Subs!J2:J<>"trial") * (((Subs!H2:H="") + (Subs!H2:H>=M1)) > 0))
+```
+
+Subscribers who ended during the month:
+
+```
+=COUNTIFS(Subs!H2:H, ">="&M1, Subs!H2:H, "<"&N1, Subs!G2:G, "<"&M1)
+```
+
+Logo churn is the second divided by the first. For revenue churn, swap the counts for sums of column I (the live MRR guide has both versions).
+
+**4. ARPU.** Average revenue per user: MRR divided by the number of active subscribers.
+
+```
+=SUMIFS(Subs!I:I, Subs!J:J, "active") / COUNTIFS(Subs!J:J, "active")
+```
+
+**5. Refunds.** Total refunded in the month. With a `Refunds` tab where column B is the refund date and column C the amount:
+
+```
+=SUMIFS(Refunds!C:C, Refunds!B:B, ">="&M1, Refunds!B:B, "<"&N1)
+```
+
+Report it next to revenue for the month, so a high-refund month doesn't hide inside a good sales number.
+
+**6. Top product.** The product with the most MRR:
+
+```
+=INDEX(QUERY(Subs!A:J, "select C, sum(I) where J = 'active' group by C order by sum(I) desc", 1), 2, 1)
+```
+
+## New, expansion, churned and net new MRR
+
+Net new MRR is MRR at the end of the month minus MRR at the start. It's worth splitting into parts, because "+$40" means something very different when it's +$200 new and −$160 churned.
+
+- **New MRR:** monthly amount from subscriptions that started in the month.
+
+  ```
+  =SUMIFS(Subs!I:I, Subs!G:G, ">="&M1, Subs!G:G, "<"&N1, Subs!J:J, "<>trial")
+  ```
+
+- **Churned MRR:** monthly amount from subscriptions that ended in the month.
+
+  ```
+  =SUMIFS(Subs!I2:I, Subs!H2:H, ">="&M1, Subs!H2:H, "<"&N1, Subs!G2:G, "<"&M1)
+  ```
+
+- **Expansion (and contraction) MRR:** customers who changed plans. A one-row-per-subscription table only shows today's price, so it can't see an upgrade on its own. Either keep last month's copy of the `Subs` tab and compare amounts by subscription, or leave expansion out and say so in the update. Don't guess it.
+
+- **Net new MRR** = new + expansion − contraction − churned. As a check, it should equal end-of-month MRR minus start-of-month MRR.
+
+## Writing the update: a short text template
+
+Keep the numbers on one tab and the words next to them. Here's a filled example. **All numbers are example data.**
+
+> **September 2026 update**
+>
+> - MRR: $1,240 (Aug: $1,180)
+> - Net new MRR: +$60 (new +$150, churned −$90; expansion not tracked)
+> - Logo churn: 3 of 118 subscribers (2.5%); revenue churn: $90 of $1,180 (7.6%)
+> - ARPU: $10.16
+> - Refunds: $38 on $1,610 of revenue
+> - Top product: Pro plan, $820 MRR
+>
+> **What happened:** one or two sentences on the biggest change.
+> **What's next:** the one thing you'll do in October.
+> **Ask:** anything you need from the reader.
+
+To fill it automatically, reference the cells: `="MRR: "&TEXT(B2,"$#,##0")&" (Aug: "&TEXT(C2,"$#,##0")&")"`.
+
+## Building in public with real numbers
+
+If you post your update publicly, two habits keep it trustworthy:
+
+- **Use the same definitions every month.** If you count past-due subscriptions in MRR in one update and not the next, the change in your number is the definition, not the business. Write your rules down once (ours are on [How we calculate MRR and churn](/docs/mrr-and-churn)) and link to them.
+- **Report revenue churn next to logo churn.** It's the number that shows when your best customers leave.
+
+## Filling it automatically
+
+The template is free to copy. The tedious part is keeping the `Subs` and `Refunds` tabs current.
+
+RevenueSheet is a Google Sheets add-on that fills them from your stores. It backfills full history from Lemon Squeezy, Polar, Gumroad and Stripe (plus CSV import) into Orders, Subscriptions, Customers and Refunds tabs, and builds a Dashboard tab with MRR, net revenue, churn and revenue by product. It normalizes quarterly, six-month, yearly and two-year plans to monthly, and by default counts only active subscriptions in MRR. Named ranges such as `rs_subs` and `rs_mrr_monthly` let the formulas above point straight at its tabs.
+
+The Free plan covers one source with one-click refresh. Once paid plans open, Pro ($9/mo) adds all four sources plus CSV import and scheduled refresh (hourly, every 6 hours, daily or weekly). RevenueSheet is pending Google Workspace Marketplace review; [join the launch list](/#launch) to hear when it's live.
+

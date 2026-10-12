@@ -1,0 +1,90 @@
+---
+title: "Revenue by Product: A Sheets Report for Indie Sellers"
+description: "Build a revenue-by-product report across Gumroad, Polar, Lemon Squeezy and Stripe in Google Sheets with one QUERY formula, net of refunds."
+date: "2026-10-12"
+tags: ["guides", "sheets"]
+draft: true
+---
+
+# Revenue by Product: A Sheets Report for Indie Sellers
+
+Once you have more than a couple of products, "how much did I make?" turns into "which product made it?" Each platform's dashboard answers that for its own store. If you sell in two or three places, nobody adds them up for you, and a product sold on both Gumroad and Lemon Squeezy shows up as two half-numbers.
+
+This guide builds a revenue-by-product report in Google Sheets with one formula.
+
+## Gross vs. net revenue by product
+
+Decide first which number you want:
+
+- **Gross revenue** is every completed order, before refunds.
+- **Net revenue** leaves out refunded and charged-back orders.
+
+Net is the one to make decisions with. A product that sells well but gets refunded often looks very different once refunds come out.
+
+## Start from one Orders table
+
+Put every order from every store in one tab called `Orders`, with the same columns no matter where the row came from:
+
+| Column | Header | Example |
+|---|---|---|
+| A | Order ID | 10423 |
+| B | Created | 2026-09-14 |
+| C | Source | Gumroad |
+| D | Product | Notion budget template |
+| E | Email | sam@example.com |
+| F | Amount (dollars) | 19 |
+| G | Status | paid |
+
+Use a single currency for the report, or add a column for it and filter on it. Don't add dollars and euros together.
+
+## The QUERY formula
+
+In a new tab, this gives net revenue per product, largest first:
+
+```
+=QUERY(Orders!A:G,
+  "select D, sum(F), count(A)
+   where G <> 'refunded' and G <> 'chargeback' and G <> 'failed'
+   group by D
+   order by sum(F) desc
+   label D 'Product', sum(F) 'Net revenue', count(A) 'Orders'", 1)
+```
+
+The status values are whatever your stores use. Check the distinct values first with `=UNIQUE(Orders!G2:G)` and adjust the `where` clause.
+
+To limit it to one month, add a date condition, for example `and B >= date '2026-09-01' and B < date '2026-10-01'`.
+
+For a split by store as well, group by both columns: `select D, C, sum(F) ... group by D, C`.
+
+## Matching product names across stores
+
+If you sell the same product in two places, it probably has two slightly different names. Fix that with a small mapping tab called `Products`:
+
+| A: Name in store | B: Report name |
+|---|---|
+| Budget Template (Notion) | Notion budget template |
+| notion-budget-template | Notion budget template |
+
+Add a column H to `Orders` with:
+
+```
+=IFERROR(VLOOKUP(D2, Products!A:B, 2, FALSE), D2)
+```
+
+Then group by H instead of D in the QUERY. Any name you haven't mapped falls through unchanged, so nothing disappears from the report.
+
+## Reading the result
+
+A worked example on example data: a template at $1,240 net, a course at $860, and nine small products adding up to $310. Two things to look at:
+
+- **The top of the list.** Those products pay the bills. They're where a price test or a better landing page matters most.
+- **The long tail.** Small products aren't automatically worth cutting. Check the order count next to the revenue: lots of small orders can mean a good entry product that leads to bigger purchases.
+
+Re-run the report monthly and keep the old tabs. The trend tells you more than any single month.
+
+## Doing it automatically
+
+RevenueSheet is a Google Sheets add-on that fills the Orders table for you. It backfills full order history from Lemon Squeezy, Polar, Gumroad and Stripe (plus CSV import for anything else) into named tabs: Orders, Subscriptions, Customers, Refunds and Dashboard. The Orders tab has order ID, created, source, product, email, amount and status, and refunds and chargebacks land on the Refunds tab linked back to the original order. The Dashboard tab shows MRR, net revenue, churn and revenue by product, built from formulas you can audit and extend. There are also named ranges such as `rs_orders` for your own QUERY and FILTER formulas.
+
+The Free plan covers one source with one-click refresh and full history backfill. Once paid plans open, Pro ($9/mo) adds all four sources plus CSV import, scheduled refresh (hourly, every 6 hours, daily or weekly), and revenue by product and source. Business ($19/mo) covers up to 20 stores per source in one combined MRR. RevenueSheet is pending Google Workspace Marketplace review; [join the launch list](/#launch) to hear when it's live.
+

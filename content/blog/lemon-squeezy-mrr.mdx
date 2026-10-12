@@ -1,0 +1,119 @@
+---
+title: "Lemon Squeezy MRR: How to Calculate It Correctly"
+description: "Which Lemon Squeezy subscription statuses count toward MRR, how to handle annual plans and discounts, and a Google Sheets formula you can copy."
+date: "2026-10-12"
+tags: ["guides", "mrr", "lemon-squeezy"]
+draft: true
+---
+
+# Lemon Squeezy MRR: How to Calculate It Correctly
+
+If you're about to sell a Lemon Squeezy business, raise a little money, or just write an honest monthly update, someone will ask for your MRR. The number sounds simple. Then you open your subscriptions and find seven different statuses, a mix of monthly and yearly plans, and a handful of customers on a launch discount, and "simple" goes away.
+
+This page gives you a status-by-status rule for what counts, the math for annual and discounted plans, and a Google Sheets formula you can copy. Everything works by hand from a CSV export. If you'd rather skip the export, [RevenueSheet](/?utm_source=blog&utm_medium=seo&utm_campaign=ls-mrr) pulls your Lemon Squeezy subscriptions into a sheet and runs this calculation on every sync. It's free for one source. Once paid plans open, Pro unlocks the rest.
+
+## What counts as MRR on Lemon Squeezy
+
+MRR is the monthly revenue you can expect from subscriptions that are paying right now, at today's prices. On Lemon Squeezy, each subscription carries a status. Here's how we treat each one, and why.
+
+| Status | What it means | Counts toward MRR? | Why |
+|---|---|---|---|
+| `active` | Paying and current | **Yes** | This is the definition |
+| `on_trial` | In a free trial, hasn't paid yet | **No** (track separately) | Trials convert at well under 100%. Counting them inflates the number you're most likely to be judged on |
+| `past_due` | A renewal payment failed; Lemon Squeezy is retrying | **No** (track separately) | Some recover, some don't. Show the amount next to MRR so nobody's surprised |
+| `paused` | The customer paused billing | **No** | No money is coming in this month |
+| `unpaid` | Retries failed and the subscription is suspended | **No** | Effectively churned unless they come back |
+| `cancelled` | Cancelled, but still has access until the end of the paid period | **Your call** | See below |
+| `expired` | Ended | **No** | Gone |
+
+The one real decision is `cancelled`. On Lemon Squeezy, a cancelled subscription usually still has access until its period ends, and it may even be resumed before then. Two defensible choices:
+
+- **Count it until it expires.** Your MRR drops on the day access ends, which matches the "a subscription stops counting when access ends" rule used in most SaaS reporting.
+- **Drop it the day they cancel.** More conservative. Your MRR reflects intent rather than the calendar.
+
+Pick one, write it at the top of your sheet, and don't switch midyear. For the record, RevenueSheet takes the conservative side: its MRR counts only subscriptions whose status is `active`. Trials and past-due are shown as their own numbers next to it, and there's a sidebar option to fold them back in if you want the looser figure.
+
+## Annual, monthly and discounted plans
+
+Every subscription has to be turned into a monthly amount before you add anything up.
+
+**Billing interval.** A $90 yearly plan is $7.50 of MRR, not $90 in the month it renews and zero the other eleven. The divisors:
+
+| Billing interval | Divide the price by |
+|---|---|
+| Monthly | 1 |
+| Quarterly | 3 |
+| Every 6 months | 6 |
+| Yearly | 12 |
+
+**Cents.** Lemon Squeezy's API returns prices in cents. A `recurring_price` of `900` is $9.00. If you pull data from the API rather than the dashboard export, divide by 100 before anything else. This one mistake turns a $3,000 MRR business into a $300,000 one, and it happens more often than you'd think.
+
+**Discounts.** If a customer is on a 50% off forever coupon, their MRR is the discounted price, because that's what they'll actually pay next month. If the discount is for the first three months only, the honest number is still what they pay today, and it will step up later on its own. Whatever your export gives you, check a few discounted customers by hand against what they were actually charged on their last invoice. Plan price and charged price are not always the same column.
+
+**Currency.** If you sell in more than one currency, don't add euros to dollars. Either report MRR per currency, or convert at a rate you write down and use consistently.
+
+## The formula
+
+Put your subscriptions in a tab called `Subs`, one row per subscription, with headers in row 1:
+
+| Column | Header | Example (example data) |
+|---|---|---|
+| A | Subscription ID | 1042 |
+| B | Customer email | ana@example.com |
+| C | Product | Pro |
+| D | Status | active |
+| E | Interval | year |
+| F | Price (major units) | 90.00 |
+| G | Currency | USD |
+
+Add a helper column H, **Monthly value**, that normalizes the interval:
+
+```
+=IF(F2="", "", F2 / SWITCH(LOWER(E2), "month", 1, "quarter", 3, "6 months", 6, "year", 12, 1))
+```
+
+Adjust the interval labels to whatever your export actually uses. Lemon Squeezy's API uses `month` and `year` for the billing interval, with a separate interval count for things like "every 3 months". If you have interval counts, use `F2 / IF(E2="year", 12*count, count)` instead.
+
+Now the MRR cell, counting only `active`:
+
+```
+=SUMIFS(Subs!H:H, Subs!D:D, "active", Subs!G:G, "USD")
+```
+
+Trials and past-due as their own numbers, to show next to it:
+
+```
+=SUMIFS(Subs!H:H, Subs!D:D, "on_trial", Subs!G:G, "USD")
+=SUMIFS(Subs!H:H, Subs!D:D, "past_due", Subs!G:G, "USD")
+```
+
+If you decided to count `cancelled` until it expires, add it in, but only for rows whose end date is still in the future. With the end date in column I:
+
+```
+=SUMIFS(Subs!H:H, Subs!D:D, "active", Subs!G:G, "USD")
+ + SUMIFS(Subs!H:H, Subs!D:D, "cancelled", Subs!I:I, ">"&TODAY(), Subs!G:G, "USD")
+```
+
+A quick worked example on example data: 40 active monthly subscribers at $9 ($360), 6 active yearly at $90 ($45 of MRR), 5 on trial, 2 past due at $9, and 3 cancelled with access until next week. Conservative MRR is **$405**. Trials are shown as 5 subscribers, past-due as **$18**, and the cancelled three add $27 only if you chose to count them until expiry.
+
+## Common mistakes
+
+**Counting trials.** A store with a generous trial can show a big MRR jump on launch week that disappears two weeks later. If someone is buying your business, they'll find this in the first hour of due diligence. Keep trials separate.
+
+**Counting cancelled subscriptions as churned too early, or too late.** If you count by status alone and also record churn on the cancel date, the same customer can vanish from MRR before their access ends while your churn chart says they left two weeks later. Use one date for both: either the cancel date or the end date, consistently.
+
+**Forgetting the cents.** Covered above, worth repeating. Check that your largest subscription has a believable price.
+
+**Mixing currencies.** A sum across a USD and EUR column is a meaningless number that happens to look plausible.
+
+**Using order revenue as MRR.** The sum of last month's orders includes one-time purchases, yearly renewals landing in that month, and refunds that haven't happened yet. It's revenue, which matters, but it isn't MRR.
+
+## Doing it automatically
+
+The formulas above are fine for a monthly check. They get tedious when you want the number every morning, or when you also sell on Polar or Gumroad and need one total.
+
+RevenueSheet is a Google Sheets add-on that pulls every Lemon Squeezy subscription, order, customer and refund into named tabs, back to your first sale, and refreshes hourly, every 6 hours, daily or weekly. Prices come in already converted from cents, and yearly and multi-month plans (for example every 3 months) are normalized to monthly using each plan's interval and interval count. The Dashboard tab shows MRR from active subscriptions, with trials and past-due as separate figures. The raw rows stay in the sheet, so you can check any number against the formulas on this page.
+
+Your API key is stored in your Google account, not in a cell, and the add-on can only open the sheet it's installed in. For combining Lemon Squeezy with other platforms, see [How to Track MRR Across Gumroad, Polar and Lemon Squeezy](/blog/mrr-across-gumroad-polar-lemon-squeezy). For getting the data in, see [Lemon Squeezy to Google Sheets](/docs/setup/lemon-squeezy), or start from the [MRR spreadsheet template](/sample).
+
+[Join the launch list](/#launch). Free covers one source with manual refresh. Once paid plans open, Pro adds scheduled sync (hourly, every 6 hours, daily or weekly) across all sources.

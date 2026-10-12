@@ -1,0 +1,98 @@
+---
+title: "How to Calculate MRR From Gumroad Memberships"
+description: "Gumroad memberships can renew on different schedules. Here's how to turn every one of them into a single MRR number in Google Sheets."
+date: "2026-10-12"
+tags: ["guides", "mrr", "gumroad"]
+draft: true
+---
+
+# How to Calculate MRR From Gumroad Memberships
+
+Gumroad is great at telling you what sold today. If you run memberships, though, the number you usually want is different: how much recurring revenue comes in each month. That's MRR, and getting it from Gumroad takes a little extra math, because one membership can renew monthly while another renews once a year.
+
+This guide does it by hand in Google Sheets. At the end there's a short note on doing it automatically.
+
+## Why Gumroad needs extra math
+
+MRR is the revenue you can expect every month from active subscriptions. A monthly membership counts at its price. A longer billing period has to be divided down to a month: a $120 yearly membership is $10 of MRR, not $120 in the month it renews.
+
+Here is the divisor for each billing period:
+
+| Billing period | Gumroad label | Monthly MRR |
+|---|---|---|
+| Monthly | `monthly` | amount as billed |
+| Quarterly | `quarterly` | amount ÷ 3 |
+| Every 6 months | `biannually` | amount ÷ 6 |
+| Yearly | `yearly` | amount ÷ 12 |
+| Every 2 years | `every_two_years` | amount ÷ 24 |
+
+One-time sales (an ebook, a template pack) are revenue, but they aren't recurring. Keep them out of MRR and track them on their own line.
+
+## Where the data lives
+
+You need one row per membership, with the customer, product, status, price, and billing period. Gumroad's API returns subscribers per membership product (`GET https://api.gumroad.com/v2/products/:id/subscribers`), so you call it once per product. Each subscriber comes back with a `recurrence` (one of the labels above) and a `status`. You need an access token: in Gumroad, open **Settings › Advanced**, create an application, and click **Generate access token**. Treat the token like a password.
+
+The API returns money in cents. A $9.00 membership comes back as `900`, so divide by 100 when you write it to the sheet.
+
+Put the rows in a tab called `Members`:
+
+| Column | Header | Example |
+|---|---|---|
+| A | Email | sam@example.com |
+| B | Product | Pattern club |
+| C | Status | alive |
+| D | Price (dollars, per billing period) | 30 |
+| E | Recurrence | quarterly |
+| F | Ended | (blank if still running) |
+
+## The normalize-to-monthly formula
+
+Add a column G called `Monthly` and put this in G2, then fill down:
+
+```
+=IF(AND(C2<>"alive", C2<>"pending_cancellation"), 0,
+  D2 / SWITCH(LOWER(E2),
+    "monthly", 1,
+    "quarterly", 3,
+    "biannually", 6,
+    "yearly", 12,
+    "every_two_years", 24,
+    NA()))
+```
+
+The `NA()` at the end is on purpose. If a billing period shows up that the formula doesn't know, you'll see an error instead of a silently wrong number.
+
+Your membership MRR is then:
+
+```
+=SUM(Members!G:G)
+```
+
+A worked example on example data: 30 members at $10 a month ($300), 8 at $30 a quarter ($80), and 5 at $96 a year ($40). Membership MRR is **$420**.
+
+## Cancelled vs. ended vs. failed payment
+
+Status is where homemade MRR numbers drift. Gumroad's subscriber statuses are `alive`, `pending_cancellation`, `pending_failure`, `failed_payment`, `fixed_subscription_period_ended` and `cancelled`. Three rules keep it honest:
+
+- **A membership stops counting on the day access ends,** not the day someone clicks cancel. `pending_cancellation` means the member asked to cancel but still has access, so the formula above keeps it in MRR until the subscription actually ends.
+- **Failed payments are a choice.** `pending_failure` means the latest charge failed and Gumroad is retrying. The money hasn't arrived, so we'd leave it out of the headline number and show it on its own line: `=SUMIFS(Members!D:D, Members!C:C, "pending_failure")` gives the at-risk amount per billing period.
+- **Ended is ended.** `cancelled`, `failed_payment` and `fixed_subscription_period_ended` all contribute zero.
+- **Pick a rule and stay consistent.** Changing it month to month makes your growth chart meaningless.
+
+## Membership MRR next to one-time sales
+
+Most Gumroad sellers have both. Keep two numbers side by side:
+
+- **MRR** from the `Members` tab, as above.
+- **Net revenue** for the month from your sales: one-time and membership charges, with refunded sales taken out.
+
+MRR tells you what the base looks like. Net revenue tells you what actually landed. For getting every sale into a sheet, see [Gumroad sales spreadsheet: get your full history into Google Sheets](/blog/gumroad-sales-spreadsheet).
+
+## Doing it automatically
+
+RevenueSheet is a Google Sheets add-on that does the import for you. You paste a Gumroad access token in the sidebar and press Backfill; sales land in an Orders tab with product, email, amount, and refund status, and re-running sync updates refunded rows instead of duplicating them. Memberships count toward MRR, normalized monthly, and one-time sales go to net revenue. The add-on only reads: it calls Gumroad with GET requests only. Your key stays in your Google account.
+
+By default only `active` subscriptions count toward MRR. There's a sidebar toggle to include trialing and past-due subscriptions if you prefer. The full method is on [How we calculate MRR and churn](/docs/mrr-and-churn).
+
+The Free plan covers one source with one-click refresh and full history backfill. Once paid plans open, Pro ($9/mo) adds Polar, Lemon Squeezy and Stripe beside Gumroad, plus CSV import and scheduled refresh (hourly, every 6 hours, daily or weekly). RevenueSheet is pending Google Workspace Marketplace review; [join the launch list](/#launch) to hear when it's live.
+

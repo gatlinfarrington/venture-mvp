@@ -1,0 +1,98 @@
+---
+title: "Combine Gumroad, Polar and Lemon Squeezy Sales in One Sheet"
+description: "A step-by-step way to merge sales from several platforms into one Google Sheet: a shared column layout, currency handling, and deduping customers by email."
+date: "2026-10-12"
+tags: ["guides", "sheets", "gumroad", "polar", "lemon-squeezy"]
+draft: true
+---
+
+# Combine Gumroad, Polar and Lemon Squeezy Sales in One Sheet
+
+Selling in more than one place happens gradually. You start on Gumroad because it was the fastest way to put an ebook online. A year later the software product goes on Lemon Squeezy, or Polar, because you need license keys and subscriptions. Then someone asks how much you made last month, and the honest answer is "let me open three tabs and add them up."
+
+This page is the version of that spreadsheet that holds up: one column layout every platform fits into, a decision about currencies, and a formula for spotting customers who bought from you in two places. It works by hand with CSV exports. If you'd rather not paste exports every month, [RevenueSheet](/?utm_source=blog&utm_medium=seo&utm_campaign=combine) fills the Orders tab from Lemon Squeezy, Polar, Gumroad and Stripe for you, free for one source. Once paid plans open, Pro unlocks the rest.
+
+## The shared layout
+
+The rule that makes everything else easy: **one row per order, every platform in the same tab, with a Source column.** Not one tab per platform. Separate tabs feel tidy, but every total then becomes a sum of three formulas, and the first time you add a fourth platform you'll miss one.
+
+Here's the layout (example data):
+
+| Column | Header | Example | Notes |
+|---|---|---|---|
+| A | Order ID | `gum_8812` | Prefix with the source so IDs from different platforms can't collide |
+| B | Created | 2026-09-14 | Date only is fine for monthly reporting |
+| C | Source | Gumroad | Gumroad, Lemon Squeezy, Polar |
+| D | Product | Notion Finance Kit | Use the platform's product name as-is |
+| E | Customer email | ana@example.com | Lowercase it (see the dedupe section) |
+| F | Amount | 29.00 | **Major units.** Dollars, not cents |
+| G | Currency | USD | Three-letter code |
+| H | Status | paid | paid / refunded / chargeback |
+
+Mapping each platform's export into this takes a few minutes the first time:
+
+- **Gumroad** sales exports have a sale date, product name, buyer email and price. If you pull from the API instead, prices are in cents.
+- **Lemon Squeezy** orders have a created date, a total, a currency and the customer's email. The API returns totals in cents, so divide by 100.
+- **Polar** orders have a created date, an amount and the customer. Amounts from the API are in cents too.
+
+The cents issue is the single most common way a combined sheet goes wrong. One platform in dollars and another in cents produces a total that's off by a factor of 100 for that slice and looks almost plausible. After every paste, sort column F descending and check that your largest order is a price you actually charge.
+
+With everything in one tab, the useful numbers are one formula each. Revenue by platform for September:
+
+```
+=SUMIFS(Orders!$F:$F, Orders!$C:$C, "Gumroad", Orders!$B:$B, ">="&DATE(2026,9,1), Orders!$B:$B, "<"&DATE(2026,10,1), Orders!$H:$H, "paid", Orders!$G:$G, "USD")
+```
+
+Swap "Gumroad" for each source, or drop that condition for the total. Revenue by product works the same way on column D.
+
+## Currency: convert at sale date or report per currency
+
+If every platform pays you in one currency, skip this section. If you sell in USD on Gumroad and EUR on Polar, you have to decide how to add them, and there are only two honest options.
+
+**Report per currency.** Keep a total for USD and a total for EUR, side by side. Nothing is converted, so nothing is wrong. This is the right choice if you don't need a single number, or if your payouts actually land in different currencies.
+
+**Convert at the sale date.** Add a column I, Amount (USD), that converts each row at the exchange rate on the day of the sale. Google Sheets can fetch historical rates:
+
+```
+=IF(G2="USD", F2, F2 * INDEX(GOOGLEFINANCE("CURRENCY:"&G2&"USD", "price", B2), 2, 2))
+```
+
+`GOOGLEFINANCE` is slow over thousands of rows and occasionally returns errors for weekends or holidays. For a big sheet, keep a small Rates tab with one rate per currency per month and look it up with `XLOOKUP`. Monthly rates are accurate enough for most indie reporting. Write down which you chose.
+
+What you shouldn't do is sum column F across currencies. A total of 1,000 USD and 1,000 EUR is not 2,000 of anything.
+
+## Customers who bought in two places
+
+One of the better reasons to combine platforms is finding customers who bought from you more than once across stores: the person who got the ebook on Gumroad and later subscribed to the app on Polar. They're your best customers and the most likely to buy the next thing.
+
+Every platform identifies customers differently, so the only common key is the email address. Normalize it first: a helper column with `=LOWER(TRIM(E2))`. Then a Customers tab:
+
+**Unique customers across all stores**
+
+```
+=UNIQUE(FILTER(Orders!J2:J, Orders!J2:J<>""))
+```
+
+(where J is the normalized email).
+
+**Next to each email, the number of platforms they bought on**
+
+```
+=COUNTA(UNIQUE(FILTER(Orders!$C$2:$C, Orders!$J$2:$J=A2)))
+```
+
+Filter that column for values of 2 or more, and you have your cross-platform customers. **Lifetime value per customer** is a `SUMIFS` on the amount column with the email as the condition.
+
+Two caveats. People use different emails at different times, so this undercounts. It never overcounts, though, so the list it gives you is real. And treat these emails the way you'd want yours treated: they're customers who bought from you, not a mailing list. Only email them about things they've signed up for.
+
+## Keeping it current without pasting
+
+The by-hand version has two costs. The obvious one is the monthly export-and-paste. The less obvious one is refunds: a sale you pasted in March might be refunded in April, and your March export doesn't know that. To keep the sheet honest by hand, re-export at least the last 60 to 90 days each time and replace those rows, rather than appending only new ones.
+
+RevenueSheet is a Google Sheets add-on that does the import part for you. It pulls orders, subscriptions, customers and refunds from Lemon Squeezy, Polar, Gumroad and Stripe into named tabs, using a layout like the one on this page: one row per order, a Source column, amounts in major units, a currency column. It goes back to your first sale on the first run and refreshes hourly, every 6 hours, daily or weekly after that. The Dashboard tab breaks revenue and MRR down by store and by product.
+
+To be clear about what it doesn't do: it doesn't convert currencies for you, and it doesn't merge the same customer across platforms. The currency decision and the dedupe formulas above still apply, and you can add them in columns to the right of the synced data, where the add-on won't overwrite them.
+
+For the subscription side of the same problem, see [How to Track MRR Across Gumroad, Polar and Lemon Squeezy](/blog/mrr-across-gumroad-polar-lemon-squeezy). For Gumroad alone, with a working Apps Script, see the [Gumroad sales spreadsheet guide](/blog/gumroad-sales-spreadsheet).
+
+[Join the launch list](/#launch). Free covers one source with manual refresh. Once paid plans open, Pro adds scheduled sync (hourly, every 6 hours, daily or weekly) across all sources.
