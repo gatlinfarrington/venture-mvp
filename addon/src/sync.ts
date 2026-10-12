@@ -1,3 +1,5 @@
+import { netRevenueBetween } from "./metrics/netRevenue";
+import { clearDeadline, deadlinePassed, setDeadline } from "./lib/deadline";
 import { CONFIG, SHEET_NAMES, SOURCES, type ScheduleCadence, type SourceId } from "./lib/config";
 import { isBackfillIncomplete, resolveFetchCursor } from "./lib/backfill";
 import { checkLicenseSync, enforceSourceLimit, type LicenseStatus } from "./lib/license";
@@ -28,7 +30,7 @@ import { fetchGumroadResultSync } from "./importers/gumroad";
 import { fetchLemonSqueezyResultSync } from "./importers/lemonSqueezy";
 import { fetchPolarResultSync } from "./importers/polar";
 import { fetchStripeResultSync } from "./importers/stripe";
-import type { ImportBundle, ImportResult, SyncCursor } from "./importers/types";
+import type { ImportBundle, ImportResult, NormalizedSubscription, SyncCursor } from "./importers/types";
 import { buildSampleBundle } from "./demo/sampleData";
 import { computeMrr } from "./metrics/mrr";
 import { buildDashboard } from "./sheets/dashboard";
@@ -48,6 +50,8 @@ export interface SyncResult {
   sources: SourceId[];
   sample?: boolean;
   incomplete?: boolean;
+  /** Rows in the data tabs after this run (orders + subscriptions + refunds). */
+  records?: number;
 }
 
 function emptyBundle(): ImportBundle {
@@ -132,8 +136,10 @@ export function paintEmptyWorkbook(ss?: GoogleAppsScript.Spreadsheet.Spreadsheet
   ensureSettingsSheet(spreadsheet, license, { empty: true });
 }
 
-export function runSync(opts: { full?: boolean } = {}): SyncResult {
-  const ss = SpreadsheetApp.getActive();
+export function runSync(
+  opts: { full?: boolean; ss?: GoogleAppsScript.Spreadsheet.Spreadsheet } = {},
+): SyncResult {
+  const ss = opts.ss || SpreadsheetApp.getActive();
   ensureAllTabs(ss);
   ensureDataSheets(ss);
   applyTabOrderAndColors(ss);
@@ -152,7 +158,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
 
   const limited = enforceSourceLimit(license, connected);
   if (limited.blocked.length) {
-    SpreadsheetApp.getActive().toast(limited.message || "Source limit reached", BRAND.name, 8);
+    safeToast(ss, limited.message || "Source limit reached");
   }
 
   // Only sync stores under allowed sources, then cap by maxStores per source.
@@ -162,7 +168,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   }
   const storeLimit = enforceStoreLimit(storesForAllowed, license.maxStores);
   if (storeLimit.blocked.length) {
-    SpreadsheetApp.getActive().toast(storeLimit.message || "Store limit reached", BRAND.name, 8);
+    safeToast(ss, storeLimit.message || "Store limit reached");
   }
 
   let bundle = emptyBundle();
@@ -172,16 +178,31 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   const totalKnownBySource: Partial<Record<SourceId, number>> = {};
   let resuming = false;
   const syncedStoreLabels: string[] = [];
+  let existingSubs: NormalizedSubscription[] | null = null;
 
   for (const { source, store } of storeLimit.allowed) {
+    if (deadlinePassed()) {
+      // Out of time for this slice: leave the store's cursor as-is; next slice resumes it.
+      resuming = true;
+      if (!incompleteSources.includes(source)) incompleteSources.push(source);
+      continue;
+    }
     try {
       const stored = getSyncCursor(source, store.id);
       if (isBackfillIncomplete(stored)) resuming = true;
       const { cursor } = resolveFetchCursor(stored, !!opts.full);
       const result = fetchSourceResult(source, store.apiKey, cursor);
       const tagged = tagBundleWithStore(result.bundle, store);
+      if (result.subscriptionsSnapshot) {
+        existingSubs ||= readSubscriptions(ss);
+        tagged.subscriptions.push(...vanishedSubscriptions(existingSubs, tagged.subscriptions, source, store.label));
+      }
       bundle = mergeBundles(bundle, tagged);
       setSyncCursor(source, result.cursor, store.id);
+      for (const w of result.warnings || []) {
+        console.warn(`${source}/${store.label}: ${w}`);
+        errors.push(`${SOURCES.find((s) => s.id === source)?.label || source} (${store.label}): ${w}`);
+      }
       if (result.totalCount != null && result.totalCount > 0) {
         totalKnownBySource[source] = (totalKnownBySource[source] || 0) + result.totalCount;
       }
@@ -193,7 +214,8 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
       syncedStoreLabels.push(`${SOURCES.find((s) => s.id === source)?.label || source} · ${store.label}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      errors.push(`${source}/${store.label}: ${msg}`);
+      console.error(`sync ${source}/${store.label} failed: ${msg}`);
+      errors.push(`${SOURCES.find((s) => s.id === source)?.label || source} (${store.label}): ${msg}`);
     }
   }
 
@@ -274,6 +296,7 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   return {
     ok: errors.length === 0,
     incomplete,
+    records: orders.length + subscriptions.length + refunds.length,
     message: errors.length
       ? `Synced with errors: ${errors.join("; ")}`
       : incomplete
@@ -283,26 +306,34 @@ export function runSync(opts: { full?: boolean } = {}): SyncResult {
   };
 }
 
+/**
+ * For snapshot providers (Gumroad lists only live subscriptions): rows we stored earlier
+ * for this account that are no longer in the list ended since the last sync → mark cancelled.
+ */
+export function vanishedSubscriptions(
+  existing: NormalizedSubscription[],
+  current: NormalizedSubscription[],
+  source: string,
+  accountLabel: string,
+  now: Date = new Date(),
+): NormalizedSubscription[] {
+  const live = new Set(current.map((s) => s.id));
+  const out: NormalizedSubscription[] = [];
+  for (const s of existing) {
+    if (s.source !== source || (s.storeLabel || "Default") !== accountLabel || live.has(s.id)) continue;
+    const st = String(s.status || "").toLowerCase();
+    if (st === "canceled" || st === "cancelled" || st === "expired") continue;
+    out.push({ ...s, status: "canceled", cancelledAt: s.cancelledAt || now.toISOString() });
+  }
+  return out;
+}
+
 function sumNetRevenue30d(
   orders: { created: string; amount: number; status?: string }[],
   refunds: { created: string; amount: number }[],
 ): number {
   const end = Date.now();
-  const start = end - 30 * 86400000;
-  let sum = 0;
-  for (const o of orders) {
-    const t = Date.parse(o.created);
-    if (Number.isNaN(t) || t < start || t > end) continue;
-    const status = String(o.status || "").toLowerCase();
-    if (status === "refunded" || status === "chargeback" || status === "failed") continue;
-    sum += Number(o.amount) || 0;
-  }
-  for (const r of refunds) {
-    const t = Date.parse(r.created);
-    if (Number.isNaN(t) || t < start || t > end) continue;
-    sum -= Number(r.amount) || 0;
-  }
-  return Math.round(sum * 100) / 100;
+  return netRevenueBetween(orders as never, refunds as never, end - 30 * 86400000, end + 1);
 }
 
 function buildBackfillRows(
@@ -395,7 +426,24 @@ export function runScheduledSync(): void {
     console.warn("Scheduled sync skipped — license does not allow schedule.");
     return;
   }
-  runSync({ full: false });
+  let ss: GoogleAppsScript.Spreadsheet.Spreadsheet | null = null;
+  try {
+    ss = SpreadsheetApp.getActive();
+  } catch {
+    ss = null;
+  }
+  if (!ss) {
+    // Time-driven triggers have no active spreadsheet; use the one the user last synced.
+    const id = PropertiesService.getUserProperties().getProperty("RS_BG_SYNC_SSID");
+    if (!id) return;
+    ss = SpreadsheetApp.openById(id);
+  }
+  setDeadline(270_000);
+  try {
+    runSync({ full: false, ss });
+  } finally {
+    clearDeadline();
+  }
 }
 
 function ensureSettingsSheet(
@@ -451,4 +499,12 @@ function ensureSettingsSheet(
 
 export function resetSourceCursor(source: SourceId): void {
   clearSyncCursor(source);
+}
+
+function safeToast(ss: GoogleAppsScript.Spreadsheet.Spreadsheet, msg: string): void {
+  try {
+    ss.toast(msg, BRAND.name, 8);
+  } catch {
+    /* no UI in trigger context */
+  }
 }

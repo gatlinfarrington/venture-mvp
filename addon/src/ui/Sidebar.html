@@ -342,8 +342,21 @@
       var storeRows = [];
       var emailDigestAvailable = false;
 
+      var pendingTimer = null;
       function setStatus(msg, kind) {
         var el = document.getElementById("status");
+        if (pendingTimer) { clearTimeout(pendingTimer); pendingTimer = null; }
+        if (/…$/.test(String(msg))) {
+          // google.script.run can hang silently (e.g. several Google accounts signed in).
+          pendingTimer = setTimeout(function () {
+            var btns = document.querySelectorAll("button");
+            for (var i = 0; i < btns.length; i++) btns[i].disabled = false;
+            setStatus(
+              "No response from RevenueSheet. This usually happens when you're signed into more than one Google account. Use Save and Sync now on the RevenueSheet card instead (close this sidebar, then click the RevenueSheet icon on the right).",
+              "err",
+            );
+          }, 45000);
+        }
         el.className = "status" + (kind ? " " + kind : "");
         el.textContent = msg;
       }

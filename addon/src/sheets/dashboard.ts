@@ -1,3 +1,4 @@
+import { netRevenueBetween } from "../metrics/netRevenue";
 import { BRAND, managedByFooter } from "../lib/brand";
 import { SHEET_NAMES, type DashboardTemplate } from "../lib/config";
 import type { BackfillSourceRow } from "../lib/onboardingCopy";
@@ -231,7 +232,7 @@ export function buildDashboard(
   const netNew = churn.newSubs - churn.cancelled;
   const net30 = computeNetRevenue30d(orders, refunds);
   const productRows = revenueByProductWithSource(orders, 6);
-  const sourceRows = revenueBySource30d(orders, refunds);
+  const sourceRows = revenueBySource30d(orders, refunds).slice(0, 8);
 
   // Visible MRR monthly tab (chart source + named range)
   writeMrrMonthlySheet(ss, trend, monthlyChurn);
@@ -768,22 +769,7 @@ function computeNetRevenue30d(
   const start = end - 30 * 86400000;
   const prevStart = start - 30 * 86400000;
 
-  const sumOrders = (from: number, to: number) => {
-    let n = 0;
-    for (const o of orders) {
-      const t = Date.parse(o.created);
-      if (Number.isNaN(t) || t < from || t >= to) continue;
-      const st = String(o.status || "").toLowerCase();
-      if (st === "refunded" || st === "chargeback" || st === "failed") continue;
-      n += Number(o.amount) || 0;
-    }
-    for (const r of refunds) {
-      const t = Date.parse(r.created);
-      if (Number.isNaN(t) || t < from || t >= to) continue;
-      n -= Number(r.amount) || 0;
-    }
-    return n;
-  };
+  const sumOrders = (from: number, to: number) => netRevenueBetween(orders, refunds, from, to);
 
   const cur = sumOrders(start, end);
   const prev = sumOrders(prevStart, start);
@@ -831,38 +817,49 @@ function revenueByProductWithSource(
     .slice(0, topN);
 }
 
-function revenueBySource30d(
+/**
+ * Net revenue (orders − refunds) per source over the last 30 days vs the prior 30.
+ * When any source has more than one connected account, rows split per account
+ * ("Stripe · EU store") so multi-account sellers see the breakdown; totals are unchanged.
+ */
+export function revenueBySource30d(
   orders: NormalizedOrder[],
   refunds: NormalizedRefund[],
+  nowMs: number = Date.now(),
 ): { source: string; revenue: number; share: number; delta: number; status: string; danger?: boolean }[] {
-  const now = Date.now();
-  const start = now - 30 * 86400000;
+  const start = nowMs - 30 * 86400000;
   const prevStart = start - 30 * 86400000;
-  const cur: Record<string, number> = {};
-  const prev: Record<string, number> = {};
-
-  for (const o of orders) {
-    const t = Date.parse(o.created);
-    if (Number.isNaN(t)) continue;
-    const st = String(o.status || "").toLowerCase();
-    if (st === "refunded" || st === "chargeback" || st === "failed") continue;
-    if (t >= start && t < now) cur[o.source] = (cur[o.source] || 0) + (Number(o.amount) || 0);
-    else if (t >= prevStart && t < start) prev[o.source] = (prev[o.source] || 0) + (Number(o.amount) || 0);
+  const accountsBySource: Record<string, Set<string>> = {};
+  for (const r of [...orders, ...refunds]) {
+    (accountsBySource[r.source] ||= new Set()).add(r.storeLabel || "Default");
   }
+  const split = (src: string) => (accountsBySource[src]?.size || 0) > 1;
+  const keyOf = (r: { source: string; storeLabel?: string }) =>
+    split(r.source) ? `${r.source}\u0000${r.storeLabel || "Default"}` : r.source;
+  const groups = new Map<string, { orders: NormalizedOrder[]; refunds: NormalizedRefund[] }>();
+  const groupFor = (k: string) => {
+    let g = groups.get(k);
+    if (!g) groups.set(k, (g = { orders: [], refunds: [] }));
+    return g;
+  };
+  for (const o of orders) groupFor(keyOf(o)).orders.push(o);
+  for (const r of refunds) groupFor(keyOf(r)).refunds.push(r);
 
-  const total = Object.values(cur).reduce((a, b) => a + b, 0) || 1;
-  return Object.keys({ ...cur, ...prev })
-    .map((s) => {
-      const revenue = cur[s] || 0;
-      const p = prev[s] || 0;
-      const delta = p > 0 ? (revenue - p) / p : revenue > 0 ? 1 : 0;
-      return {
-        source: SOURCE_LABEL[s] || s,
-        revenue: Math.round(revenue * 100) / 100,
-        share: revenue / total,
-        delta: Math.round(delta * 1000) / 1000,
-        status: "● Synced",
-      };
-    })
+  const rows = [...groups.entries()].map(([k, g]) => {
+    const [src, account] = k.split("\u0000");
+    const revenue = netRevenueBetween(g.orders, g.refunds, start, nowMs + 1);
+    const p = netRevenueBetween(g.orders, g.refunds, prevStart, start);
+    const delta = p > 0 ? (revenue - p) / p : revenue > 0 ? 1 : 0;
+    return {
+      source: account ? `${SOURCE_LABEL[src] || src} · ${account}` : SOURCE_LABEL[src] || src,
+      revenue: Math.round(revenue * 100) / 100,
+      prev: p,
+      delta: Math.round(delta * 1000) / 1000,
+      status: "● Synced",
+    };
+  }).filter((r) => r.revenue !== 0 || r.prev !== 0);
+  const total = rows.reduce((a, b) => a + Math.max(0, b.revenue), 0) || 1;
+  return rows
+    .map(({ prev: _p, ...r }) => ({ ...r, share: Math.max(0, r.revenue) / total }))
     .sort((a, b) => b.revenue - a.revenue);
 }

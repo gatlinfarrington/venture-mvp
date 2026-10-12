@@ -13,7 +13,7 @@ const ORDER_HEADERS = [
   "Order ID",
   "Created",
   "Source",
-  "Store",
+  "Account",
   "Product",
   "Customer email",
   "Amount (USD)",
@@ -25,7 +25,7 @@ const SUB_HEADERS = [
   "Subscription ID",
   "Created",
   "Source",
-  "Store",
+  "Account",
   "Product",
   "Customer email",
   "MRR (USD)",
@@ -35,12 +35,12 @@ const SUB_HEADERS = [
   "Country",
 ];
 
-const CUST_HEADERS = ["Customer ID", "Created", "Source", "Store", "Email", "Name", "Country"];
+const CUST_HEADERS = ["Customer ID", "Created", "Source", "Account", "Email", "Name", "Country"];
 const REFUND_HEADERS = [
   "Refund ID",
   "Created",
   "Source",
-  "Store",
+  "Account",
   "Order ID",
   "Amount (USD)",
   "Status",
@@ -186,26 +186,32 @@ function writeTable(
     return;
   }
 
+  // Merge in memory and write once (row-by-row setValues is ~1 API call per row and
+  // blows the card's 30s budget on large stores).
   const existing = sheet.getDataRange().getValues();
   const existingHeaders = existing[0] as string[];
-  const keyIdx = existingHeaders.indexOf(mergeKeyHeader);
+  const keyIdx = Math.max(0, existingHeaders.indexOf(mergeKeyHeader));
+  const width = headers.length;
+  const body: unknown[][] = existing.slice(1).filter((r) => r.some((c) => c !== "" && c != null)).map((r) => {
+    const row = r.slice(0, width);
+    while (row.length < width) row.push("");
+    return row;
+  });
   const map = new Map<string, number>();
-  for (let i = 1; i < existing.length; i++) {
-    map.set(String(existing[i][keyIdx]), i + 1);
-  }
-
-  // Ensure headers
-  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-
+  body.forEach((r, i) => map.set(String(r[keyIdx]), i));
   for (const row of rows) {
     const key = String(row[0]);
-    const dest = map.get(key);
-    if (dest) {
-      sheet.getRange(dest, 1, 1, headers.length).setValues([row]);
-    } else {
-      sheet.appendRow(row as (string | number | boolean | Date)[]);
+    const idx = map.get(key);
+    if (idx != null) body[idx] = row;
+    else {
+      map.set(key, body.length);
+      body.push(row);
     }
   }
+  const oldRows = existing.length - 1;
+  sheet.getRange(1, 1, 1, width).setValues([headers]);
+  if (body.length) sheet.getRange(2, 1, body.length, width).setValues(body as (string | number | boolean | Date)[][]);
+  if (oldRows > body.length) sheet.getRange(body.length + 2, 1, oldRows - body.length, Math.max(width, existingHeaders.length)).clearContent();
   annotateManaged(sheet);
 }
 
@@ -305,7 +311,7 @@ export function readOrders(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): Normal
   if (!sheet || sheet.getLastRow() < 2) return [];
   const values = sheet.getDataRange().getValues();
   const headers = (values[0] as string[]).map(String);
-  const hasStore = headers.includes("Store");
+  const hasStore = headers.includes("Account") || headers.includes("Store");
   return values
     .slice(1)
     .filter((r) => r[0])
@@ -349,7 +355,7 @@ export function readSubscriptions(
   if (!sheet || sheet.getLastRow() < 2) return [];
   const values = sheet.getDataRange().getValues();
   const headers = (values[0] as string[]).map(String);
-  const hasStore = headers.includes("Store");
+  const hasStore = headers.includes("Account") || headers.includes("Store");
   return values
     .slice(1)
     .filter((r) => r[0])
@@ -394,7 +400,7 @@ export function readRefunds(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): Norma
   if (!sheet || sheet.getLastRow() < 2) return [];
   const values = sheet.getDataRange().getValues();
   const headers = (values[0] as string[]).map(String);
-  const hasStore = headers.includes("Store");
+  const hasStore = headers.includes("Account") || headers.includes("Store");
   return values
     .slice(1)
     .filter((r) => r[0])
@@ -431,4 +437,54 @@ export function readRefunds(ss: GoogleAppsScript.Spreadsheet.Spreadsheet): Norma
 function stringifyDate(value: unknown): string {
   if (value instanceof Date) return value.toISOString();
   return String(value || "");
+}
+
+/** Data tab names that carry an Account column at index 3 (D). */
+const ACCOUNT_TABS = [SHEET_NAMES.orders, SHEET_NAMES.subscriptions, SHEET_NAMES.customers, SHEET_NAMES.refunds];
+
+/** Rename an account's label on existing rows (so breakdowns don't split after a rename). */
+export function relabelAccountRows(
+  ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
+  source: string,
+  oldLabel: string,
+  newLabel: string,
+): number {
+  let n = 0;
+  for (const name of ACCOUNT_TABS) {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet || sheet.getLastRow() < 2) continue;
+    const range = sheet.getRange(2, 3, sheet.getLastRow() - 1, 2); // Source, Account
+    const values = range.getValues();
+    let changed = false;
+    for (const row of values) {
+      if (String(row[0]) === source && String(row[1] || "Default") === oldLabel) {
+        row[1] = newLabel;
+        changed = true;
+        n++;
+      }
+    }
+    if (changed) range.setValues(values);
+  }
+  return n;
+}
+
+/** Delete every row that belongs to one account (after the user removes it). */
+export function deleteAccountRows(
+  ss: GoogleAppsScript.Spreadsheet.Spreadsheet,
+  source: string,
+  label: string,
+): number {
+  let n = 0;
+  for (const name of ACCOUNT_TABS) {
+    const sheet = ss.getSheetByName(name);
+    if (!sheet || sheet.getLastRow() < 2) continue;
+    const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, Math.max(4, sheet.getLastColumn())).getValues();
+    const keep = values.filter((r) => !(String(r[2]) === source && String(r[3] || "Default") === label));
+    const removed = values.length - keep.length;
+    if (!removed) continue;
+    n += removed;
+    sheet.getRange(2, 1, values.length, values[0].length).clearContent();
+    if (keep.length) sheet.getRange(2, 1, keep.length, values[0].length).setValues(keep);
+  }
+  return n;
 }

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node --import tsx --test \"test/*.test.ts\"",
+    "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "push": "npm run build && clasp push",
     "open": "clasp open",

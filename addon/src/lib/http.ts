@@ -129,6 +129,8 @@ export function toIsoTimestamp(value: string | number | Date | null | undefined)
   if (value == null || value === "") return "";
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  const iso = d.toISOString();
-  return `${iso.slice(0, 10)} ${iso.slice(11, 16)}`;
+  // Full UTC ISO (with Z). The old "YYYY-MM-DD HH:mm" form had no zone, so Sheets and
+  // Date.parse read it as local time, shifting rows by the UTC offset (recent orders
+  // landed "in the future" and fell out of the 30-day window).
+  return `${d.toISOString().slice(0, 19)}Z`;
 }
