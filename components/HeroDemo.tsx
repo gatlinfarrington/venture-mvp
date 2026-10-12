@@ -158,7 +158,7 @@ export function HeroDemo() {
     timers.current = [];
   }, []);
 
-  /** Rest inside the MRR card: right of the number, clear of digits, bar, and table. */
+  /** Rest fully inside the MRR card (sheet-top), right of the number — never outside. */
   const packetEnd = useCallback((stage: HTMLElement, sheet: HTMLElement, storeEl: HTMLElement) => {
     const stageRect = stage.getBoundingClientRect();
     const storeRect = storeEl.getBoundingClientRect();
@@ -170,19 +170,32 @@ export function HeroDemo() {
     const barsRect = bars?.getBoundingClientRect();
     const startX = storeRect.right - stageRect.left + 8;
     const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    const endX = numRect
-      ? Math.min(
-          numRect.right - stageRect.left + 14,
-          (topRect?.right ?? numRect.right) - stageRect.left - 44,
-        )
-      : storeRect.right - stageRect.left + 120;
+    // Packet uses offset-anchor left-center; reserve room for "+$12.50".
+    const packetW = 72;
+    const packetH = 22;
+    const pad = 8;
+    const cardLeft = topRect ? topRect.left - stageRect.left + pad : 0;
+    const cardRight = topRect
+      ? topRect.right - stageRect.left - pad
+      : stageRect.width;
+    const cardTop = topRect ? topRect.top - stageRect.top + pad : 0;
+    const cardBottom = barsRect
+      ? barsRect.top - stageRect.top - pad
+      : topRect
+        ? topRect.bottom - stageRect.top - pad
+        : stageRect.height;
+    let endX = numRect
+      ? numRect.right - stageRect.left + 12
+      : cardLeft + 120;
+    // Keep the whole chip inside the card (never ~9px outside).
+    endX = Math.max(cardLeft, Math.min(endX, cardRight - packetW));
     let endY = numRect
       ? numRect.top + numRect.height / 2 - stageRect.top
       : startY;
-    // Keep the chip above the bar track.
-    if (barsRect) {
-      endY = Math.min(endY, barsRect.top - stageRect.top - 14);
-    }
+    endY = Math.max(
+      cardTop + packetH / 2,
+      Math.min(endY, cardBottom - packetH / 2),
+    );
     const midX = startX + (endX - startX) * 0.55;
     return { startX, startY, endX, endY, midX };
   }, []);

@@ -1050,7 +1050,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet thead tr {
   display: grid;
-  /* Fixed tracks: Order 92 / Source 112 / Product flex / Amount 84 ($150.00). */
+  /* Fixed tracks: Order 92 / Source 112 / Product ≥25ch at desktop / Amount 84. */
   grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 30px;
   background: var(--c-surface-2);
@@ -1200,6 +1200,21 @@ tr.reveal.reveal-rise {
   white-space: nowrap;
 }
 
+/* At 1280+, give Product room for 25 characters (short names fit with no ellipsis). */
+@media (min-width: 1280px) {
+  .hero-sheet thead tr,
+  .hero-sheet tbody tr,
+  .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
+    grid-template-columns: 92px 112px minmax(25ch, 1fr) 84px;
+  }
+
+  .hero-sheet td.hero-col-product {
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
+  }
+}
+
 .hero-sheet tr.new td {
   animation: hero-hl 1.2s var(--ease-standard);
 }
@@ -1229,6 +1244,8 @@ tr.reveal.reveal-rise {
   transform-origin: left center;
   animation: hero-fly 900ms var(--ease-in-out) forwards;
   pointer-events: none;
+  white-space: nowrap;
+  min-width: max-content;
 }
 
 /* Travel only: dissolve starts after arrival so the pill never covers row text. */
@@ -1351,6 +1368,32 @@ tr.reveal.reveal-rise {
 
   .hero-bars i.signal {
     transition-duration: 420ms;
+  }
+}
+
+/* 980–1119: centered column so the right half is not empty; pills at natural width. */
+@media (min-width: 980px) and (max-width: 1119px) {
+  .hero-copy {
+    max-width: 720px;
+  }
+
+  .hero-stage {
+    max-width: 720px;
+    width: 100%;
+  }
+
+  .hero-stores {
+    grid-template-columns: repeat(4, max-content);
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .hero-store {
+    width: auto;
+  }
+
+  .hero-sheet-wrap {
+    max-width: 720px;
   }
 }
 
@@ -4605,6 +4648,8 @@ a.tag-pill:focus-visible {
 
 .sample-dash td.sample-src-name {
   font-weight: 600;
+  white-space: nowrap;
+  min-width: 120px;
 }
 
 /* Beat .sample-grid tr.sample-hdr th:not(.sample-rn) text-align:left */

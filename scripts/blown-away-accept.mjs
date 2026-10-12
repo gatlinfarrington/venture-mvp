@@ -263,6 +263,23 @@ async function sampleHero(page) {
         if (bars && overlaps(pr, bars.getBoundingClientRect())) {
           return { kind: "bar", text: "hero-bars" };
         }
+        // Chip must stay fully inside the MRR card (sheet-top), never ~9px outside.
+        const card = stage?.querySelector(".hero-sheet-top");
+        if (card) {
+          const cr = card.getBoundingClientRect();
+          const inset = 1;
+          if (
+            pr.left < cr.left - inset ||
+            pr.right > cr.right + inset ||
+            pr.top < cr.top - inset ||
+            pr.bottom > cr.bottom + inset
+          ) {
+            return {
+              kind: "outside-card",
+              text: `dx=${(pr.left - cr.left).toFixed(1)},dy=${(pr.top - cr.top).toFixed(1)}`,
+            };
+          }
+        }
         return { kind: "clear" };
       });
       if (hit && hit.kind !== "clear") chipHits.push(hit);
@@ -273,7 +290,7 @@ async function sampleHero(page) {
     pass: chipHits.length === 0,
     packetsOn,
     hits: chipHits.slice(0, 8),
-    note: "FAIL if packet bbox intersects digits, table cells, or bars",
+    note: "FAIL if packet intersects digits/cells/bars or sits outside the MRR card",
   };
 
   fs.writeFileSync(path.join(OUT, "frames.json"), JSON.stringify(frames, null, 2));
