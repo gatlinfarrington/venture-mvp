@@ -735,8 +735,9 @@ tr.reveal.reveal-rise {
   overflow: visible;
   display: grid;
   grid-template-columns: 168px minmax(0, 1fr);
-  align-items: stretch;
-  gap: var(--space-4);
+  column-gap: var(--space-4);
+  row-gap: var(--space-4);
+  align-items: start;
 }
 
 .hero-stores-col {
@@ -821,10 +822,10 @@ tr.reveal.reveal-rise {
 
 .hero-sheet-wrap {
   position: relative;
-  flex: 1;
   min-width: 0;
-  max-width: 440px;
-  margin-left: auto;
+  width: 100%;
+  max-width: none;
+  margin-left: 0;
   align-self: stretch;
   display: flex;
   flex-direction: column;
@@ -1343,14 +1344,11 @@ tr.reveal.reveal-rise {
     display: none;
   }
 
-  .hero-col-product {
-    display: none;
-  }
-
+  /* Keep Product from 641px up so a 720px card is not a 3-col broken grid. */
   .hero-sheet thead tr,
   .hero-sheet tbody tr,
   .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
-    grid-template-columns: 92px minmax(0, 1fr) 84px;
+    grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   }
 
   .hero-mrr-num {
@@ -1383,6 +1381,24 @@ tr.reveal.reveal-rise {
   }
 
   .hero-store {
+    width: auto;
+  }
+}
+
+/* Phone: hide Product; let remaining cols fill so row lines span the card. */
+@media (max-width: 640px) {
+  .hero-col-product {
+    display: none;
+  }
+
+  .hero-sheet thead tr,
+  .hero-sheet tbody tr,
+  .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
+    grid-template-columns: 92px minmax(0, 1fr) 84px;
+  }
+
+  .hero-sheet th,
+  .hero-sheet td {
     width: auto;
   }
 }
