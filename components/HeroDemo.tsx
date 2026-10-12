@@ -29,7 +29,6 @@ const START_DELAY_MS = 600;
 const REST_MS = 2400;
 const RESET_MS = 720;
 const ROW_SPRING_MS = 360;
-const ROW_H = 36;
 
 function prefersReducedMotion() {
   return (
@@ -137,18 +136,22 @@ export function HeroDemo() {
   const computePacketPath = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    const store = stage.querySelector<HTMLElement>(".hero-store");
+    // Aim at the active store when possible; path ends above the table header
+    // so the +$N pill never covers order IDs.
+    const stores = stage.querySelectorAll<HTMLElement>(".hero-store");
+    const store = stores[0] ?? null;
     const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
     const head = sheet?.querySelector<HTMLElement>("thead");
-    const body = sheet?.querySelector<HTMLElement>("tbody");
-    if (!store || !sheet || !head || !body) return;
+    if (!store || !sheet || !head) return;
     const stageRect = stage.getBoundingClientRect();
     const storeRect = store.getBoundingClientRect();
-    const bodyRect = body.getBoundingClientRect();
+    const headRect = head.getBoundingClientRect();
+    const sheetRect = sheet.getBoundingClientRect();
     const startX = storeRect.right - stageRect.left + 8;
     const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    const endX = bodyRect.left - stageRect.left + 48;
-    const endY = head.getBoundingClientRect().bottom - stageRect.top + ROW_H / 2;
+    // Land just above the thead, centered on the sheet (outside the row area).
+    const endX = sheetRect.left - stageRect.left + sheetRect.width * 0.35;
+    const endY = headRect.top - stageRect.top - 10;
     const midX = startX + (endX - startX) * 0.55;
     packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
   }, []);
@@ -181,6 +184,23 @@ export function HeroDemo() {
 
       const spawnPacket = packetsAllowed();
       if (spawnPacket) {
+        // Recompute from the active store so the path starts on the right pill.
+        const stage = stageRef.current;
+        const storeEl = stage?.querySelectorAll<HTMLElement>(".hero-store")[s];
+        const sheet = stage?.querySelector<HTMLElement>(".hero-sheet");
+        const head = sheet?.querySelector<HTMLElement>("thead");
+        if (stage && storeEl && sheet && head) {
+          const stageRect = stage.getBoundingClientRect();
+          const storeRect = storeEl.getBoundingClientRect();
+          const headRect = head.getBoundingClientRect();
+          const sheetRect = sheet.getBoundingClientRect();
+          const startX = storeRect.right - stageRect.left + 8;
+          const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
+          const endX = sheetRect.left - stageRect.left + sheetRect.width * 0.35;
+          const endY = headRect.top - stageRect.top - 10;
+          const midX = startX + (endX - startX) * 0.55;
+          packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
+        }
         const pid = `p-${index}`;
         setPackets([{ id: pid, amount, path: packetPathRef.current }]);
         timers.current.push(
@@ -347,9 +367,10 @@ export function HeroDemo() {
         return;
       }
       if (startTimer != null) return;
+      // Short delay so phone viewports autoplay without waiting on Replay.
       startTimer = window.setTimeout(() => {
         started = true;
-        // Hold final (matches /sample), crossfade to seed, then landings.
+        startTimer = null;
         clearTimers();
         setFading(true);
         timers.current.push(
@@ -369,10 +390,15 @@ export function HeroDemo() {
             });
           }, RESET_MS / 2),
         );
-      }, 1200);
+      }, 400);
     };
 
     const stop = () => {
+      // Once the loop has started, keep it running (pause only via visibility).
+      if (started) {
+        if (!pageVisible) clearTimers();
+        return;
+      }
       if (startTimer != null) {
         window.clearTimeout(startTimer);
         startTimer = null;
@@ -386,7 +412,8 @@ export function HeroDemo() {
         if (visible && pageVisible) scheduleStart();
         else stop();
       },
-      { threshold: 0.2 },
+      // threshold 0: phone layouts often never reach 0.2 while the hero is on screen.
+      { threshold: 0, rootMargin: "0px 0px -8% 0px" },
     );
     io.observe(stage);
 
@@ -464,11 +491,11 @@ export function HeroDemo() {
                           } as CSSProperties
                         }
                       >
-                        <i>
+                        <span className="d-strip" aria-hidden="true">
                           {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                             <span key={n}>{n}</span>
                           ))}
-                        </i>
+                        </span>
                       </span>
                     ),
                   )}

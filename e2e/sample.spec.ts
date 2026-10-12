@@ -33,16 +33,18 @@ test.describe("/sample acceptance", () => {
       "Sample RevenueSheet spreadsheet, read only, example data",
     );
     await expect(page.locator(".sample-example-pill")).toHaveText("EXAMPLE DATA");
-    await expect(page.locator(".sample-caption")).toContainText("@example.com");
+    await expect(page.locator(".sample-caption")).toContainText("alex@example.com");
 
     await expect(page.getByText("$11.7k")).toBeVisible();
     await expect(page.getByText(DASHBOARD.netRevenue)).toBeVisible();
-    await expect(page.getByText("342", { exact: true })).toBeVisible();
+    await expect(page.getByText(DASHBOARD.activeSubs, { exact: true })).toBeVisible();
     await expect(page.getByText("1.9%")).toBeVisible();
-    await expect(page.getByText("412 orders")).toBeVisible();
-    await expect(page.getByText("1,284 orders")).toBeVisible();
-    await expect(page.getByText("903 sales")).toBeVisible();
-    await expect(page.getByText("Backfilling 62%")).toBeVisible();
+    await expect(page.getByText("▲ 1.7% MoM")).toBeVisible();
+    for (const src of DASHBOARD.sources) {
+      if (!src.detail) continue;
+      await expect(page.getByText(src.detail)).toBeVisible();
+    }
+    await expect(page.getByText("Synced").first()).toBeVisible();
 
     const scroll = page.locator(".sample-scroll");
     const dashOverflow = await scroll.evaluate((el) => el.scrollWidth - el.clientWidth);

@@ -1,11 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { FINAL_MRR, MAX_DELTA, START_MRR } from "@/lib/hero-demo-sequence";
 
 /** SSR-friendly placeholder matching the live sheet chromes (digit strip + bars). */
-function HeroDemoFallback({ final = false }: { final?: boolean }) {
-  const mrr = final ? "$4,431" : "$4,180";
-  const delta = final ? "+6.0%" : null;
+function HeroDemoFallback({ final = true }: { final?: boolean }) {
+  const value = final ? FINAL_MRR : START_MRR;
+  const mrr = `$${Math.round(value).toLocaleString("en-US")}`;
+  const delta = final ? `+${(MAX_DELTA * 100).toFixed(1)}%` : null;
   const digits = [...mrr];
   return (
     <div className="hero-stage" aria-hidden="true" data-hero-demo>
@@ -20,12 +22,16 @@ function HeroDemoFallback({ final = false }: { final?: boolean }) {
               <b className="hero-mrr-num">
                 {digits.map((ch, i) =>
                   ch >= "0" && ch <= "9" ? (
-                    <span key={i} className="d" style={{ ["--v" as string]: Number(ch), ["--p" as string]: 0 }}>
-                      <i>
+                    <span
+                      key={i}
+                      className="d"
+                      style={{ ["--v" as string]: Number(ch), ["--p" as string]: 0 }}
+                    >
+                      <span className="d-strip" aria-hidden="true">
                         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                           <span key={n}>{n}</span>
                         ))}
-                      </i>
+                      </span>
                     </span>
                   ) : (
                     <span key={i} className="s">

@@ -3,14 +3,16 @@ import {
   HERO_LANDINGS,
   HERO_SEED,
   LANDING_TOTAL,
+  SAMPLE_MRR_OCT,
   type SampleOrder,
 } from "@/lib/sample-data";
 
-export const BASE_MRR = 4180;
-export const START_MRR = BASE_MRR;
-export const MAX_DELTA = 0.06;
+/** Final hero MRR matches /sample Oct stacked MRR ($11.7k). */
+export const FINAL_MRR = SAMPLE_MRR_OCT;
+export const START_MRR = FINAL_MRR - LANDING_TOTAL;
+export const BASE_MRR = START_MRR;
+export const MAX_DELTA = (FINAL_MRR - START_MRR) / START_MRR;
 export const ROW_COUNT = 9;
-export const FINAL_MRR = START_MRR + LANDING_TOTAL;
 
 export type HeroRow = {
   id: string;

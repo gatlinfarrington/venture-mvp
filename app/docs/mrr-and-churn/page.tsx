@@ -44,18 +44,17 @@ export default function MrrAndChurnDocsPage() {
 
         <h2>Why your MRR may differ from Polar’s</h2>
         <p>
-          Polar’s public Analytics docs define MRR as the sum of every ongoing subscription’s net
-          amount, normalized monthly (yearly plans divided by 12). Trialing subscriptions are
-          excluded. Paused and past-due subscriptions are included until the subscription actually
-          ends (
+          Polar’s Analytics treats ongoing subscriptions as MRR after normalizing the interval
+          (yearly plans divided by 12). Trials are out; paused and past-due stay in until the
+          subscription ends. See{" "}
           <a
             href="https://polar.sh/docs/features/analytics"
             rel="noopener noreferrer"
             target="_blank"
           >
-            Polar Analytics
+            Polar’s Analytics docs
           </a>
-          , checked 2026-10-11).
+          .
         </p>
         <p>
           {brand.name} defaults the other way: only active counts toward total MRR. Paused is out.
@@ -111,23 +110,19 @@ export default function MrrAndChurnDocsPage() {
         <details className="docs-footnote">
           <summary>For the curious</summary>
           <p>
-            Interval conversion: <code>toMonthlyAmount</code> /{" "}
-            <code>toMonthlyFromUnitCount</code> in <code>addon/src/lib/intervals.ts</code>, with
-            vendor strings via <code>normalizeBillingInterval</code> and{" "}
-            <code>intervalFromUnitAndCount</code>.
+            Interval math is the same everywhere: take the billed amount and scale it to a monthly
+            rate (yearly ÷ 12, weekly × 52 ÷ 12, and so on). Vendor labels like “every 3 months” are
+            normalized first so Lemon Squeezy, Gumroad, Polar, and Stripe land on the same periods.
           </p>
           <p>
-            Sidebar toggle <strong>Include trialing + past due in MRR</strong> maps to{" "}
-            <code>includeTrialingPastDue</code> in <code>addon/src/metrics/mrr.ts</code>.
+            The sidebar toggle <strong>Include trialing + past due in MRR</strong> only changes which
+            statuses enter the total. Refund tallies sum refund rows in the window; the dashboard’s
+            30-day net revenue skips refunded, chargeback, and failed orders, then subtracts refunds
+            in that window.
           </p>
           <p>
-            Refund summary: <code>computeRefundSummary</code> in{" "}
-            <code>addon/src/metrics/refunds.ts</code>. Dashboard net revenue:{" "}
-            <code>sumNetRevenue30d</code> in <code>addon/src/sync.ts</code>.
-          </p>
-          <p>
-            Logo churn: <code>cancelled_in_window / active_at_window_start</code> in{" "}
-            <code>addon/src/metrics/churn.ts</code>.
+            Logo churn is cancellations in the window divided by how many subscriptions were active
+            at the window’s start.
           </p>
         </details>
 

@@ -22,7 +22,7 @@ const faqs: Array<{ q: string; a: ReactNode }> = [
   },
   {
     q: "Can I use more than one storefront?",
-    a: "Free allows one source and one store. Pro includes Lemon Squeezy, Polar, Gumroad, and Stripe with scheduled refresh (one store per source). Business is the same on refresh, with up to 20 stores per source rolled into one MRR number.",
+    a: "Once paid plans open, Free allows one source and one store. Pro includes Lemon Squeezy, Polar, Gumroad, and Stripe with scheduled refresh (one store per source). Business is the same on refresh, with up to 20 stores per source rolled into one MRR number.",
   },
   {
     q: "What if Lemon Squeezy shifts toward Stripe Managed Payments?",

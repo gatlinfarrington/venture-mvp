@@ -11,8 +11,11 @@ import {
 import {
   DASHBOARD,
   ORDER_HEADERS,
+  SAMPLE_MRR_OCT,
   SAMPLE_ORDERS,
+  SAMPLE_ORDERS_CAPTION,
   SAMPLE_SUBS,
+  SAMPLE_SUBS_CAPTION,
   SAMPLE_TAB_NAMES,
   SUB_HEADERS,
 } from "@/lib/sample-data";
@@ -36,7 +39,7 @@ function money(n: number) {
 }
 
 function MrrBars() {
-  const max = 11700;
+  const max = SAMPLE_MRR_OCT;
   return (
     <div
       className="sample-bars"
@@ -509,7 +512,10 @@ export function SampleSheet() {
           hidden={tab !== "Orders"}
         >
           {tab === "Orders" ? (
-            <DataGrid tab="Orders" headers={ORDER_HEADERS} rows={orderRows} />
+            <>
+              <p className="sample-excerpt-label mono muted">{SAMPLE_ORDERS_CAPTION}</p>
+              <DataGrid tab="Orders" headers={ORDER_HEADERS} rows={orderRows} />
+            </>
           ) : null}
         </div>
         <div
@@ -521,7 +527,10 @@ export function SampleSheet() {
           hidden={tab !== "Subscriptions"}
         >
           {tab === "Subscriptions" ? (
-            <DataGrid tab="Subscriptions" headers={SUB_HEADERS} rows={subRows} />
+            <>
+              <p className="sample-excerpt-label mono muted">{SAMPLE_SUBS_CAPTION}</p>
+              <DataGrid tab="Subscriptions" headers={SUB_HEADERS} rows={subRows} />
+            </>
           ) : null}
         </div>
       </div>

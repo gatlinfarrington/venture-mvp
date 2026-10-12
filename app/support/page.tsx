@@ -70,9 +70,9 @@ export default function SupportPage() {
 
         <h2>Billing and licenses</h2>
         <p>
-          Paid plans run through Stripe Checkout when they open. Use the customer portal link on your
-          receipt to update payment methods or cancel. After purchase, the success page shows your
-          license key: paste it in the add-on sidebar.
+          Once paid plans open, they run through Stripe Checkout. Use the customer portal link on
+          your receipt to update payment methods or cancel. After purchase, the success page shows
+          your license key: paste it in the add-on sidebar.
         </p>
         <p>{REFUND_LINE}</p>
 
