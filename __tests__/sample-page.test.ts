@@ -60,6 +60,7 @@ describe("/sample acceptance data", () => {
   it("sample caption is buyer-facing with no Marketplace screenshot claim", async () => {
     const { SAMPLE_CAPTION } = await import("@/lib/sample-data");
     expect(SAMPLE_CAPTION).toMatch(/Example data/i);
+    expect(SAMPLE_CAPTION).toContain("@example.com");
     expect(SAMPLE_CAPTION).not.toMatch(/Marketplace screenshots/i);
   });
 

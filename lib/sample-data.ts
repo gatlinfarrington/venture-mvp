@@ -169,4 +169,4 @@ export const DASHBOARD = {
 } as const;
 
 export const SAMPLE_CAPTION =
-  "Example data. Fake stores and customers, not real revenue.";
+  "Example data. Fake stores and customers (customer###@example.com), not real revenue.";
