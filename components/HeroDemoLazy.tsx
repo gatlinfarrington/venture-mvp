@@ -26,17 +26,8 @@ function HeroDemoFallback({ final = false }: { final?: boolean }) {
                 <span className="sr-only">{mrr}</span>
                 {digits.map((ch, i) =>
                   ch >= "0" && ch <= "9" ? (
-                    <span
-                      key={i}
-                      className="d"
-                      aria-hidden="true"
-                      style={{ ["--v" as string]: Number(ch), ["--p" as string]: 0 }}
-                    >
-                      <span className="d-strip">
-                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                          <span key={n}>{n}</span>
-                        ))}
-                      </span>
+                    <span key={i} className="d" aria-hidden="true">
+                      <span className="d-face">{ch}</span>
                     </span>
                   ) : (
                     <span key={i} className="s" aria-hidden="true">

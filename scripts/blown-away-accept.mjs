@@ -6,6 +6,7 @@
  * 3. Final number equals START_MRR + Σ mrrDelta.
  * 4. No horizontal jiggle on .hero-mrr-num (±0.5px).
  * 5. Reduced motion: zero running animations on the hero after load.
+ * 6. +$ chip never intersects MRR digits, table cells/headers, or the bar.
  */
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
@@ -35,7 +36,8 @@ const FIRST_TICK_ID = landings[FIRST_TICK_INDEX]?.id;
 const GAP_MS = 1100;
 const FLY_MS = 900;
 const START_DELAY_MS = 600;
-const packetsOn = WIDTH >= 769;
+// Match HeroDemo packetsAllowed (≥1120 shows the flying chip).
+const packetsOn = WIDTH >= 1120;
 const tickAtApprox =
   START_DELAY_MS + FIRST_TICK_INDEX * GAP_MS + (packetsOn ? FLY_MS : 0);
 
@@ -63,10 +65,15 @@ async function sampleHero(page) {
       stage?.querySelector(".hero-rows:not(.hero-rows-ghost)") ||
       stage?.querySelector("tbody");
     const top = liveBody?.querySelector("tr[data-row-id], .hero-row");
+    // Prefer visible digit faces (crossfade); fall back to --v strip slots.
     const digits = num
-      ? [...num.querySelectorAll(".d")].map((d) =>
-          getComputedStyle(d).getPropertyValue("--v").trim(),
-        )
+      ? [...num.querySelectorAll(".d")].map((d) => {
+          const face = d.querySelector(".d-face");
+          if (face?.textContent != null && face.textContent !== "") {
+            return face.textContent.trim();
+          }
+          return getComputedStyle(d).getPropertyValue("--v").trim();
+        })
       : [];
     const barH = signal ? signal.getBoundingClientRect().height : 0;
     const barStyleH = signal ? signal.style.height : "";
@@ -218,6 +225,74 @@ async function sampleHero(page) {
     jigglePx: jiggle,
   };
 
+  // Check 6: +$ chip never intersects MRR digits or any table cell/header.
+  // At <1120 the chip is hidden — treat as N/A pass.
+  let chipHits = [];
+  if (packetsOn) {
+    const chipUntil =
+      START_DELAY_MS + landings.length * GAP_MS + FLY_MS + 400;
+    while (Date.now() - t0 < chipUntil) {
+      const hit = await page.evaluate(() => {
+        const stage = document.querySelector("[data-hero-demo]");
+        const packet = stage?.querySelector("[data-hero-packet]");
+        if (!packet) return null;
+        const o = +getComputedStyle(packet).opacity;
+        if (o < 0.15) return null;
+        const pr = packet.getBoundingClientRect();
+        if (pr.width < 1 || pr.height < 1) return null;
+        const overlaps = (a, b) =>
+          !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+        const digits = [...(stage?.querySelectorAll(".hero-mrr-num .d, .hero-mrr-num .s") || [])];
+        for (const el of digits) {
+          if (overlaps(pr, el.getBoundingClientRect())) {
+            return { kind: "digit", text: el.textContent?.trim() || "" };
+          }
+        }
+        const cells = [
+          ...(stage?.querySelectorAll(".hero-sheet th, .hero-sheet td") || []),
+        ];
+        for (const el of cells) {
+          if (overlaps(pr, el.getBoundingClientRect())) {
+            return {
+              kind: "cell",
+              text: (el.textContent || "").trim().slice(0, 24),
+            };
+          }
+        }
+        const bars = stage?.querySelector(".hero-bars");
+        if (bars && overlaps(pr, bars.getBoundingClientRect())) {
+          return { kind: "bar", text: "hero-bars" };
+        }
+        // Chip must stay fully inside the MRR card (sheet-top), never ~9px outside.
+        const card = stage?.querySelector(".hero-sheet-top");
+        if (card) {
+          const cr = card.getBoundingClientRect();
+          const inset = 1;
+          if (
+            pr.left < cr.left - inset ||
+            pr.right > cr.right + inset ||
+            pr.top < cr.top - inset ||
+            pr.bottom > cr.bottom + inset
+          ) {
+            return {
+              kind: "outside-card",
+              text: `dx=${(pr.left - cr.left).toFixed(1)},dy=${(pr.top - cr.top).toFixed(1)}`,
+            };
+          }
+        }
+        return { kind: "clear" };
+      });
+      if (hit && hit.kind !== "clear") chipHits.push(hit);
+      await page.waitForTimeout(40);
+    }
+  }
+  results.checks[6] = {
+    pass: chipHits.length === 0,
+    packetsOn,
+    hits: chipHits.slice(0, 8),
+    note: "FAIL if packet intersects digits/cells/bars or sits outside the MRR card",
+  };
+
   fs.writeFileSync(path.join(OUT, "frames.json"), JSON.stringify(frames, null, 2));
   await context.close();
 }
@@ -255,7 +330,7 @@ async function sampleHero(page) {
 await browser.close();
 
 fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify(results, null, 2));
-const allPass = [2, 3, 4, 5].every((k) => results.checks[k]?.pass);
+const allPass = [2, 3, 4, 5, 6].every((k) => results.checks[k]?.pass);
 console.log(JSON.stringify(results, null, 2));
 console.log(allPass ? "RESULT: PASS" : "RESULT: FAIL");
 process.exit(allPass ? 0 : 1);

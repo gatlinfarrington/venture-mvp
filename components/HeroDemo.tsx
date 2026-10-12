@@ -158,17 +158,44 @@ export function HeroDemo() {
     timers.current = [];
   }, []);
 
-  /** Land the +$ chip on row 1's Order cell (below header) — never on digits/bar/SOURCE. */
+  /** Rest fully inside the MRR card (sheet-top), right of the number — never outside. */
   const packetEnd = useCallback((stage: HTMLElement, sheet: HTMLElement, storeEl: HTMLElement) => {
     const stageRect = stage.getBoundingClientRect();
     const storeRect = storeEl.getBoundingClientRect();
-    const sheetRect = sheet.getBoundingClientRect();
-    const head = sheet.querySelector<HTMLElement>("thead");
-    const headRect = head?.getBoundingClientRect() ?? sheetRect;
+    const num = sheet.querySelector<HTMLElement>(".hero-mrr-num");
+    const top = sheet.querySelector<HTMLElement>(".hero-sheet-top");
+    const bars = sheet.querySelector<HTMLElement>(".hero-bars");
+    const numRect = num?.getBoundingClientRect();
+    const topRect = top?.getBoundingClientRect();
+    const barsRect = bars?.getBoundingClientRect();
     const startX = storeRect.right - stageRect.left + 8;
     const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    const endX = sheetRect.left - stageRect.left + 56;
-    const endY = headRect.bottom - stageRect.top + 18;
+    // Packet uses offset-anchor left-center; reserve room for "+$12.50".
+    const packetW = 72;
+    const packetH = 22;
+    const pad = 8;
+    const cardLeft = topRect ? topRect.left - stageRect.left + pad : 0;
+    const cardRight = topRect
+      ? topRect.right - stageRect.left - pad
+      : stageRect.width;
+    const cardTop = topRect ? topRect.top - stageRect.top + pad : 0;
+    const cardBottom = barsRect
+      ? barsRect.top - stageRect.top - pad
+      : topRect
+        ? topRect.bottom - stageRect.top - pad
+        : stageRect.height;
+    let endX = numRect
+      ? numRect.right - stageRect.left + 12
+      : cardLeft + 120;
+    // Keep the whole chip inside the card (never ~9px outside).
+    endX = Math.max(cardLeft, Math.min(endX, cardRight - packetW));
+    let endY = numRect
+      ? numRect.top + numRect.height / 2 - stageRect.top
+      : startY;
+    endY = Math.max(
+      cardTop + packetH / 2,
+      Math.min(endY, cardBottom - packetH / 2),
+    );
     const midX = startX + (endX - startX) * 0.55;
     return { startX, startY, endX, endY, midX };
   }, []);
@@ -212,10 +239,9 @@ export function HeroDemo() {
       setPulseStore(s);
       timers.current.push(window.setTimeout(() => setPulseStore(null), PULSE_MS));
 
-      // Only fly a +$ chip when MRR actually moves — amount may differ (e.g. annual).
+      // Fly chip then insert so the pill lands as the row enters (same beat).
       const spawnPacket = packetsAllowed() && pillDelta > 0;
       if (spawnPacket) {
-        // Recompute from the active store; land beside the MRR number inside the card.
         const stage = stageRef.current;
         const storeEl = stage?.querySelectorAll<HTMLElement>(".hero-store")[s];
         const sheet = stage?.querySelector<HTMLElement>(".hero-sheet");
@@ -224,6 +250,7 @@ export function HeroDemo() {
           packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
         }
         const pid = `p-${index}`;
+        // Always two decimals so "+$12.50" never drifts from mrrDelta.
         setPackets([{ id: pid, amount: pillDelta, path: packetPathRef.current }]);
         timers.current.push(
           window.setTimeout(() => {
@@ -301,8 +328,21 @@ export function HeroDemo() {
       transitioning.current = false;
       setActiveStores([false, false, false, false]);
       setDelta(null);
-      mrrRef.current = START_MRR;
-      setMrr(START_MRR);
+      // Roll MRR down over RESET_MS (no snap from FINAL → START).
+      const from = mrrRef.current;
+      const steps = 16;
+      for (let i = 1; i <= steps; i++) {
+        timers.current.push(
+          window.setTimeout(() => {
+            const v =
+              i === steps
+                ? START_MRR
+                : Math.round(from + (START_MRR - from) * (i / steps));
+            mrrRef.current = v;
+            setMrr(v);
+          }, Math.round((RESET_MS * i) / steps)),
+        );
+      }
       requestAnimationFrame(() => setInstant(false));
       // Ghost anim 160ms; live after-reset starts at 140ms for 220ms → clear after both.
       timers.current.push(window.setTimeout(() => setGhost(null), 200));
@@ -494,18 +534,11 @@ export function HeroDemo() {
                         key={`d-${i}`}
                         className="d"
                         aria-hidden="true"
-                        style={
-                          {
-                            "--v": Number(c.ch),
-                            "--p": c.pos,
-                            "--digit-ms": `${digitMs}ms`,
-                          } as CSSProperties
-                        }
+                        style={{ "--digit-ms": `${digitMs}ms` } as CSSProperties}
                       >
-                        <span className="d-strip">
-                          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                            <span key={n}>{n}</span>
-                          ))}
+                        {/* Crossfade face (no strip mid-roll half-glyphs). */}
+                        <span key={c.ch} className="d-face">
+                          {c.ch}
                         </span>
                       </span>
                     ),
@@ -592,10 +625,11 @@ export function HeroDemo() {
           <div
             key={p.id}
             className={`hero-packet${p.dissolving ? " is-dissolving" : ""}`}
+            data-hero-packet
             style={{ offsetPath: `path("${p.path}")` }}
             aria-hidden="true"
           >
-            +${p.amount}
+            +${p.amount.toFixed(2)}
           </div>
         ))}
       </div>
