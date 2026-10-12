@@ -58,14 +58,14 @@ export function SampleCopyAction({ source }: Props) {
           if (!wrapRef.current?.contains(e.relatedTarget as Node)) setOpen(false);
         }}
       >
-        Make a copy
+        Copy available at launch
       </button>
       <span
         role="tooltip"
         id={tipId}
         className={`sample-copy-tip${open ? " is-open" : ""}`}
       >
-        Opens once sharing is approved
+        Template copy opens with the Marketplace listing
       </span>
     </div>
   );

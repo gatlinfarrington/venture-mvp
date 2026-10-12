@@ -600,7 +600,7 @@ tr.reveal.reveal-rise {
   display: none;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1079px) {
   .nav-links {
     display: none;
   }
@@ -802,9 +802,14 @@ tr.reveal.reveal-rise {
   background: var(--c-signal);
 }
 
+/* Spec: 1px ink ring for ~600ms + dot scale 1 → 1.6 → 1 over 360ms spring. */
 .hero-store.pulse {
   box-shadow: 0 0 0 1px var(--c-ink);
-  transition: box-shadow 140ms var(--ease-standard);
+  transition: box-shadow 0ms linear;
+}
+
+.hero-store:not(.pulse) {
+  transition: box-shadow 200ms var(--ease-standard);
 }
 
 .hero-store.pulse .st {
@@ -815,7 +820,7 @@ tr.reveal.reveal-rise {
   position: relative;
   flex: 1;
   min-width: 0;
-  max-width: 400px;
+  max-width: 440px;
   margin-left: auto;
   align-self: stretch;
   display: flex;
@@ -909,6 +914,10 @@ tr.reveal.reveal-rise {
   align-items: baseline;
   gap: var(--space-3);
   margin-top: var(--space-2);
+  position: relative;
+  /* Room for the flying +$ chip to the right of the number. */
+  min-height: 1.2em;
+  padding-right: 3.5rem;
 }
 
 .hero-mrr-num {
@@ -921,23 +930,31 @@ tr.reveal.reveal-rise {
   display: inline-flex;
   align-items: flex-start;
   user-select: none;
+
+  /* Integer px slot so translateY never lands on a half-glyph (esp. 375). */
+  --digit-h: 40px;
+
+  line-height: var(--digit-h);
+  height: var(--digit-h);
 }
 
 .hero-mrr-num .d {
   display: inline-block;
   width: 1ch;
-  height: 1em;
+  height: var(--digit-h);
   overflow: hidden;
-  line-height: 1;
+  line-height: var(--digit-h);
   vertical-align: top;
   font-variant-numeric: tabular-nums;
   text-align: center;
+  /* Isolate each strip so subpixel compositing cannot bleed half digits. */
+  contain: strict;
 }
 
 .hero-mrr-num .d-strip {
   display: block;
   font-style: normal;
-  transform: translateY(calc(var(--v) * -1em));
+  transform: translateY(calc(var(--v) * -1 * var(--digit-h)));
   transition: transform var(--digit-ms, 560ms) var(--ease-out);
   transition-delay: calc(var(--p) * 40ms);
   will-change: transform;
@@ -946,15 +963,17 @@ tr.reveal.reveal-rise {
 .hero-mrr-num .d-strip > span {
   display: block;
   width: 1ch;
-  height: 1em;
-  line-height: 1;
+  height: var(--digit-h);
+  line-height: var(--digit-h);
   font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .hero-mrr-num .s {
   display: inline-block;
-  line-height: 1;
-  width: 0.55ch;
+  line-height: var(--digit-h);
+  width: auto;
+  padding-right: 0.02em;
   text-align: center;
 }
 
@@ -963,6 +982,7 @@ tr.reveal.reveal-rise {
   color: var(--c-signal);
   font-variant-numeric: tabular-nums;
   width: 5ch;
+  flex-shrink: 0;
   display: inline-block;
   animation: hero-delta-in 140ms var(--ease-standard);
 }
@@ -980,7 +1000,8 @@ tr.reveal.reveal-rise {
   display: flex;
   align-items: flex-end;
   gap: var(--space-2);
-  height: 64px;
+  /* Taller track so each landing's mrrDelta reads as a visible height step. */
+  height: 72px;
   margin-top: var(--space-3);
   position: relative;
 }
@@ -1026,7 +1047,8 @@ tr.reveal.reveal-rise {
 
 .hero-sheet thead tr {
   display: grid;
-  grid-template-columns: 96px 1fr 1.3fr 72px;
+  /* Fixed tracks: Order 92 / Source 112 / Product flex / Amount 84 ($150.00). */
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 30px;
   background: var(--c-surface-2);
   border-bottom: 1px solid var(--c-border);
@@ -1057,7 +1079,9 @@ tr.reveal.reveal-rise {
   width: 100%;
 }
 
+/* Ghost overlay only: not a live .hero-rows layer (avoids 18-row DOM counts). */
 .hero-sheet tbody.hero-rows-ghost {
+  display: block;
   position: absolute;
   left: 0;
   right: 0;
@@ -1065,14 +1089,28 @@ tr.reveal.reveal-rise {
   height: calc(9 * 36px);
   background: var(--c-surface);
   opacity: 1;
-  animation: hero-ghost-out 360ms var(--ease-standard) forwards;
+  animation: hero-ghost-out 160ms var(--ease-standard) forwards;
   pointer-events: none;
   z-index: 2;
 }
 
-/* Live layer fades in under the ghost so both are never at full opacity. */
-.hero-sheet tbody.hero-rows.is-crossfade-in {
-  animation: hero-live-in 360ms var(--ease-standard) forwards;
+.hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
+  display: grid;
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
+  height: 36px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
+  box-sizing: border-box;
+  transform: translateY(calc(var(--i, 0) * 36px));
+  background: var(--c-surface);
+}
+
+/* Sequential reset: ghost out first, then live in (no double text). */
+.hero-sheet tbody.hero-rows.after-reset {
+  animation: hero-rows-in 220ms var(--ease-out) 140ms both;
 }
 
 @keyframes hero-ghost-out {
@@ -1084,7 +1122,7 @@ tr.reveal.reveal-rise {
   }
 }
 
-@keyframes hero-live-in {
+@keyframes hero-rows-in {
   from {
     opacity: 0;
   }
@@ -1095,7 +1133,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet tbody tr {
   display: grid;
-  grid-template-columns: 96px 1fr 1.3fr 72px;
+  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1132,10 +1170,31 @@ tr.reveal.reveal-rise {
   text-overflow: ellipsis;
 }
 
+.hero-sheet th:nth-child(1),
+.hero-sheet td:nth-child(1) {
+  width: 92px;
+}
+
+.hero-sheet th:nth-child(2),
+.hero-sheet td:nth-child(2) {
+  width: 112px;
+}
+
+.hero-sheet th:last-child,
 .hero-sheet td.n {
+  width: 84px;
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  overflow: visible;
+  text-overflow: clip;
+  padding-left: var(--space-2);
+}
+
+.hero-sheet td.hero-col-product {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .hero-sheet tr.new td {
@@ -1203,17 +1262,12 @@ tr.reveal.reveal-rise {
   }
 }
 
-@media (max-width: 980px) {
+/* Stack copy + demo before form overlaps source pills (clears at 1120). */
+@media (max-width: 1119px) {
   .hero-grid {
     grid-template-columns: 1fr;
   }
 
-  .hero-sheet-wrap {
-    max-width: none;
-  }
-}
-
-@media (max-width: 768px) {
   .hero-stage {
     height: auto;
     display: flex;
@@ -1227,11 +1281,13 @@ tr.reveal.reveal-rise {
     width: 100%;
     flex-direction: column;
     justify-content: flex-start;
+    min-height: 0;
   }
 
   .hero-stores-col .hero-demo-foot {
     margin-top: var(--space-3);
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
@@ -1260,7 +1316,7 @@ tr.reveal.reveal-rise {
 
   .hero-sheet-wrap {
     width: 100%;
-    max-width: 100%;
+    max-width: none;
     margin-left: 0;
   }
 
@@ -1273,8 +1329,18 @@ tr.reveal.reveal-rise {
   }
 
   .hero-sheet thead tr,
-  .hero-sheet tbody tr {
-    grid-template-columns: 96px 1fr 72px;
+  .hero-sheet tbody tr,
+  .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
+    grid-template-columns: 92px minmax(0, 1fr) 84px;
+  }
+
+  .hero-mrr {
+    padding-right: 0;
+  }
+
+  .hero-mrr-num {
+    /* Keep integer slot height when KPI size is unchanged on phone. */
+    --digit-h: 40px;
   }
 
   .hero-mrr-num .d-strip {
@@ -1283,6 +1349,13 @@ tr.reveal.reveal-rise {
 
   .hero-bars i.signal {
     transition-duration: 420ms;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-sheet th:nth-child(2),
+  .hero-sheet td:nth-child(2) {
+    width: auto;
   }
 }
 
@@ -1314,7 +1387,7 @@ tr.reveal.reveal-rise {
     display: none;
   }
 
-  .hero-sheet tbody.hero-rows.is-crossfade-in {
+  .hero-sheet tbody.hero-rows.after-reset {
     animation: none !important;
     opacity: 1;
   }
@@ -1684,7 +1757,8 @@ table.compare-table thead th:nth-child(2) {
   flex-direction: column;
   gap: var(--space-2);
   align-items: stretch;
-  margin-top: var(--space-8); /* list → button 32px */
+  margin-top: auto; /* pin CTAs to card bottom so Free/Pro/Business rows align */
+  padding-top: var(--space-8); /* list → button 32px */
 }
 
 .price-cta-stack .btn {
@@ -3025,7 +3099,7 @@ h2.docs-group-label {
   padding-inline: 0;
   margin-inline: 0;
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
 }
 

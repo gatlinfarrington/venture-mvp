@@ -54,7 +54,7 @@ describe("/sample acceptance data", () => {
   it("sample-dataset.json sha256 matches the design pin", () => {
     const buf = readFileSync(join(process.cwd(), "lib/sample-dataset/sample-dataset.json"));
     expect(createHash("sha256").update(buf).digest("hex")).toBe(
-      "1e5dd0981614f73e99a832745214fcf0aac78462b47477293e98bcb954059605",
+      "449e839b5ae5f366b24bfae03bc0c87f8c4f3f2527f43a1de7adac21426a87ca",
     );
   });
 
@@ -62,7 +62,7 @@ describe("/sample acceptance data", () => {
     expect(DASHBOARD.mrr).toBe("$4,476");
     expect(DASHBOARD.mrrDelta).toBe("▲ 4.6% MoM");
     expect(DASHBOARD.netRevenue).toBe("$7,099");
-    expect(DASHBOARD.netDelta).toBe("30D · showing 24 example orders");
+    expect(DASHBOARD.netDelta).toBe("30D net · 261 orders across sources");
     expect(DASHBOARD.activeSubs).toBe(String(SAMPLE_HEADLINE.activeSubs));
     expect(DASHBOARD.activeSubs).toBe("233");
     expect(DASHBOARD.churn).toBe("2.2%");
@@ -87,8 +87,8 @@ describe("/sample acceptance data", () => {
     expect(SAMPLE_CAPTION).toContain("alex@example.com");
     expect(SAMPLE_CAPTION).not.toMatch(/customer###/);
     expect(SAMPLE_CAPTION).not.toMatch(/Marketplace screenshots/i);
-    expect(SAMPLE_ORDERS_CAPTION).toMatch(/Showing 24 example orders/);
-    expect(SAMPLE_SUBS_CAPTION).toMatch(/Showing 24 example subscriptions/);
+    expect(SAMPLE_ORDERS_CAPTION).toMatch(/Excerpt: 24 of 261 orders \(30D\)/);
+    expect(SAMPLE_SUBS_CAPTION).toMatch(/Excerpt: 24 example subscriptions/);
   });
 
   it("canceled subscriptions never have created dates after cancel", () => {

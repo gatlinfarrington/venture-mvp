@@ -255,7 +255,7 @@
     "id": "EX-10256",
     "source": "Stripe",
     "product": "Demo SaaS \u00b7 Team",
-    "amount": 490,
+    "amount": 49,
     "kind": "renewal",
     "mrrDelta": 0
    },
@@ -368,7 +368,7 @@
    "source": "Stripe",
    "product": "Demo SaaS \u00b7 Team",
    "email": "customer183@example.com",
-   "amount": 490,
+   "amount": 49,
    "status": "paid",
    "country": "CA",
    "kind": "renewal",

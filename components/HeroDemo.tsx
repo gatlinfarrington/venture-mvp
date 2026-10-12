@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -21,8 +22,13 @@ import {
 } from "@/lib/hero-demo-sequence";
 import { HERO_SEED } from "@/lib/sample-data";
 
-/** Prior months on the cropped axis; current month grows 62% → 92% over the loop. */
-const PRIOR_BARS = [30, 33, 35, 36, 39, 42, 44, 47, 50, 54, 58];
+/**
+ * Prior months on the cropped axis (kept below BAR_START).
+ * Current month grows BAR_START → BAR_END so each mrrDelta tick is ≥~3px on a 72px track.
+ */
+const PRIOR_BARS = [18, 20, 21, 22, 24, 26, 27, 29, 31, 33, 36];
+const BAR_START = 40;
+const BAR_END = 92;
 const GAP_MS = 1100;
 const FLY_MS = 900;
 const START_DELAY_MS = 600;
@@ -42,7 +48,8 @@ function packetsAllowed() {
   return (
     typeof window !== "undefined" &&
     !prefersReducedMotion() &&
-    window.matchMedia("(min-width: 769px)").matches
+    // Match one-column hero breakpoint (≤1119 hides the flying chip).
+    window.matchMedia("(min-width: 1120px)").matches
   );
 }
 
@@ -51,11 +58,11 @@ function deltaLabel() {
   return MOM_DELTA_LABEL;
 }
 
-/** Current-month bar: 62% at START_MRR → 92% at FINAL_MRR (readable growth). */
+/** Current-month bar: BAR_START at START_MRR → BAR_END at FINAL_MRR (per-order readable). */
 function barPct(mrr: number) {
   const span = FINAL_MRR - START_MRR;
   const progress = span <= 0 ? 1 : (mrr - START_MRR) / span;
-  return 62 + 30 * Math.max(0, Math.min(1, progress));
+  return BAR_START + (BAR_END - BAR_START) * Math.max(0, Math.min(1, progress));
 }
 
 function formatMrr(n: number) {
@@ -107,25 +114,40 @@ export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
   const packetPathRef = useRef("M 150 138 C 230 138, 250 160, 330 175");
-  const mrrRef = useRef(FINAL_MRR);
+  const mrrRef = useRef(START_MRR);
   const transitioning = useRef(false);
-  const rowsRef = useRef<HeroRow[]>(buildFinalRows());
-  // First paint matches /sample Orders (HERO_FINAL). The loop crossfades to seed.
-  const [mrr, setMrr] = useState(FINAL_MRR);
-  const [delta, setDelta] = useState<string | null>(() => deltaLabel());
+  const rowsRef = useRef<HeroRow[]>(buildSeedRows());
+  // First paint is START_MRR + seed so the first motion is counting up, not a drop.
+  const [mrr, setMrr] = useState(START_MRR);
+  const [delta, setDelta] = useState<string | null>(null);
   const [deltaKey, setDeltaKey] = useState(0);
-  const [rows, setRows] = useState<HeroRow[]>(() => buildFinalRows());
+  const [rows, setRows] = useState<HeroRow[]>(() => buildSeedRows());
   const [ghost, setGhost] = useState<HeroRow[] | null>(null);
   const [enteringId, setEnteringId] = useState<string | null>(null);
   /** 'from' = new at -1 / others at prior slots; 'to' = settled indices. */
   const [enterPhase, setEnterPhase] = useState<"from" | "to">("to");
   const [instant, setInstant] = useState(false);
-  const [activeStores, setActiveStores] = useState([true, true, true, true]);
+  const [activeStores, setActiveStores] = useState([false, false, false, false]);
   const [pulseStore, setPulseStore] = useState<number | null>(null);
   const [packets, setPackets] = useState<
     Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
   >([]);
   const [reduced, setReduced] = useState(false);
+
+  // Before paint: reduced-motion visitors must land on FINAL, never see START→FINAL drop.
+  useLayoutEffect(() => {
+    if (!prefersReducedMotion()) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- intentional first-paint sync for a11y */
+    setReduced(true);
+    mrrRef.current = FINAL_MRR;
+    setMrr(FINAL_MRR);
+    setDelta(deltaLabel());
+    const finalRows = buildFinalRows();
+    setRows(finalRows);
+    rowsRef.current = finalRows;
+    setActiveStores([true, true, true, true]);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
 
   useEffect(() => {
     rowsRef.current = rows;
@@ -136,28 +158,31 @@ export function HeroDemo() {
     timers.current = [];
   }, []);
 
+  /** Land the +$ chip on row 1's Order cell (below header) — never on digits/bar/SOURCE. */
+  const packetEnd = useCallback((stage: HTMLElement, sheet: HTMLElement, storeEl: HTMLElement) => {
+    const stageRect = stage.getBoundingClientRect();
+    const storeRect = storeEl.getBoundingClientRect();
+    const sheetRect = sheet.getBoundingClientRect();
+    const head = sheet.querySelector<HTMLElement>("thead");
+    const headRect = head?.getBoundingClientRect() ?? sheetRect;
+    const startX = storeRect.right - stageRect.left + 8;
+    const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
+    const endX = sheetRect.left - stageRect.left + 56;
+    const endY = headRect.bottom - stageRect.top + 18;
+    const midX = startX + (endX - startX) * 0.55;
+    return { startX, startY, endX, endY, midX };
+  }, []);
+
   const computePacketPath = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    // Aim at the active store when possible; path ends above the table header
-    // so the +$N pill never covers order IDs.
     const stores = stage.querySelectorAll<HTMLElement>(".hero-store");
     const store = stores[0] ?? null;
     const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
-    const head = sheet?.querySelector<HTMLElement>("thead");
-    if (!store || !sheet || !head) return;
-    const stageRect = stage.getBoundingClientRect();
-    const storeRect = store.getBoundingClientRect();
-    const headRect = head.getBoundingClientRect();
-    const sheetRect = sheet.getBoundingClientRect();
-    const startX = storeRect.right - stageRect.left + 8;
-    const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    // Land just above the thead, centered on the sheet (outside the row area).
-    const endX = sheetRect.left - stageRect.left + sheetRect.width * 0.35;
-    const endY = headRect.top - stageRect.top - 10;
-    const midX = startX + (endX - startX) * 0.55;
+    if (!store || !sheet) return;
+    const { startX, startY, endX, endY, midX } = packetEnd(stage, sheet, store);
     packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
-  }, []);
+  }, [packetEnd]);
 
   const finishInstant = useCallback(() => {
     setInstant(true);
@@ -173,8 +198,9 @@ export function HeroDemo() {
       const order = HERO_LANDINGS[index];
       if (!order) return;
       const s = sourceIndex(order.source);
-      const amount = order.amount;
       const mrrTick = order.mrrDelta ?? 0;
+      // Pill and counter share the same MRR delta (not order amount).
+      const pillDelta = mrrTick > 0 ? mrrTick : 0;
 
       if (transitioning.current) finishInstant();
 
@@ -186,27 +212,19 @@ export function HeroDemo() {
       setPulseStore(s);
       timers.current.push(window.setTimeout(() => setPulseStore(null), PULSE_MS));
 
-      const spawnPacket = packetsAllowed();
+      // Only fly a +$ chip when MRR actually moves — amount may differ (e.g. annual).
+      const spawnPacket = packetsAllowed() && pillDelta > 0;
       if (spawnPacket) {
-        // Recompute from the active store so the path starts on the right pill.
+        // Recompute from the active store; land beside the MRR number inside the card.
         const stage = stageRef.current;
         const storeEl = stage?.querySelectorAll<HTMLElement>(".hero-store")[s];
         const sheet = stage?.querySelector<HTMLElement>(".hero-sheet");
-        const head = sheet?.querySelector<HTMLElement>("thead");
-        if (stage && storeEl && sheet && head) {
-          const stageRect = stage.getBoundingClientRect();
-          const storeRect = storeEl.getBoundingClientRect();
-          const headRect = head.getBoundingClientRect();
-          const sheetRect = sheet.getBoundingClientRect();
-          const startX = storeRect.right - stageRect.left + 8;
-          const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-          const endX = sheetRect.left - stageRect.left + sheetRect.width * 0.35;
-          const endY = headRect.top - stageRect.top - 10;
-          const midX = startX + (endX - startX) * 0.55;
+        if (stage && storeEl && sheet) {
+          const { startX, startY, endX, endY, midX } = packetEnd(stage, sheet, storeEl);
           packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
         }
         const pid = `p-${index}`;
-        setPackets([{ id: pid, amount, path: packetPathRef.current }]);
+        setPackets([{ id: pid, amount: pillDelta, path: packetPathRef.current }]);
         timers.current.push(
           window.setTimeout(() => {
             setPackets((prev) =>
@@ -231,10 +249,17 @@ export function HeroDemo() {
           setRows((prev) => applyLanding(trimOutgoing(prev), index));
 
           if (mrrTick !== 0) {
-            mrrRef.current = Math.min(FINAL_MRR, mrrRef.current + mrrTick);
-            setMrr(mrrRef.current);
+            const next = Math.min(FINAL_MRR, Math.round((mrrRef.current + mrrTick) * 100) / 100);
+            mrrRef.current = next;
+            setMrr(next);
             setDelta(deltaLabel());
             setDeltaKey((k) => k + 1);
+          }
+          // Last landing: force exact FINAL so the read-out never stalls mid-climb.
+          if (index === HERO_LANDINGS.length - 1) {
+            mrrRef.current = FINAL_MRR;
+            setMrr(FINAL_MRR);
+            setDelta(deltaLabel());
           }
 
           // Double rAF so the 'from' positions paint with transition:none first.
@@ -255,7 +280,7 @@ export function HeroDemo() {
         }, insertDelay),
       );
     },
-    [finishInstant],
+    [finishInstant, packetEnd],
   );
 
   const scheduleLoopRef = useRef<() => void>(() => {});
@@ -265,7 +290,7 @@ export function HeroDemo() {
       clearTimers();
       setPackets([]);
       setPulseStore(null);
-      // Ghost-layer crossfade: freeze final rows on top, seed underneath, no blank frames.
+      // Ghost out → live in (sequential). Digit strips roll START via CSS transition.
       const frozen = trimOutgoing(rowsRef.current).map((r) => ({ ...r, fresh: false }));
       setGhost(frozen);
       setInstant(true);
@@ -275,11 +300,12 @@ export function HeroDemo() {
       rowsRef.current = HERO_SEED.map((o) => toHeroRow(o));
       transitioning.current = false;
       setActiveStores([false, false, false, false]);
+      setDelta(null);
       mrrRef.current = START_MRR;
       setMrr(START_MRR);
-      setDelta(null);
       requestAnimationFrame(() => setInstant(false));
-      timers.current.push(window.setTimeout(() => setGhost(null), RESET_MS / 2));
+      // Ghost anim 160ms; live after-reset starts at 140ms for 220ms → clear after both.
+      timers.current.push(window.setTimeout(() => setGhost(null), 200));
       timers.current.push(window.setTimeout(thenRun, RESET_MS));
     },
     [clearTimers],
@@ -368,27 +394,11 @@ export function HeroDemo() {
         return;
       }
       if (startTimer != null) return;
-      // Short delay so phone viewports autoplay without waiting on Replay.
-      // First start swaps to seed with no ghost (ghost is only for mid-loop reset).
+      // Already on START_MRR + seed; short delay then count up (no drop).
       startTimer = window.setTimeout(() => {
         started = true;
         startTimer = null;
-        clearTimers();
-        setGhost(null);
-        setInstant(true);
-        setEnteringId(null);
-        setEnterPhase("to");
-        const seed = buildSeedRows();
-        setRows(seed);
-        rowsRef.current = seed;
-        setActiveStores([false, false, false, false]);
-        mrrRef.current = START_MRR;
-        setMrr(START_MRR);
-        setDelta(null);
-        requestAnimationFrame(() => {
-          setInstant(false);
-          scheduleLoopRef.current();
-        });
+        scheduleLoopRef.current();
       }, 400);
     };
 
@@ -523,7 +533,10 @@ export function HeroDemo() {
                   <th style={{ textAlign: "right" }}>Amount</th>
                 </tr>
               </thead>
-              <tbody className={`hero-rows${ghost ? " is-crossfade-in" : ""}`}>
+              <tbody
+                className={`hero-rows${ghost ? " after-reset" : ""}`}
+                data-hero-live-rows
+              >
                 {rows.map((r, i) => {
                   const entering = enteringId === r.id;
                   // from: new at -1, others at i-1 (prior slots). to: index i.
@@ -546,23 +559,27 @@ export function HeroDemo() {
                       <td className="mono">{r.id}</td>
                       <td>{r.source}</td>
                       <td className="hero-col-product">{r.product}</td>
-                      <td className="n">${r.amount}.00</td>
+                      <td className="n">${r.amount.toFixed(2)}</td>
                     </tr>
                   );
                 })}
               </tbody>
               {ghost ? (
-                <tbody className="hero-rows hero-rows-ghost" aria-hidden="true">
+                <tbody
+                  className="hero-rows-ghost"
+                  aria-hidden="true"
+                  data-hero-ghost-rows
+                >
                   {ghost.map((r, i) => (
                     <tr
                       key={`g-${r.id}`}
-                      className="hero-row"
+                      className="hero-ghost-row"
                       style={{ "--i": i } as CSSProperties}
                     >
                       <td className="mono">{r.id}</td>
                       <td>{r.source}</td>
                       <td className="hero-col-product">{r.product}</td>
-                      <td className="n">${r.amount}.00</td>
+                      <td className="n">${r.amount.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>

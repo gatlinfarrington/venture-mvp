@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LaunchAvailabilityNote } from "@/components/LaunchAvailabilityNote";
 import { brand, siteHostname } from "@/lib/brand";
 import { siteConfig } from "@/lib/site";
 
@@ -14,6 +15,7 @@ export default function TroubleshootingPage() {
     <main className="docs-page">
       <p className="eyebrow">Help</p>
       <h1>Troubleshooting</h1>
+      <LaunchAvailabilityNote />
       <div className="prose">
         <h2>Tabs are empty after Backfill</h2>
         <ul>
@@ -30,7 +32,8 @@ export default function TroubleshootingPage() {
         <h2>Rate limited</h2>
         <p>
           Large first backfills can hit source API limits. Wait for the cooldown suggested in the
-          status line, then resume. Scheduled sync on Pro uses smaller incremental windows.
+          status line, then resume. At launch, scheduled sync on Pro uses smaller incremental
+          windows.
         </p>
         <h2>License not recognized</h2>
         <ul>

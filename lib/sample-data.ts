@@ -158,11 +158,11 @@ export const DASHBOARD = {
   mrr: fmtMoney(h.mrr),
   mrrDelta: `▲ ${h.mrrMoMPct}% MoM`,
   netRevenue: fmtMoney(h.net30d),
-  netDelta: `30D · showing ${EXCERPT_N} example orders`,
+  netDelta: `30D net · ${h.orders30d} orders across sources`,
   activeSubs: String(h.activeSubs),
   activeDelta: `${h.trialingSubs} trialing`,
   churn: `${h.churn30dPct}%`,
-  churnDelta: "30D logo churn",
+  churnDelta: "30D cancelled ÷ active at start",
   pastDueLine: `Past due ${h.pastDueCount} · $${h.pastDueMrr} · MRR counts active subscriptions only`,
   statusLine: "● SYNCED · LAST RUN 10:02 · NEXT 11:02 · EXAMPLE DATA",
   sources: [
@@ -198,8 +198,8 @@ export const DASHBOARD = {
   })(),
 } as const;
 
-export const SAMPLE_ORDERS_CAPTION = `Showing ${SAMPLE_ORDERS.length} example orders`;
-export const SAMPLE_SUBS_CAPTION = `Showing ${SAMPLE_SUBS.length} example subscriptions`;
+export const SAMPLE_ORDERS_CAPTION = `Excerpt: ${SAMPLE_ORDERS.length} of ${h.orders30d} orders (30D)`;
+export const SAMPLE_SUBS_CAPTION = `Excerpt: ${SAMPLE_SUBS.length} example subscriptions`;
 
 export const SAMPLE_CAPTION =
   "Example data. Fake stores and customers (alex@example.com), not real revenue.";

@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { FINAL_MRR, MOM_DELTA_LABEL, START_MRR } from "@/lib/hero-demo-sequence";
 
-const PRIOR_BARS = [30, 33, 35, 36, 39, 42, 44, 47, 50, 54, 58];
+const PRIOR_BARS = [18, 20, 21, 22, 24, 26, 27, 29, 31, 33, 36];
 
 /** SSR-friendly placeholder matching the live sheet chromes (digit strip + bars). */
 /** Match live demo start (START_MRR / seed), not final — avoids SSR→hydrate snap. */
@@ -51,7 +51,7 @@ function HeroDemoFallback({ final = false }: { final?: boolean }) {
               {PRIOR_BARS.map((h, i) => (
                 <i key={i} style={{ height: `${h}%` }} />
               ))}
-              <i className="signal" style={{ height: final ? "92%" : "62%" }} />
+              <i className="signal" style={{ height: final ? "92%" : "40%" }} />
             </div>
           </div>
         </div>
