@@ -41,23 +41,21 @@ function money(n: number) {
 function MrrBars() {
   const max = SAMPLE_MRR_OCT;
   return (
-    <div
-      className="sample-bars"
-      role="img"
-      aria-label="Stacked MRR by source from $6.1k in November to $11.7k in October. Polar, Lemon Squeezy, Gumroad. Example data."
-    >
+    <div className="sample-bars" role="img" aria-label={DASHBOARD.chartAriaLabel}>
       {DASHBOARD.mrrStack.map((m) => {
-        const total = m.polar + m.ls + m.gum;
+        const total = m.total || m.polar + m.ls + m.gum + m.stripe;
         const h = Math.max(8, Math.round((total / max) * 160));
         const pH = Math.round((m.polar / total) * h);
         const lH = Math.round((m.ls / total) * h);
-        const gH = Math.max(0, h - pH - lH);
+        const sH = Math.round((m.stripe / total) * h);
+        const gH = Math.max(0, h - pH - lH - sH);
         return (
           <div key={m.month} className="sample-bar-col">
             {/* column-reverse: first child (Polar) sits at the bottom of the stack */}
             <div className="sample-bar-stack" style={{ height: `${h}px` }}>
               <i className="sample-seg-polar" style={{ height: `${pH}px` }} />
               <i className="sample-seg-ls" style={{ height: `${lH}px` }} />
+              <i className="sample-seg-stripe" style={{ height: `${sH}px` }} />
               <i className="sample-seg-gum" style={{ height: `${gH}px` }} />
             </div>
             <span className="sample-bar-label">{m.month}</span>
@@ -239,6 +237,9 @@ function DashboardGrid() {
                     </span>
                     <span>
                       <i className="sample-swatch-ls" /> Lemon Squeezy
+                    </span>
+                    <span>
+                      <i className="sample-swatch-stripe" /> Stripe
                     </span>
                     <span>
                       <i className="sample-swatch-gum" /> Gumroad

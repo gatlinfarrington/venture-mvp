@@ -4441,9 +4441,11 @@ a.tag-pill:focus-visible {
 
 .sample-swatch-polar,
 .sample-swatch-ls,
+.sample-swatch-stripe,
 .sample-swatch-gum,
 .sample-seg-polar,
 .sample-seg-ls,
+.sample-seg-stripe,
 .sample-seg-gum {
   display: inline-block;
   /* design-exception: A8 legend/bar swatch */
@@ -4451,20 +4453,29 @@ a.tag-pill:focus-visible {
   height: 9px;
 }
 
+/* 4-step greyscale: Polar, Lemon Squeezy, Stripe, Gumroad (SAMPLE-DATASET). */
 .sample-swatch-polar,
 .sample-seg-polar {
-  background: var(--c-ink);
+  /* design-exception: light-only SAMPLE-DATASET Polar series */
+  background: #0d0d0d; /* design-exception: token-color SAMPLE-DATASET Polar series */
 }
 
 .sample-swatch-ls,
 .sample-seg-ls {
-  background: var(--c-ink-muted);
+  /* design-exception: light-only SAMPLE-DATASET Lemon Squeezy series */
+  background: #5c5c5c; /* design-exception: token-color SAMPLE-DATASET Lemon Squeezy series */
+}
+
+.sample-swatch-stripe,
+.sample-seg-stripe {
+  /* design-exception: light-only SAMPLE-DATASET Stripe series */
+  background: #8c8c8c; /* design-exception: token-color SAMPLE-DATASET Stripe series */
 }
 
 .sample-swatch-gum,
 .sample-seg-gum {
-  /* design-exception: light-only Gumroad series from sample design spec */
-  background: #bfbfbf; /* design-exception: token-color Gumroad series */
+  /* design-exception: light-only SAMPLE-DATASET Gumroad series */
+  background: #bfbfbf; /* design-exception: token-color SAMPLE-DATASET Gumroad series */
 }
 
 .sample-bars {
