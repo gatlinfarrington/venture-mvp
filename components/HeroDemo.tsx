@@ -30,7 +30,9 @@ const PRIOR_BARS = [18, 20, 21, 22, 24, 26, 27, 29, 31, 33, 36];
 const BAR_START = 40;
 const BAR_END = 92;
 const GAP_MS = 1100;
-const FLY_MS = 900;
+/** In-place chip fade/scale (no flight path). */
+const CHIP_MS = 420;
+const CHIP_HOLD_MS = 520;
 const START_DELAY_MS = 600;
 const REST_MS = 2400;
 const RESET_MS = 720;
@@ -44,12 +46,12 @@ function prefersReducedMotion() {
   );
 }
 
-function packetsAllowed() {
+function chipsAllowed() {
   return (
     typeof window !== "undefined" &&
     !prefersReducedMotion() &&
-    // Match one-column hero breakpoint (≤1119 hides the flying chip).
-    window.matchMedia("(min-width: 1120px)").matches
+    // Two-column hero from 980px; chip sits below the MRR number there.
+    window.matchMedia("(min-width: 980px)").matches
   );
 }
 
@@ -65,8 +67,13 @@ function barPct(mrr: number) {
   return BAR_START + (BAR_END - BAR_START) * Math.max(0, Math.min(1, progress));
 }
 
+/** Carry cents in state; always show two decimals so +$12.50 steps match the chip. */
 function formatMrr(n: number) {
-  return `$${Math.round(n).toLocaleString("en-US")}`;
+  const cents = Math.round(n * 100) / 100;
+  return `$${cents.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 type DigitCell = { kind: "d"; ch: string; pos: number } | { kind: "s"; ch: string };
@@ -113,7 +120,6 @@ function DemoFoot({ onReplay, hidden }: { onReplay: () => void; hidden?: boolean
 export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
-  const packetPathRef = useRef("M 150 138 C 230 138, 250 160, 330 175");
   const mrrRef = useRef(START_MRR);
   const transitioning = useRef(false);
   const rowsRef = useRef<HeroRow[]>(buildSeedRows());
@@ -129,8 +135,9 @@ export function HeroDemo() {
   const [instant, setInstant] = useState(false);
   const [activeStores, setActiveStores] = useState([false, false, false, false]);
   const [pulseStore, setPulseStore] = useState<number | null>(null);
-  const [packets, setPackets] = useState<
-    Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
+  /** +$ chip beside MRR (fade/scale in place — never flies across the table). */
+  const [chips, setChips] = useState<
+    Array<{ id: string; amount: number; dissolving?: boolean }>
   >([]);
   const [reduced, setReduced] = useState(false);
 
@@ -157,59 +164,6 @@ export function HeroDemo() {
     timers.current.forEach((id) => window.clearTimeout(id));
     timers.current = [];
   }, []);
-
-  /** Rest fully inside the MRR card (sheet-top), right of the number — never outside. */
-  const packetEnd = useCallback((stage: HTMLElement, sheet: HTMLElement, storeEl: HTMLElement) => {
-    const stageRect = stage.getBoundingClientRect();
-    const storeRect = storeEl.getBoundingClientRect();
-    const num = sheet.querySelector<HTMLElement>(".hero-mrr-num");
-    const top = sheet.querySelector<HTMLElement>(".hero-sheet-top");
-    const bars = sheet.querySelector<HTMLElement>(".hero-bars");
-    const numRect = num?.getBoundingClientRect();
-    const topRect = top?.getBoundingClientRect();
-    const barsRect = bars?.getBoundingClientRect();
-    const startX = storeRect.right - stageRect.left + 8;
-    const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    // Packet uses offset-anchor left-center; reserve room for "+$12.50".
-    const packetW = 72;
-    const packetH = 22;
-    const pad = 8;
-    const cardLeft = topRect ? topRect.left - stageRect.left + pad : 0;
-    const cardRight = topRect
-      ? topRect.right - stageRect.left - pad
-      : stageRect.width;
-    const cardTop = topRect ? topRect.top - stageRect.top + pad : 0;
-    const cardBottom = barsRect
-      ? barsRect.top - stageRect.top - pad
-      : topRect
-        ? topRect.bottom - stageRect.top - pad
-        : stageRect.height;
-    let endX = numRect
-      ? numRect.right - stageRect.left + 12
-      : cardLeft + 120;
-    // Keep the whole chip inside the card (never ~9px outside).
-    endX = Math.max(cardLeft, Math.min(endX, cardRight - packetW));
-    let endY = numRect
-      ? numRect.top + numRect.height / 2 - stageRect.top
-      : startY;
-    endY = Math.max(
-      cardTop + packetH / 2,
-      Math.min(endY, cardBottom - packetH / 2),
-    );
-    const midX = startX + (endX - startX) * 0.55;
-    return { startX, startY, endX, endY, midX };
-  }, []);
-
-  const computePacketPath = useCallback(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const stores = stage.querySelectorAll<HTMLElement>(".hero-store");
-    const store = stores[0] ?? null;
-    const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
-    if (!store || !sheet) return;
-    const { startX, startY, endX, endY, midX } = packetEnd(stage, sheet, store);
-    packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
-  }, [packetEnd]);
 
   const finishInstant = useCallback(() => {
     setInstant(true);
@@ -239,75 +193,62 @@ export function HeroDemo() {
       setPulseStore(s);
       timers.current.push(window.setTimeout(() => setPulseStore(null), PULSE_MS));
 
-      // Fly chip then insert so the pill lands as the row enters (same beat).
-      const spawnPacket = packetsAllowed() && pillDelta > 0;
-      if (spawnPacket) {
-        const stage = stageRef.current;
-        const storeEl = stage?.querySelectorAll<HTMLElement>(".hero-store")[s];
-        const sheet = stage?.querySelector<HTMLElement>(".hero-sheet");
-        if (stage && storeEl && sheet) {
-          const { startX, startY, endX, endY, midX } = packetEnd(stage, sheet, storeEl);
-          packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
-        }
+      // Fade/scale chip in place beside MRR (same beat as row + counter — no flight).
+      const spawnChip = chipsAllowed() && pillDelta > 0;
+      if (spawnChip) {
         const pid = `p-${index}`;
-        // Always two decimals so "+$12.50" never drifts from mrrDelta.
-        setPackets([{ id: pid, amount: pillDelta, path: packetPathRef.current }]);
+        setChips([{ id: pid, amount: pillDelta }]);
         timers.current.push(
           window.setTimeout(() => {
-            setPackets((prev) =>
+            setChips((prev) =>
               prev.map((p) => (p.id === pid ? { ...p, dissolving: true } : p)),
             );
-          }, FLY_MS),
+          }, CHIP_MS + CHIP_HOLD_MS),
         );
         timers.current.push(
-          window.setTimeout(() => setPackets([]), FLY_MS + 160 + 20),
+          window.setTimeout(() => setChips([]), CHIP_MS + CHIP_HOLD_MS + 180),
         );
       }
 
-      const insertDelay = spawnPacket ? FLY_MS : 0;
+      transitioning.current = true;
+      const newId = order.id;
+      // Mount at prior slots (new at -1, others at 0..8), then spring to 0..9.
+      setInstant(true);
+      setEnteringId(newId);
+      setEnterPhase("from");
+      setRows((prev) => applyLanding(trimOutgoing(prev), index));
+
+      if (mrrTick !== 0) {
+        const next = Math.min(FINAL_MRR, Math.round((mrrRef.current + mrrTick) * 100) / 100);
+        mrrRef.current = next;
+        setMrr(next);
+        setDelta(deltaLabel());
+        setDeltaKey((k) => k + 1);
+      }
+      // Last landing: force exact FINAL so the read-out never stalls mid-climb.
+      if (index === HERO_LANDINGS.length - 1) {
+        mrrRef.current = FINAL_MRR;
+        setMrr(FINAL_MRR);
+        setDelta(deltaLabel());
+      }
+
+      // Double rAF so the 'from' positions paint with transition:none first.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setInstant(false);
+          setEnterPhase("to");
+        });
+      });
+
       timers.current.push(
         window.setTimeout(() => {
-          transitioning.current = true;
-          const newId = order.id;
-          // Mount at prior slots (new at -1, others at 0..8), then spring to 0..9.
-          setInstant(true);
-          setEnteringId(newId);
-          setEnterPhase("from");
-          setRows((prev) => applyLanding(trimOutgoing(prev), index));
-
-          if (mrrTick !== 0) {
-            const next = Math.min(FINAL_MRR, Math.round((mrrRef.current + mrrTick) * 100) / 100);
-            mrrRef.current = next;
-            setMrr(next);
-            setDelta(deltaLabel());
-            setDeltaKey((k) => k + 1);
-          }
-          // Last landing: force exact FINAL so the read-out never stalls mid-climb.
-          if (index === HERO_LANDINGS.length - 1) {
-            mrrRef.current = FINAL_MRR;
-            setMrr(FINAL_MRR);
-            setDelta(deltaLabel());
-          }
-
-          // Double rAF so the 'from' positions paint with transition:none first.
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              setInstant(false);
-              setEnterPhase("to");
-            });
-          });
-
-          timers.current.push(
-            window.setTimeout(() => {
-              setEnteringId(null);
-              setRows((prev) => trimOutgoing(prev).map((r) => ({ ...r, fresh: false })));
-              transitioning.current = false;
-            }, ROW_SPRING_MS + 40),
-          );
-        }, insertDelay),
+          setEnteringId(null);
+          setRows((prev) => trimOutgoing(prev).map((r) => ({ ...r, fresh: false })));
+          transitioning.current = false;
+        }, ROW_SPRING_MS + 40),
       );
     },
-    [finishInstant, packetEnd],
+    [finishInstant],
   );
 
   const scheduleLoopRef = useRef<() => void>(() => {});
@@ -315,7 +256,7 @@ export function HeroDemo() {
   const resetAndRestart = useCallback(
     (thenRun: () => void) => {
       clearTimers();
-      setPackets([]);
+      setChips([]);
       setPulseStore(null);
       // Ghost out → live in (sequential). Digit strips roll START via CSS transition.
       const frozen = trimOutgoing(rowsRef.current).map((r) => ({ ...r, fresh: false }));
@@ -337,7 +278,7 @@ export function HeroDemo() {
             const v =
               i === steps
                 ? START_MRR
-                : Math.round(from + (START_MRR - from) * (i / steps));
+                : Math.round((from + (START_MRR - from) * (i / steps)) * 100) / 100;
             mrrRef.current = v;
             setMrr(v);
           }, Math.round((RESET_MS * i) / steps)),
@@ -372,7 +313,7 @@ export function HeroDemo() {
 
   const run = useCallback(() => {
     clearTimers();
-    setPackets([]);
+    setChips([]);
     setPulseStore(null);
     setInstant(true);
     setEnteringId(null);
@@ -414,12 +355,6 @@ export function HeroDemo() {
     if (!stage) return;
 
     setReduced(prefersReducedMotion());
-    computePacketPath();
-    const onResize = () => {
-      window.clearTimeout((onResize as unknown as { t?: number }).t);
-      (onResize as unknown as { t?: number }).t = window.setTimeout(computePacketPath, 150);
-    };
-    window.addEventListener("resize", onResize);
 
     let visible = true;
     let pageVisible = document.visibilityState === "visible";
@@ -477,14 +412,17 @@ export function HeroDemo() {
     return () => {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("resize", onResize);
       stop();
     };
-  }, [clearTimers, computePacketPath, resetAndRestart, run]);
+  }, [clearTimers, resetAndRestart, run]);
 
   const digits = splitMrr(mrr);
   const lastBar = barPct(mrr);
-  const digitMs = reduced ? 0 : typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 420 : 560;
+  const digitMs = reduced
+    ? 0
+    : typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches
+      ? 220
+      : 260;
 
   return (
     <div className="hero-demo">
@@ -522,33 +460,50 @@ export function HeroDemo() {
             <div className="hero-sheet-top">
               <div className="eyebrow">MRR · all sources · example</div>
               <div className="hero-mrr">
-                <b className="hero-mrr-num">
-                  <span className="sr-only">{formatMrr(mrr)}</span>
-                  {digits.map((c, i) =>
-                    c.kind === "s" ? (
-                      <span key={`s-${i}`} className="s" aria-hidden="true">
-                        {c.ch}
-                      </span>
-                    ) : (
-                      <span
-                        key={`d-${i}`}
-                        className="d"
-                        aria-hidden="true"
-                        style={{ "--digit-ms": `${digitMs}ms` } as CSSProperties}
-                      >
-                        {/* Crossfade face (no strip mid-roll half-glyphs). */}
-                        <span key={c.ch} className="d-face">
+                <div className="hero-mrr-line">
+                  <b className="hero-mrr-num">
+                    <span className="sr-only">{formatMrr(mrr)}</span>
+                    {digits.map((c, i) =>
+                      c.kind === "s" ? (
+                        <span key={`s-${i}`} className="s" aria-hidden="true">
                           {c.ch}
                         </span>
-                      </span>
-                    ),
-                  )}
-                </b>
-                {delta ? (
-                  <span key={deltaKey} className="hero-delta">
-                    {delta}
+                      ) : (
+                        <span
+                          key={`d-${i}`}
+                          className="d"
+                          aria-hidden="true"
+                          style={
+                            {
+                              "--digit-ms": `${digitMs}ms`,
+                              "--p": c.pos,
+                            } as CSSProperties
+                          }
+                        >
+                          {/* Reel face: slide up 40% with spring + stagger (not a grey fade). */}
+                          <span key={c.ch} className="d-face">
+                            {c.ch}
+                          </span>
+                        </span>
+                      ),
+                    )}
+                  </b>
+                  {delta ? (
+                    <span key={deltaKey} className="hero-delta">
+                      {delta}
+                    </span>
+                  ) : null}
+                </div>
+                {chips.map((p) => (
+                  <span
+                    key={p.id}
+                    className={`hero-packet${p.dissolving ? " is-dissolving" : ""}`}
+                    data-hero-packet
+                    aria-hidden="true"
+                  >
+                    +${p.amount.toFixed(2)}
                   </span>
-                ) : null}
+                ))}
               </div>
               <div className="hero-bars" data-baseline>
                 {PRIOR_BARS.map((h, i) => (
@@ -621,17 +576,6 @@ export function HeroDemo() {
           </div>
         </div>
 
-        {packets.map((p) => (
-          <div
-            key={p.id}
-            className={`hero-packet${p.dissolving ? " is-dissolving" : ""}`}
-            data-hero-packet
-            style={{ offsetPath: `path("${p.path}")` }}
-            aria-hidden="true"
-          >
-            +${p.amount.toFixed(2)}
-          </div>
-        ))}
       </div>
     </div>
   );

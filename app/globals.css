@@ -643,7 +643,8 @@ tr.reveal.reveal-rise {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 5fr 7fr;
+  /* Two columns from 980px so the sheet stays above the fold. */
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 420px);
   gap: var(--space-8);
   align-items: center;
 }
@@ -911,13 +912,19 @@ tr.reveal.reveal-rise {
 
 .hero-mrr {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1-5);
   margin-top: var(--space-2);
   position: relative;
-  /* Room for the flying +$ chip to the right of the number. */
   min-height: 1.2em;
-  padding-right: 3.5rem;
+}
+
+.hero-mrr-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-height: 1.2em;
 }
 
 .hero-mrr-num {
@@ -931,7 +938,7 @@ tr.reveal.reveal-rise {
   align-items: flex-start;
   user-select: none;
 
-  /* Glyph box = font-size (36px): no fractional em mid-roll half-glyphs. */
+  /* Glyph box = font-size (36px): reel window for slide-up faces. */
   --digit-h: 36px;
 
   line-height: var(--digit-h);
@@ -951,7 +958,7 @@ tr.reveal.reveal-rise {
   text-align: center;
 }
 
-/* Crossfade each digit face: never a half-glyph between strip positions. */
+/* Real reel: slide up 40% with spring + 30ms stagger (not a grey opacity flash). */
 .hero-mrr-num .d-face {
   display: block;
   width: 1ch;
@@ -959,15 +966,18 @@ tr.reveal.reveal-rise {
   line-height: var(--digit-h);
   font-variant-numeric: tabular-nums;
   text-align: center;
-  animation: hero-digit-in var(--digit-ms, 280ms) var(--ease-out);
+  animation: hero-digit-in var(--digit-ms, 260ms) var(--ease-spring) both;
+  animation-delay: calc(var(--p, 0) * 30ms);
 }
 
 @keyframes hero-digit-in {
   from {
+    transform: translateY(40%);
     opacity: 0;
   }
 
   to {
+    transform: none;
     opacity: 1;
   }
 }
@@ -987,7 +997,8 @@ tr.reveal.reveal-rise {
   width: 5ch;
   flex-shrink: 0;
   display: inline-block;
-  animation: hero-delta-in 140ms var(--ease-standard);
+  /* After the +$ chip starts so they never stack as a ghost on the badge. */
+  animation: hero-delta-in 140ms var(--ease-standard) 120ms both;
 }
 
 @keyframes hero-delta-in {
@@ -1050,8 +1061,8 @@ tr.reveal.reveal-rise {
 
 .hero-sheet thead tr {
   display: grid;
-  /* Fixed tracks: Order 92 / Source 112 / Product ≥25ch at desktop / Amount 84. */
-  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
+  /* Fixed tracks: Order 88 / Source 104 / Product flex / Amount 88 (sum fits the card). */
+  grid-template-columns: 88px 104px minmax(0, 1fr) 88px;
   height: 30px;
   background: var(--c-surface-2);
   border-bottom: 1px solid var(--c-border);
@@ -1099,7 +1110,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
   display: grid;
-  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
+  grid-template-columns: 88px 104px minmax(0, 1fr) 88px;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1136,7 +1147,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet tbody tr {
   display: grid;
-  grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
+  grid-template-columns: 88px 104px minmax(0, 1fr) 88px;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1175,44 +1186,30 @@ tr.reveal.reveal-rise {
 
 .hero-sheet th:nth-child(1),
 .hero-sheet td:nth-child(1) {
-  width: 92px;
+  width: 88px;
 }
 
 .hero-sheet th:nth-child(2),
 .hero-sheet td:nth-child(2) {
-  width: 112px;
+  width: 104px;
 }
 
 .hero-sheet th:last-child,
 .hero-sheet td.n {
-  width: 84px;
+  width: 88px;
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  overflow: visible;
+  overflow: hidden;
   text-overflow: clip;
   padding-left: var(--space-2);
 }
 
 .hero-sheet td.hero-col-product {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* At 1280+, give Product room for 25 characters (short names fit with no ellipsis). */
-@media (min-width: 1280px) {
-  .hero-sheet thead tr,
-  .hero-sheet tbody tr,
-  .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
-    grid-template-columns: 92px 112px minmax(25ch, 1fr) 84px;
-  }
-
-  .hero-sheet td.hero-col-product {
-    overflow: visible;
-    text-overflow: clip;
-    max-width: none;
-  }
 }
 
 .hero-sheet tr.new td {
@@ -1228,46 +1225,38 @@ tr.reveal.reveal-rise {
   }
 }
 
+/* In-place just below the MRR number: fade/scale, never over digits, badge, or table. */
 .hero-packet {
-  position: absolute;
+  position: relative;
   height: 22px;
+  margin-top: 0;
   padding: 0 var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--c-ink);
   color: var(--c-ink-inverse);
   font: 500 var(--t-chart-label-size) var(--font-mono);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   z-index: 3;
-  offset-rotate: 0deg;
-  offset-anchor: 0% 50%;
-  transform-origin: left center;
-  animation: hero-fly 900ms var(--ease-in-out) forwards;
+  transform-origin: center center;
+  animation: hero-chip-in 420ms var(--ease-out) forwards;
   pointer-events: none;
   white-space: nowrap;
-  min-width: max-content;
+  flex-shrink: 0;
 }
 
-/* Travel only: dissolve starts after arrival so the pill never covers row text. */
-@keyframes hero-fly {
+@keyframes hero-chip-in {
   0% {
     opacity: 0;
-    offset-distance: 0%;
-    transform: scale(1);
-  }
-  10% {
-    opacity: 1;
-    transform: scale(1);
+    transform: scale(0.86);
   }
   100% {
     opacity: 1;
-    offset-distance: 100%;
     transform: scale(1);
   }
 }
 
 .hero-packet.is-dissolving {
-  offset-distance: 100%;
   animation: hero-packet-dissolve 160ms var(--ease-out) forwards;
 }
 
@@ -1275,15 +1264,17 @@ tr.reveal.reveal-rise {
   from {
     opacity: 1;
     transform: scale(1);
+    visibility: visible;
   }
   to {
     opacity: 0;
     transform: scale(0.92);
+    visibility: hidden;
   }
 }
 
-/* Stack copy + demo before form overlaps source pills (clears at 1120). */
-@media (max-width: 1119px) {
+/* Phone / narrow: single column. Two-column grid resumes at 980px. */
+@media (max-width: 979px) {
   .hero-grid {
     grid-template-columns: 1fr;
   }
@@ -1351,11 +1342,7 @@ tr.reveal.reveal-rise {
   .hero-sheet thead tr,
   .hero-sheet tbody tr,
   .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
-    grid-template-columns: 92px minmax(0, 1fr) 84px;
-  }
-
-  .hero-mrr {
-    padding-right: 0;
+    grid-template-columns: 88px minmax(0, 1fr) 88px;
   }
 
   .hero-mrr-num {
@@ -1368,32 +1355,6 @@ tr.reveal.reveal-rise {
 
   .hero-bars i.signal {
     transition-duration: 420ms;
-  }
-}
-
-/* 980–1119: centered column so the right half is not empty; pills at natural width. */
-@media (min-width: 980px) and (max-width: 1119px) {
-  .hero-copy {
-    max-width: 720px;
-  }
-
-  .hero-stage {
-    max-width: 720px;
-    width: 100%;
-  }
-
-  .hero-stores {
-    grid-template-columns: repeat(4, max-content);
-    width: max-content;
-    max-width: 100%;
-  }
-
-  .hero-store {
-    width: auto;
-  }
-
-  .hero-sheet-wrap {
-    max-width: 720px;
   }
 }
 
@@ -4646,10 +4607,16 @@ a.tag-pill:focus-visible {
   color: var(--c-ink-muted);
 }
 
+/* Fixed-layout table: set col width (td min-width is ignored). */
+.sample-dash col.sample-src-col {
+  width: 132px;
+}
+
 .sample-dash td.sample-src-name {
   font-weight: 600;
   white-space: nowrap;
-  min-width: 120px;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 /* Beat .sample-grid tr.sample-hdr th:not(.sample-rn) text-align:left */

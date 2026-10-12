@@ -1,12 +1,14 @@
 /**
- * blown-away-spec.md acceptance checks 2–5.
+ * blown-away-spec.md acceptance checks 2–7.
  * Usage: VIEWPORT_WIDTH=1280 node scripts/blown-away-accept.mjs [url]
  *
  * 2. Row insert, first digit move, and bar start within the same 100ms window.
  * 3. Final number equals START_MRR + Σ mrrDelta.
  * 4. No horizontal jiggle on .hero-mrr-num (±0.5px).
  * 5. Reduced motion: zero running animations on the hero after load.
- * 6. +$ chip never intersects MRR digits, table cells/headers, or the bar.
+ * 6. +$ chip never intersects table cells/headers or the bar; stays in MRR card.
+ *    Samples the whole chip lifetime (not only rest state).
+ * 7. Every th/td lies within the sheet card bounds at 1280, 1440, 768, and 375.
  */
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
@@ -34,15 +36,19 @@ const FIRST_TICK_INDEX = landings.findIndex((o) => (o.mrrDelta || 0) > 0);
 const FIRST_TICK_ID = landings[FIRST_TICK_INDEX]?.id;
 
 const GAP_MS = 1100;
-const FLY_MS = 900;
+const CHIP_MS = 420;
+const CHIP_HOLD_MS = 520;
 const START_DELAY_MS = 600;
-// Match HeroDemo packetsAllowed (≥1120 shows the flying chip).
-const packetsOn = WIDTH >= 1120;
-const tickAtApprox =
-  START_DELAY_MS + FIRST_TICK_INDEX * GAP_MS + (packetsOn ? FLY_MS : 0);
+// Match HeroDemo chipsAllowed (≥980 shows the +$ chip below the number).
+const packetsOn = WIDTH >= 980;
+const tickAtApprox = START_DELAY_MS + FIRST_TICK_INDEX * GAP_MS;
 
 function fmtMrr(n) {
-  return `$${Math.round(n).toLocaleString("en-US")}`;
+  const cents = Math.round(n * 100) / 100;
+  return `$${cents.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 const results = {
@@ -65,7 +71,6 @@ async function sampleHero(page) {
       stage?.querySelector(".hero-rows:not(.hero-rows-ghost)") ||
       stage?.querySelector("tbody");
     const top = liveBody?.querySelector("tr[data-row-id], .hero-row");
-    // Prefer visible digit faces (crossfade); fall back to --v strip slots.
     const digits = num
       ? [...num.querySelectorAll(".d")].map((d) => {
           const face = d.querySelector(".d-face");
@@ -88,7 +93,39 @@ async function sampleHero(page) {
   });
 }
 
-// —— Checks 2–4 (motion) ——
+async function measureCellBounds(page) {
+  return page.evaluate(() => {
+    const sheet = document.querySelector("[data-hero-demo] .hero-sheet");
+    if (!sheet) return { ok: false, reason: "no-sheet", overflows: [] };
+    const card = sheet.getBoundingClientRect();
+    const cells = [...sheet.querySelectorAll("th, td")];
+    const inset = 0.5;
+    const overflows = [];
+    for (const el of cells) {
+      const r = el.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      const style = getComputedStyle(el);
+      if (style.display === "none" || style.visibility === "hidden") continue;
+      if (
+        r.left < card.left - inset ||
+        r.right > card.right + inset ||
+        r.top < card.top - inset ||
+        r.bottom > card.bottom + inset
+      ) {
+        overflows.push({
+          text: (el.textContent || "").trim().slice(0, 28),
+          dxL: +(r.left - card.left).toFixed(1),
+          dxR: +(r.right - card.right).toFixed(1),
+          dyT: +(r.top - card.top).toFixed(1),
+          dyB: +(r.bottom - card.bottom).toFixed(1),
+        });
+      }
+    }
+    return { ok: overflows.length === 0, overflows: overflows.slice(0, 12) };
+  });
+}
+
+// —— Checks 2–4, 6 (motion at primary WIDTH) ——
 {
   const context = await browser.newContext({
     viewport: { width: WIDTH, height: HEIGHT },
@@ -108,13 +145,11 @@ async function sampleHero(page) {
 
   await page.waitForSelector("[data-hero-demo] .hero-sheet", { timeout: 60_000 });
   await page.locator("[data-hero-demo]").first().scrollIntoViewIfNeeded();
-  // Wait for hydrated rows (lazy hero).
   await page.waitForSelector(
     "[data-hero-demo] .hero-sheet tr[data-row-id], [data-hero-demo] .hero-row",
     { timeout: 60_000 },
   );
 
-  // Stabilize on START_MRR before measuring the beat (ignore SSR/hydrate snap).
   const startLabel = fmtMrr(START_MRR);
   await page.waitForFunction(
     (label) => {
@@ -124,7 +159,6 @@ async function sampleHero(page) {
     startLabel,
     { timeout: 60_000 },
   );
-  // Two quiet frames at START so digit/bar baseline is post-hydrate.
   let quiet = await sampleHero(page);
   for (let i = 0; i < 6; i++) {
     await page.waitForTimeout(50);
@@ -150,14 +184,12 @@ async function sampleHero(page) {
     await page.waitForTimeout(50);
   }
 
-  // Check 2: first tick landing — row / digit / bar start within 100ms
   const baseline = frames[0];
   let rowStart = null;
   let digitStart = null;
   let barStart = null;
   for (const f of frames) {
     if (rowStart == null && f.topId === FIRST_TICK_ID) rowStart = f.t;
-    // Only count digit/bar moves at/after the tick row appears (same beat).
     if (rowStart != null) {
       if (digitStart == null && f.digits !== baseline.digits) digitStart = f.t;
       if (
@@ -184,54 +216,16 @@ async function sampleHero(page) {
         : null,
   };
 
-  // Continue sampling through end of landings for checks 3–4
-  const loopEnd =
-    START_DELAY_MS +
-    landings.length * GAP_MS +
-    (packetsOn ? FLY_MS : 0) +
-    800;
+  const loopEnd = START_DELAY_MS + landings.length * GAP_MS + CHIP_MS + CHIP_HOLD_MS + 400;
+  // Check 6 samples continuously through every chip's full lifetime.
+  let chipHits = [];
+  let chipSamples = 0;
   while (Date.now() - t0 < loopEnd) {
     const t = Date.now() - t0;
     const f = await sampleHero(page);
     frames.push({ t, ...f });
-    await page.waitForTimeout(50);
-  }
 
-  // Check 3: final displayed MRR = START + Σ mrrDelta
-  const expected = fmtMrr(START_MRR + SUM_DELTA);
-  const continuumOk = Math.abs(START_MRR + SUM_DELTA - FINAL_MRR) < 0.01;
-  const lastTexts = frames.slice(-10).map((f) => f.text);
-  const sawFinal = lastTexts.includes(expected) || lastTexts.includes(fmtMrr(FINAL_MRR));
-  // Prefer reading after landings settle (before reset): look for max mrr text
-  const finalFrame = [...frames].reverse().find((f) => f.text === expected);
-  results.checks[3] = {
-    pass: continuumOk && Boolean(finalFrame || sawFinal),
-    start: START_MRR,
-    sumMrrDelta: SUM_DELTA,
-    expected,
-    finalMrr: FINAL_MRR,
-    observed: finalFrame?.text || lastTexts.at(-1) || null,
-  };
-
-  // Check 4: .hero-mrr-num width stable ±0.5px while rolling
-  const widths = frames.map((f) => f.numW).filter((w) => w > 0);
-  const wMin = Math.min(...widths);
-  const wMax = Math.max(...widths);
-  const jiggle = wMax - wMin;
-  results.checks[4] = {
-    pass: jiggle <= 0.5,
-    widthMin: wMin,
-    widthMax: wMax,
-    jigglePx: jiggle,
-  };
-
-  // Check 6: +$ chip never intersects MRR digits or any table cell/header.
-  // At <1120 the chip is hidden — treat as N/A pass.
-  let chipHits = [];
-  if (packetsOn) {
-    const chipUntil =
-      START_DELAY_MS + landings.length * GAP_MS + FLY_MS + 400;
-    while (Date.now() - t0 < chipUntil) {
+    if (packetsOn) {
       const hit = await page.evaluate(() => {
         const stage = document.querySelector("[data-hero-demo]");
         const packet = stage?.querySelector("[data-hero-packet]");
@@ -242,11 +236,15 @@ async function sampleHero(page) {
         if (pr.width < 1 || pr.height < 1) return null;
         const overlaps = (a, b) =>
           !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
-        const digits = [...(stage?.querySelectorAll(".hero-mrr-num .d, .hero-mrr-num .s") || [])];
-        for (const el of digits) {
-          if (overlaps(pr, el.getBoundingClientRect())) {
-            return { kind: "digit", text: el.textContent?.trim() || "" };
-          }
+        const num = stage?.querySelector(".hero-mrr-num");
+        const numRect = num?.getBoundingClientRect();
+        // Chip must sit below the number (never across digits).
+        if (numRect && pr.top < numRect.bottom - 1) {
+          return { kind: "over-digits", text: `top=${(pr.top - numRect.bottom).toFixed(1)}` };
+        }
+        const delta = stage?.querySelector(".hero-delta");
+        if (delta && overlaps(pr, delta.getBoundingClientRect())) {
+          return { kind: "delta", text: (delta.textContent || "").trim() };
         }
         const cells = [
           ...(stage?.querySelectorAll(".hero-sheet th, .hero-sheet td") || []),
@@ -263,7 +261,6 @@ async function sampleHero(page) {
         if (bars && overlaps(pr, bars.getBoundingClientRect())) {
           return { kind: "bar", text: "hero-bars" };
         }
-        // Chip must stay fully inside the MRR card (sheet-top), never ~9px outside.
         const card = stage?.querySelector(".hero-sheet-top");
         if (card) {
           const cr = card.getBoundingClientRect();
@@ -280,17 +277,51 @@ async function sampleHero(page) {
             };
           }
         }
+        const mrr = stage?.querySelector(".hero-mrr");
+        if (mrr && !mrr.contains(packet)) {
+          return { kind: "not-in-mrr", text: "chip outside .hero-mrr" };
+        }
         return { kind: "clear" };
       });
-      if (hit && hit.kind !== "clear") chipHits.push(hit);
-      await page.waitForTimeout(40);
+      if (hit) {
+        chipSamples += 1;
+        if (hit.kind !== "clear") chipHits.push({ ...hit, t });
+      }
     }
+    await page.waitForTimeout(40);
   }
+
+  const expected = fmtMrr(START_MRR + SUM_DELTA);
+  const continuumOk = Math.abs(START_MRR + SUM_DELTA - FINAL_MRR) < 0.01;
+  const lastTexts = frames.slice(-10).map((f) => f.text);
+  const sawFinal = lastTexts.includes(expected) || lastTexts.includes(fmtMrr(FINAL_MRR));
+  const finalFrame = [...frames].reverse().find((f) => f.text === expected);
+  results.checks[3] = {
+    pass: continuumOk && Boolean(finalFrame || sawFinal),
+    start: START_MRR,
+    sumMrrDelta: SUM_DELTA,
+    expected,
+    finalMrr: FINAL_MRR,
+    observed: finalFrame?.text || lastTexts.at(-1) || null,
+  };
+
+  const widths = frames.map((f) => f.numW).filter((w) => w > 0);
+  const wMin = Math.min(...widths);
+  const wMax = Math.max(...widths);
+  const jiggle = wMax - wMin;
+  results.checks[4] = {
+    pass: jiggle <= 0.5,
+    widthMin: wMin,
+    widthMax: wMax,
+    jigglePx: jiggle,
+  };
+
   results.checks[6] = {
-    pass: chipHits.length === 0,
+    pass: !packetsOn || (chipHits.length === 0 && chipSamples > 0),
     packetsOn,
+    chipSamples,
     hits: chipHits.slice(0, 8),
-    note: "FAIL if packet intersects digits/cells/bars or sits outside the MRR card",
+    note: "FAIL if chip hits cells/bars, leaves the MRR card, or is never sampled while visible",
   };
 
   fs.writeFileSync(path.join(OUT, "frames.json"), JSON.stringify(frames, null, 2));
@@ -327,10 +358,42 @@ async function sampleHero(page) {
   await context.close();
 }
 
+// —— Check 7: every cell within the sheet card at 1280 / 1440 / 768 / 375 ——
+{
+  const BOUND_WIDTHS = [1280, 1440, 768, 375];
+  const byWidth = {};
+  let allOk = true;
+  for (const w of BOUND_WIDTHS) {
+    const h = w < 600 ? 812 : 900;
+    const context = await browser.newContext({
+      viewport: { width: w, height: h },
+      reducedMotion: "reduce",
+    });
+    const page = await context.newPage();
+    await page.goto(URL, { waitUntil: "networkidle" });
+    await page.waitForSelector("[data-hero-demo] .hero-sheet", { timeout: 60_000 });
+    await page.locator("[data-hero-demo]").first().scrollIntoViewIfNeeded();
+    await page.waitForSelector(
+      "[data-hero-demo] .hero-sheet tr[data-row-id], [data-hero-demo] .hero-row, [data-hero-demo] .hero-sheet td",
+      { timeout: 60_000 },
+    );
+    await page.waitForTimeout(200);
+    const measured = await measureCellBounds(page);
+    byWidth[w] = measured;
+    if (!measured.ok) allOk = false;
+    await context.close();
+  }
+  results.checks[7] = {
+    pass: allOk,
+    byWidth,
+    note: "FAIL if any th/td extends past .hero-sheet bounds",
+  };
+}
+
 await browser.close();
 
 fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify(results, null, 2));
-const allPass = [2, 3, 4, 5, 6].every((k) => results.checks[k]?.pass);
+const allPass = [2, 3, 4, 5, 6, 7].every((k) => results.checks[k]?.pass);
 console.log(JSON.stringify(results, null, 2));
 console.log(allPass ? "RESULT: PASS" : "RESULT: FAIL");
 process.exit(allPass ? 0 : 1);
