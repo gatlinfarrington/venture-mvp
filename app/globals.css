@@ -862,10 +862,24 @@ tr.reveal.reveal-rise {
 .hero-replay svg {
   flex-shrink: 0;
   transition: transform var(--dur-base) var(--ease-spring);
+  transform-origin: 50% 50%;
+  animation: hero-replay-idle 2.4s var(--ease-in-out) infinite;
+}
+
+@keyframes hero-replay-idle {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg);
+  }
+  85% {
+    transform: rotate(-90deg);
+  }
 }
 
 @media (hover: hover) {
   .hero-replay:hover svg {
+    animation: none;
     transform: rotate(-90deg);
   }
 
@@ -876,6 +890,7 @@ tr.reveal.reveal-rise {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-replay svg {
+    animation: none;
     transition: none;
     transform: none;
   }
@@ -1821,12 +1836,35 @@ table.compare-table thead th:nth-child(2) {
   max-width: 48ch;
 }
 
-/* 3-up above 900px; single column on tablet/phone. */
-@media (max-width: 899px) {
+/* Single column until cards are wide enough that Business features stay 1 line. */
+@media (max-width: 1099px) {
   .pricing-grid {
     grid-template-columns: 1fr;
     max-width: 480px;
     margin-inline: auto;
+  }
+}
+
+/* One IntersectionObserver for the grid so Pro's lift does not reveal early. */
+.pricing-grid-reveal .pricing-grid > .price-card {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity var(--dur-reveal) var(--ease-out),
+    transform var(--dur-reveal) var(--ease-out);
+}
+
+.pricing-grid-reveal.is-visible .pricing-grid > .price-card,
+html:not(.motion) .pricing-grid-reveal .pricing-grid > .price-card {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-grid-reveal .pricing-grid > .price-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
 

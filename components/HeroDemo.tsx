@@ -110,18 +110,19 @@ export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
   const packetPathRef = useRef("M 150 138 C 230 138, 250 160, 330 175");
-  const mrrRef = useRef(START_MRR);
+  const mrrRef = useRef(FINAL_MRR);
   const transitioning = useRef(false);
-  const [mrr, setMrr] = useState(START_MRR);
-  const [delta, setDelta] = useState<string | null>(null);
+  // First paint matches /sample Orders (HERO_FINAL). The loop crossfades to seed.
+  const [mrr, setMrr] = useState(FINAL_MRR);
+  const [delta, setDelta] = useState<string | null>(() => deltaLabel(FINAL_MRR));
   const [deltaKey, setDeltaKey] = useState(0);
-  const [rows, setRows] = useState<HeroRow[]>(() => buildSeedRows());
+  const [rows, setRows] = useState<HeroRow[]>(() => buildFinalRows());
   const [enteringId, setEnteringId] = useState<string | null>(null);
   /** 'from' = new at -1 / others at prior slots; 'to' = settled indices. */
   const [enterPhase, setEnterPhase] = useState<"from" | "to">("to");
   const [instant, setInstant] = useState(false);
   const [fading, setFading] = useState(false);
-  const [activeStores, setActiveStores] = useState([false, false, false, false]);
+  const [activeStores, setActiveStores] = useState([true, true, true, true]);
   const [pulseStore, setPulseStore] = useState<number | null>(null);
   const [packets, setPackets] = useState<
     Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
@@ -210,9 +211,12 @@ export function HeroDemo() {
           setDelta(deltaLabel(mrrRef.current));
           setDeltaKey((k) => k + 1);
 
+          // Double rAF so the 'from' positions paint with transition:none first.
           requestAnimationFrame(() => {
-            setInstant(false);
-            setEnterPhase("to");
+            requestAnimationFrame(() => {
+              setInstant(false);
+              setEnterPhase("to");
+            });
           });
 
           timers.current.push(
@@ -345,15 +349,27 @@ export function HeroDemo() {
       if (startTimer != null) return;
       startTimer = window.setTimeout(() => {
         started = true;
-        // First run: seed already showing; start loop without reset flash.
+        // Hold final (matches /sample), crossfade to seed, then landings.
         clearTimers();
-        mrrRef.current = START_MRR;
-        setMrr(START_MRR);
-        setDelta(null);
-        setRows(buildSeedRows());
-        setActiveStores([false, false, false, false]);
-        scheduleLoop();
-      }, 600);
+        setFading(true);
+        timers.current.push(
+          window.setTimeout(() => {
+            setInstant(true);
+            setEnteringId(null);
+            setEnterPhase("to");
+            setRows(buildSeedRows());
+            setActiveStores([false, false, false, false]);
+            mrrRef.current = START_MRR;
+            setMrr(START_MRR);
+            setDelta(null);
+            requestAnimationFrame(() => {
+              setInstant(false);
+              setFading(false);
+              scheduleLoopRef.current();
+            });
+          }, RESET_MS / 2),
+        );
+      }, 1200);
     };
 
     const stop = () => {
@@ -388,7 +404,7 @@ export function HeroDemo() {
       window.removeEventListener("resize", onResize);
       stop();
     };
-  }, [clearTimers, computePacketPath, run, scheduleLoop]);
+  }, [clearTimers, computePacketPath, resetAndRestart, run]);
 
   const digits = splitMrr(mrr);
   const lastBar = barPct(mrr);

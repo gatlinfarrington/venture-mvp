@@ -9,9 +9,7 @@ import path from "node:path";
 const BASE_URL = process.env.BASE_URL || "http://127.0.0.1:3000";
 const GAP_MS = 1100;
 const START_DELAY_MS = 600;
-const REST_MS = 2400;
 const LANDINGS = 14;
-const LOOP_MS = START_DELAY_MS + LANDINGS * GAP_MS + REST_MS + 800;
 const FRAME_MS = 500;
 
 const WIDTHS = [
