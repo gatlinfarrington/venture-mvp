@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { brand } from "@/lib/brand";
-import { siteConfig } from "@/lib/site";
+import { checkoutEnabled, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Security",
@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default function SecurityPage() {
+  const paidOpen = checkoutEnabled;
   return (
     <main className="legal container page-shell">
       <p className="eyebrow">Trust</p>
@@ -76,10 +77,13 @@ export default function SecurityPage() {
           are not uploaded to us for sync.
         </p>
         <p>
-          Separately, when you buy a paid plan on the website, Stripe Checkout and webhooks process
-          billing email and subscription state so we can issue a license. That is checkout, not the
-          revenue sync pipeline. Vercel may also retain standard HTTP logs for the marketing site
-          and APIs.
+          Separately,{" "}
+          {paidOpen
+            ? "when you buy a paid plan on the website,"
+            : "when paid plans are on sale,"}{" "}
+          Stripe Checkout and webhooks process billing email and subscription state so we can issue
+          a license. That is checkout, not the revenue sync pipeline. Vercel may also retain
+          standard HTTP logs for the marketing site and APIs.
         </p>
 
         <h2>Encryption in transit</h2>

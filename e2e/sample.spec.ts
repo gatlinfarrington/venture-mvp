@@ -35,7 +35,7 @@ test.describe("/sample acceptance", () => {
     await expect(page.locator(".sample-caption")).toContainText("@example.com");
 
     await expect(page.getByText("$11.7k")).toBeVisible();
-    await expect(page.getByText("$3,624")).toBeVisible();
+    await expect(page.getByText("$690")).toBeVisible();
     await expect(page.getByText("342", { exact: true })).toBeVisible();
     await expect(page.getByText("1.9%")).toBeVisible();
     await expect(page.getByText("412 orders")).toBeVisible();

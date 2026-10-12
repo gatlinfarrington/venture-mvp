@@ -132,10 +132,12 @@ export const SAMPLE_ORDERS = buildOrders();
 export const SAMPLE_SUBS = buildSubs();
 
 export const DASHBOARD = {
+  /** Oct stacked MRR ($11,700); MoM vs Sep ($11,500) = +1.7%. */
   mrr: "$11.7k",
-  mrrDelta: "▲ 4.2% MoM",
-  netRevenue: "$3,624",
-  netDelta: "▲ 6.1%",
+  mrrDelta: "▲ 1.7% MoM",
+  /** Sum of paid Orders tab amounts in the example set. */
+  netRevenue: "$690",
+  netDelta: "-",
   activeSubs: "342",
   activeDelta: "▲ 24 net new",
   churn: "1.9%",
@@ -167,4 +169,4 @@ export const DASHBOARD = {
 } as const;
 
 export const SAMPLE_CAPTION =
-  "Example data. Fake stores and customers (customer###@example.com), not real revenue. Numbers match the Marketplace screenshots.";
+  "Example data. Fake stores and customers (customer###@example.com), not real revenue.";

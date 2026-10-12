@@ -1,5 +1,5 @@
 import { redisConfigured } from "@/lib/redis-env";
-import { checkoutEnabled } from "@/lib/site";
+import { checkoutEnabled, checkoutOpen } from "@/lib/site";
 import { PRICE_LOOKUP_KEYS } from "@/lib/stripe-catalog";
 
 export type StripeEnvIssue = {
@@ -39,6 +39,15 @@ export function getStripeEnvReport(): {
         "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is missing or still a REPLACE placeholder. Paid buttons stay disabled until it is a real pk_test_/pk_live_ value.",
     });
   }
+  if (!checkoutOpen) {
+    issues.push({
+      level: "warn",
+      code: "checkout_gated",
+      message:
+        "CHECKOUT_OPEN is not true. Get Pro / Get Business stay on the launch list; POST /api/checkout returns 403.",
+    });
+  }
+
   if (!webhook || webhook.includes("REPLACE")) {
     issues.push({
       level: "warn",

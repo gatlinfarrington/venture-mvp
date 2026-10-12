@@ -69,7 +69,7 @@ Optional:
 
 **CTA flips (env only, no code change):**
 
-- Paid Checkout buttons turn on when `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is a real `pk_test_` / `pk_live_` value (see `checkoutEnabled` in `lib/site.ts`). The Checkout API still needs `STRIPE_SECRET_KEY` (and webhook secret for licenses). Pricing is **monthly only** on this path (no annual toggle).
+- Paid Checkout buttons and `POST /api/checkout` require `CHECKOUT_OPEN=true` **and** a real `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`pk_test_` / `pk_live_`; see `checkoutEnabled` in `lib/site.ts`). Leave `CHECKOUT_OPEN` unset to keep Get Pro / Get Business on the launch list. The Checkout API still needs `STRIPE_SECRET_KEY` (and webhook secret for licenses). Pricing is **monthly only** on this path (no annual toggle).
 - Install CTAs flip from “Join the launch list” to the Marketplace listing when `NEXT_PUBLIC_MARKETPLACE_URL` (or `NEXT_PUBLIC_INSTALL_URL`) is set.
 - `/success` after Checkout: masked license key (Reveal / Copy), 3-step checklist, and “what happens next”. Make a copy + Marketplace buttons stay **hidden** until their env URLs exist. Polls up to 3 minutes, then falls back to not-found. Never surfaces raw Stripe errors.
 
@@ -109,7 +109,7 @@ curl -s https://your.domain/api/version
 
 ## 4. Verify
 
-1. Open `/pricing` — Pro/Business buttons should no longer say “Checkout opens at launch”.
+1. Open `/pricing` — with `CHECKOUT_OPEN=true` and a real publishable key, Pro/Business show Get Pro / Get Business (not Join the launch list).
 2. Complete a test Checkout; confirm `/success` shows a masked license key, Reveal/Copy works, and checklist actions appear only when `NEXT_PUBLIC_TEMPLATE_COPY_URL` / `NEXT_PUBLIC_MARKETPLACE_URL` are set.
 3. Confirm the webhook delivered `checkout.session.completed` (Stripe Dashboard → Webhooks → attempts).
 4. Optional admin JSON:

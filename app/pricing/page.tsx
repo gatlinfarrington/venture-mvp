@@ -5,7 +5,7 @@ import { LaunchInvite } from "@/components/LaunchInvite";
 import { Pricing } from "@/components/Pricing";
 import { brand } from "@/lib/brand";
 import { REFUND_LINE } from "@/lib/copy";
-import { pricing, siteConfig } from "@/lib/site";
+import { checkoutEnabled, pricing, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -48,36 +48,47 @@ const compareRows = [
   },
 ];
 
-const faq: Array<{ q: string; a: ReactNode }> = [
-  {
-    q: "When do paid plans open?",
-    a: "With the Marketplace listing. Until then, join the launch list from any Join the launch list button.",
-  },
-  {
-    q: "How does billing work?",
-    a: "Monthly through Stripe Checkout. Update or cancel from the link in your receipt.",
-  },
-  {
-    q: "Does Free include backfill?",
-    a: "Yes. Full history on one source.",
-  },
-  {
-    q: "How does this compare to Polar’s dashboard?",
-    a: (
-      <>
-        Polar’s Analytics covers Polar. RevenueSheet combines Polar with Lemon Squeezy, Gumroad, and
-        Stripe in a sheet you own. See{" "}
-        <Link href="/vs/polar-dashboard">RevenueSheet vs Polar’s dashboard</Link>.
-      </>
-    ),
-  },
-  {
-    q: "What about refunds?",
-    a: REFUND_LINE,
-  },
-];
+function billingFaq(): Array<{ q: string; a: ReactNode }> {
+  const paidOpen = checkoutEnabled;
+  return [
+    paidOpen
+      ? {
+          q: "Can I buy a paid plan now?",
+          a: "Yes. Pro and Business check out on this page through Stripe. The Google Sheets add-on is not on the Google Workspace Marketplace yet (pending Google review); join the launch list for install updates.",
+        }
+      : {
+          q: "When do paid plans open?",
+          a: "With the Google Workspace Marketplace listing (the add-on is pending Google review). Until then, join the launch list from any Join the launch list button. Free stays available to try.",
+        },
+    {
+      q: "How does billing work?",
+      a: paidOpen
+        ? "Monthly through Stripe Checkout. Update or cancel from the link in your receipt."
+        : "Monthly through Stripe Checkout once paid plans open. Update or cancel from the link in your receipt.",
+    },
+    {
+      q: "Does Free include backfill?",
+      a: "Yes. Full history on one source.",
+    },
+    {
+      q: "How does this compare to Polar’s dashboard?",
+      a: (
+        <>
+          Polar’s Analytics covers Polar. RevenueSheet combines Polar with Lemon Squeezy, Gumroad,
+          and Stripe in a sheet you own. See{" "}
+          <Link href="/vs/polar-dashboard">RevenueSheet vs Polar’s dashboard</Link>.
+        </>
+      ),
+    },
+    {
+      q: "What about refunds?",
+      a: REFUND_LINE,
+    },
+  ];
+}
 
 export default function PricingPage() {
+  const faq = billingFaq();
   return (
     <main className="pricing-page page-shell">
       <Pricing variant="page" />
