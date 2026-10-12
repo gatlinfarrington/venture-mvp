@@ -71,7 +71,7 @@ test.describe("hero demo table integrity", () => {
     const ids = await page
       .locator("[data-hero-demo] .hero-sheet tbody tr[data-row-id]")
       .evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.rowId));
-    expect(ids[0]).toBe("EX-10470");
+    expect(ids[0]).toBe("EX-10261");
     expect(new Set(ids).size).toBe(9);
     await expect(page.locator(".hero-replay")).toBeHidden();
   });
