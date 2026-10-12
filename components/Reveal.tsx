@@ -10,10 +10,10 @@ type Props = {
 };
 
 /**
- * IntersectionObserver reveal per MOTION.md: once, 15% visible.
- * Content stays visible without JS / without html.motion (crawlers, reduced
- * motion, full-page captures). Above-the-fold elements get is-visible at mount
- * with transition:none so they never flash hidden.
+ * IntersectionObserver reveal: once, fires as the block enters the lower
+ * viewport (rootMargin -12%). Content stays visible without JS / without
+ * html.motion (crawlers, reduced motion, full-page captures). Above-the-fold
+ * elements get is-visible at mount with transition:none so they never flash.
  */
 export function Reveal({
   children,
@@ -52,7 +52,7 @@ export function Reveal({
           io.disconnect();
         }
       },
-      { threshold: 0.15 },
+      { threshold: 0, rootMargin: "0px 0px -12% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();

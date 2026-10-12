@@ -270,7 +270,7 @@ export function Comparison() {
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <Reveal as="tr" key={r.feature} className="reveal-rise" delay={i * 40}>
+                <Reveal as="tr" key={r.feature} className="reveal-rise" delay={i * 80}>
                   <td>{r.feature}</td>
                   <td
                     data-label={brand.name}

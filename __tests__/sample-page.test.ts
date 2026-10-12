@@ -44,9 +44,13 @@ describe("/sample acceptance data", () => {
   });
 
   it("Dashboard KPIs match the example stack and orders totals", () => {
+    const paidNet = SAMPLE_ORDERS.filter((o) => o.status === "paid").reduce(
+      (sum, o) => sum + o.amount,
+      0,
+    );
     expect(DASHBOARD.mrr).toBe("$11.7k");
     expect(DASHBOARD.mrrDelta).toBe("▲ 1.7% MoM");
-    expect(DASHBOARD.netRevenue).toBe("$690");
+    expect(DASHBOARD.netRevenue).toBe(`$${paidNet.toLocaleString("en-US")}`);
     expect(DASHBOARD.activeSubs).toBe("342");
     expect(DASHBOARD.churn).toBe("1.9%");
     expect(DASHBOARD.sources.find((s) => s.name === "Polar")?.detail).toBe("412 orders");
@@ -64,16 +68,17 @@ describe("/sample acceptance data", () => {
     expect(SAMPLE_CAPTION).not.toMatch(/Marketplace screenshots/i);
   });
 
-  it("orders start at EX-10456 and share content with the hero table", async () => {
+  it("orders share the hero continuum; row 2 is EX-10457 Sample Icon Pack", async () => {
     const { HERO_ORDERS, EXAMPLE_ORDER_SPECS } = await import("@/lib/sample-data");
-    expect(SAMPLE_ORDERS[0]?.id).toBe("EX-10456");
-    expect(SAMPLE_ORDERS[0]?.source).toBe("Lemon Squeezy");
-    expect(SAMPLE_ORDERS[0]?.product).toBe("Sample Icon Pack");
-    expect(SAMPLE_ORDERS[0]?.amount).toBe(12);
-    expect(SAMPLE_ORDERS[1]?.id).toBe("EX-10455");
+    expect(SAMPLE_ORDERS[0]?.id).toBe("EX-10458");
+    expect(SAMPLE_ORDERS[1]?.id).toBe("EX-10457");
+    expect(SAMPLE_ORDERS[1]?.source).toBe("Lemon Squeezy");
+    expect(SAMPLE_ORDERS[1]?.product).toBe("Sample Icon Pack");
+    expect(SAMPLE_ORDERS[1]?.amount).toBe(12);
     expect(HERO_ORDERS[0]?.id).toBe("EX-10457");
     expect(HERO_ORDERS[0]?.product).toBe(EXAMPLE_ORDER_SPECS[0]?.product);
-    expect(HERO_ORDERS[0]?.amount).toBe(SAMPLE_ORDERS[0]?.amount);
+    expect(HERO_ORDERS[0]?.amount).toBe(SAMPLE_ORDERS[1]?.amount);
+    expect(SAMPLE_ORDERS[2]?.id).toBe(HERO_ORDERS[1]?.id);
     expect(SAMPLE_ORDERS.length).toBeGreaterThanOrEqual(20);
   });
 
@@ -95,7 +100,7 @@ describe("/sample acceptance data", () => {
     expect(readFileSync(join(root, "components/SampleSheet.tsx"), "utf8")).toContain(
       "Sheet tabs",
     );
-    expect(readFileSync(join(root, "lib/sample-data.ts"), "utf8")).toContain("EX-10456");
+    expect(readFileSync(join(root, "lib/sample-data.ts"), "utf8")).toContain("EX-10457");
   });
 
   it("copy has no em dashes", () => {

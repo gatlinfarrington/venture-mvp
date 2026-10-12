@@ -121,7 +121,7 @@ export default function DocsIndexPage() {
           <h2 className="docs-group-label mono">Setup</h2>
           <ul className="docs-card-list">
             {setup.map((card, i) => (
-              <Reveal as="li" key={card.href} className="reveal-rise" delay={i * 40}>
+              <Reveal as="li" key={card.href} className="reveal-rise" delay={i * 80}>
                 <Link href={card.href}>
                   <span className="docs-card-title">{card.title}</span>
                   <span className="muted">{card.body}</span>
@@ -137,7 +137,7 @@ export default function DocsIndexPage() {
           <h2 className="docs-group-label mono">Help</h2>
           <ul className="docs-card-list">
             {help.map((card, i) => (
-              <Reveal as="li" key={card.href} className="reveal-rise" delay={i * 40}>
+              <Reveal as="li" key={card.href} className="reveal-rise" delay={i * 80}>
                 <Link href={card.href}>
                   <span className="docs-card-title">{card.title}</span>
                   <span className="muted">{card.body}</span>

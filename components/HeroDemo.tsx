@@ -108,9 +108,14 @@ function DemoFoot({ onReplay }: { onReplay: () => void }) {
   return (
     <div className="hero-demo-foot">
       <button type="button" className="btn btn-secondary btn-sm hero-replay" onClick={onReplay}>
-        <span className="hero-replay-icon" aria-hidden="true">
-          ↻
-        </span>
+        <svg aria-hidden width="12" height="12" viewBox="0 0 12 12">
+          <path
+            d="M10 6a4 4 0 1 1-1.2-2.8M10 1.5v2.5H7.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.25"
+          />
+        </svg>
         Replay
       </button>
       <p className="hero-note mono">Example data · no real customers</p>

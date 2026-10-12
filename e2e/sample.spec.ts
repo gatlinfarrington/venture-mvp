@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import {
+  DASHBOARD,
   ORDER_HEADERS,
   SAMPLE_ORDERS,
   SAMPLE_SUBS,
@@ -35,7 +36,7 @@ test.describe("/sample acceptance", () => {
     await expect(page.locator(".sample-caption")).toContainText("@example.com");
 
     await expect(page.getByText("$11.7k")).toBeVisible();
-    await expect(page.getByText("$690")).toBeVisible();
+    await expect(page.getByText(DASHBOARD.netRevenue)).toBeVisible();
     await expect(page.getByText("342", { exact: true })).toBeVisible();
     await expect(page.getByText("1.9%")).toBeVisible();
     await expect(page.getByText("412 orders")).toBeVisible();
@@ -125,6 +126,7 @@ test.describe("/sample acceptance", () => {
       "aria-selected",
       "true",
     );
-    await expect(page.getByRole("gridcell", { name: "EX-10456" })).toBeVisible();
+    await expect(page.getByRole("gridcell", { name: "EX-10458" })).toBeVisible();
+    await expect(page.getByRole("gridcell", { name: "EX-10457" })).toBeVisible();
   });
 });

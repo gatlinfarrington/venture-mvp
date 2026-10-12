@@ -844,14 +844,13 @@ tr.reveal.reveal-rise {
   gap: var(--space-2);
 }
 
-.hero-replay-icon {
-  display: inline-block;
-  font: 500 12px/1 var(--font-mono);
+.hero-replay svg {
+  flex-shrink: 0;
   transition: transform var(--dur-base) var(--ease-spring);
 }
 
 @media (hover: hover) {
-  .hero-replay:hover .hero-replay-icon {
+  .hero-replay:hover svg {
     transform: rotate(-90deg);
   }
 
@@ -861,11 +860,8 @@ tr.reveal.reveal-rise {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-replay-icon {
+  .hero-replay svg {
     transition: none;
-  }
-
-  .hero-replay:hover .hero-replay-icon {
     transform: none;
   }
 
@@ -1438,6 +1434,13 @@ tr.reveal.reveal-rise {
 
 .compare-table thead th:nth-child(2) {
   border-top: 2px solid var(--c-ink);
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+table.compare-table thead th:nth-child(2) {
+  font-weight: 600;
+  color: var(--c-ink);
 }
 
 .compare-table tbody td:nth-child(2) {
@@ -1573,7 +1576,8 @@ tr.reveal.reveal-rise {
 
 @media (min-width: 1024px) {
   .price-card.is-featured {
-    transform: translateY(-8px);
+    transform: none;
+    translate: 0 -8px;
   }
 }
 
@@ -1690,10 +1694,12 @@ tr.reveal.reveal-rise {
   max-width: 48ch;
 }
 
-/* 3-up from 720px; stack below. */
-@media (max-width: 719px) {
+/* 3-up above 900px; single column on tablet/phone. */
+@media (max-width: 899px) {
   .pricing-grid {
     grid-template-columns: 1fr;
+    max-width: 480px;
+    margin-inline: auto;
   }
 }
 

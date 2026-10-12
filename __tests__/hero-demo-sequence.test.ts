@@ -12,9 +12,9 @@ describe("hero demo MOTION.md sequence", () => {
     expect(src).toMatch(/SHARED_HERO_ROWS/);
     expect(HERO_ORDERS).toHaveLength(9);
     expect(HERO_ORDERS[0]?.id).toBe("EX-10457");
-    expect(SAMPLE_ORDERS[0]?.id).toBe("EX-10456");
+    expect(SAMPLE_ORDERS[1]?.id).toBe("EX-10457");
     expect(HERO_ORDERS[0]?.product).toBe(EXAMPLE_ORDER_SPECS[0]?.product);
-    expect(HERO_ORDERS[0]?.amount).toBe(SAMPLE_ORDERS[0]?.amount);
+    expect(HERO_ORDERS[0]?.amount).toBe(SAMPLE_ORDERS[1]?.amount);
   });
 
   it("adds each landed order amount once (not ×4) and caps near +6%", () => {

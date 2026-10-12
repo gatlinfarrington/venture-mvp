@@ -62,7 +62,8 @@ const COUNTRIES = ["US", "GB", "DE", "CA", "AU", "NL", "FR", "SE"] as const;
 
 /**
  * Shared example order content for the hero table and /sample Orders tab.
- * /sample assigns IDs from EX-10456 downward; hero from EX-10457 downward.
+ * Hero rows use IDs EX-10457 downward. /sample prepends EX-10458 so row 2 is
+ * the hero top row (EX-10457 Lemon Squeezy Sample Icon Pack $12).
  */
 export type ExampleOrderSpec = {
   source: (typeof SOURCES)[number];
@@ -93,22 +94,25 @@ export const EXAMPLE_ORDER_SPECS: ExampleOrderSpec[] = (() => {
   return rows;
 })();
 
-function buildOrders(startId: number): SampleOrder[] {
-  return EXAMPLE_ORDER_SPECS.map((seed, i) => {
-    const day = 9 - Math.floor(i / 3);
-    const hour = 16 - (i % 8);
-    const min = (i * 7) % 60;
-    return {
-      id: `EX-${startId - i}`,
-      created: `2026-10-${String(Math.max(1, day)).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`,
-      source: seed.source,
-      product: seed.product,
-      email: `customer${100 + i}@example.com`,
-      amount: seed.amount,
-      status: (i === 11 || i === 19 ? "refunded" : "paid") as SampleOrder["status"],
-      country: COUNTRIES[i % COUNTRIES.length]!,
-    };
-  });
+function orderFromSpec(seed: ExampleOrderSpec, idNum: number, i: number): SampleOrder {
+  const day = 9 - Math.floor(i / 3);
+  const hour = 16 - (i % 8);
+  const min = (i * 7) % 60;
+  return {
+    id: `EX-${idNum}`,
+    created: `2026-10-${String(Math.max(1, day)).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`,
+    source: seed.source,
+    product: seed.product,
+    email: `customer${100 + i}@example.com`,
+    amount: seed.amount,
+    status: (i === 11 || i === 19 ? "refunded" : "paid") as SampleOrder["status"],
+    country: COUNTRIES[i % COUNTRIES.length]!,
+  };
+}
+
+/** Continuum shared with the hero: EX-10457 = Sample Icon Pack $12, then older. */
+function buildHeroContinuum(): SampleOrder[] {
+  return EXAMPLE_ORDER_SPECS.map((seed, i) => orderFromSpec(seed, 10457 - i, i));
 }
 
 function buildSubs(): SampleSub[] {
@@ -137,18 +141,41 @@ function buildSubs(): SampleSub[] {
   return rows;
 }
 
-/** /sample Orders tab - IDs EX-10456 downward. */
-export const SAMPLE_ORDERS = buildOrders(10456);
-/** Hero table final rows - same content, IDs EX-10457 downward. */
-export const HERO_ORDERS = buildOrders(10457).slice(0, 9);
+/** Hero table final rows - shared continuum, IDs EX-10457 downward. */
+export const HERO_ORDERS = buildHeroContinuum().slice(0, 9);
+
+/**
+ * /sample Orders: one newer row (EX-10458), then the same hero continuum so
+ * row 2 is EX-10457 Lemon Squeezy Sample Icon Pack $12.
+ */
+export const SAMPLE_ORDERS: SampleOrder[] = (() => {
+  const continuum = buildHeroContinuum();
+  const newer: SampleOrder = {
+    id: "EX-10458",
+    created: "2026-10-09 17:04",
+    source: "Polar",
+    product: "Demo SaaS · Pro",
+    email: "customer099@example.com",
+    amount: 29,
+    status: "paid",
+    country: "US",
+  };
+  return [newer, ...continuum].slice(0, 24);
+})();
+
 export const SAMPLE_SUBS = buildSubs();
+
+const SAMPLE_PAID_NET = SAMPLE_ORDERS.filter((o) => o.status === "paid").reduce(
+  (sum, o) => sum + o.amount,
+  0,
+);
 
 export const DASHBOARD = {
   /** Oct stacked MRR ($11,700); MoM vs Sep ($11,500) = +1.7%. */
   mrr: "$11.7k",
   mrrDelta: "▲ 1.7% MoM",
   /** Sum of paid Orders tab amounts in the example set. */
-  netRevenue: "$690",
+  netRevenue: `$${SAMPLE_PAID_NET.toLocaleString("en-US")}`,
   netDelta: "-",
   activeSubs: "342",
   activeDelta: "▲ 24 net new",

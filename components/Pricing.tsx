@@ -159,7 +159,7 @@ export function Pricing({ variant = "section" }: Props) {
               <Reveal
                 key={plan.tier}
                 className={`${cardClass} reveal-rise`}
-                delay={Math.min(i, 4) * 40}
+                delay={Math.min(i, 2) * 80}
               >
                 {body}
               </Reveal>
