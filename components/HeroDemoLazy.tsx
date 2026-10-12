@@ -26,21 +26,23 @@ function HeroDemoFallback({ final = false }: { final?: boolean }) {
           <div className="hero-sheet-top">
             <div className="eyebrow">MRR · all sources · example</div>
             <div className="hero-mrr">
-              <b className="hero-mrr-num">
-                <span className="sr-only">{mrr}</span>
-                {digits.map((ch, i) =>
-                  ch >= "0" && ch <= "9" ? (
-                    <span key={i} className="d" aria-hidden="true">
-                      <span className="d-face">{ch}</span>
-                    </span>
-                  ) : (
-                    <span key={i} className="s" aria-hidden="true">
-                      {ch}
-                    </span>
-                  ),
-                )}
-              </b>
-              {delta ? <span className="hero-delta">{delta}</span> : null}
+              <div className="hero-mrr-line">
+                <b className="hero-mrr-num">
+                  <span className="sr-only">{mrr}</span>
+                  {digits.map((ch, i) =>
+                    ch >= "0" && ch <= "9" ? (
+                      <span key={i} className="d" aria-hidden="true">
+                        <span className="d-face">{ch}</span>
+                      </span>
+                    ) : (
+                      <span key={i} className="s" aria-hidden="true">
+                        {ch}
+                      </span>
+                    ),
+                  )}
+                </b>
+                {delta ? <span className="hero-delta">{delta}</span> : null}
+              </div>
             </div>
             <div className="hero-bars" data-baseline>
               {PRIOR_BARS.map((h, i) => (

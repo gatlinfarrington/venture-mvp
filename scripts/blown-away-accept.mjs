@@ -39,8 +39,8 @@ const GAP_MS = 1100;
 const CHIP_MS = 420;
 const CHIP_HOLD_MS = 520;
 const START_DELAY_MS = 600;
-// Match HeroDemo chipsAllowed (≥1120 shows the +$ chip).
-const packetsOn = WIDTH >= 1120;
+// Match HeroDemo chipsAllowed (≥980 shows the +$ chip below the number).
+const packetsOn = WIDTH >= 980;
 const tickAtApprox = START_DELAY_MS + FIRST_TICK_INDEX * GAP_MS;
 
 function fmtMrr(n) {
@@ -236,7 +236,16 @@ async function measureCellBounds(page) {
         if (pr.width < 1 || pr.height < 1) return null;
         const overlaps = (a, b) =>
           !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
-        // In-place chip sits beside digits — digits overlap is expected/ignored.
+        const num = stage?.querySelector(".hero-mrr-num");
+        const numRect = num?.getBoundingClientRect();
+        // Chip must sit below the number (never across digits).
+        if (numRect && pr.top < numRect.bottom - 1) {
+          return { kind: "over-digits", text: `top=${(pr.top - numRect.bottom).toFixed(1)}` };
+        }
+        const delta = stage?.querySelector(".hero-delta");
+        if (delta && overlaps(pr, delta.getBoundingClientRect())) {
+          return { kind: "delta", text: (delta.textContent || "").trim() };
+        }
         const cells = [
           ...(stage?.querySelectorAll(".hero-sheet th, .hero-sheet td") || []),
         ];
@@ -268,7 +277,6 @@ async function measureCellBounds(page) {
             };
           }
         }
-        // Must live inside .hero-mrr (beside the number), not absolute-fly over the stage.
         const mrr = stage?.querySelector(".hero-mrr");
         if (mrr && !mrr.contains(packet)) {
           return { kind: "not-in-mrr", text: "chip outside .hero-mrr" };

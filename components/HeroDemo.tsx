@@ -50,8 +50,8 @@ function chipsAllowed() {
   return (
     typeof window !== "undefined" &&
     !prefersReducedMotion() &&
-    // Match one-column hero breakpoint (≤1119 hides the +$ chip).
-    window.matchMedia("(min-width: 1120px)").matches
+    // Two-column hero from 980px; chip sits below the MRR number there.
+    window.matchMedia("(min-width: 980px)").matches
   );
 }
 
@@ -418,7 +418,11 @@ export function HeroDemo() {
 
   const digits = splitMrr(mrr);
   const lastBar = barPct(mrr);
-  const digitMs = reduced ? 0 : typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches ? 420 : 560;
+  const digitMs = reduced
+    ? 0
+    : typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches
+      ? 220
+      : 260;
 
   return (
     <div className="hero-demo">
@@ -456,28 +460,40 @@ export function HeroDemo() {
             <div className="hero-sheet-top">
               <div className="eyebrow">MRR · all sources · example</div>
               <div className="hero-mrr">
-                <b className="hero-mrr-num">
-                  <span className="sr-only">{formatMrr(mrr)}</span>
-                  {digits.map((c, i) =>
-                    c.kind === "s" ? (
-                      <span key={`s-${i}`} className="s" aria-hidden="true">
-                        {c.ch}
-                      </span>
-                    ) : (
-                      <span
-                        key={`d-${i}`}
-                        className="d"
-                        aria-hidden="true"
-                        style={{ "--digit-ms": `${digitMs}ms` } as CSSProperties}
-                      >
-                        {/* Crossfade face (no strip mid-roll half-glyphs). */}
-                        <span key={c.ch} className="d-face">
+                <div className="hero-mrr-line">
+                  <b className="hero-mrr-num">
+                    <span className="sr-only">{formatMrr(mrr)}</span>
+                    {digits.map((c, i) =>
+                      c.kind === "s" ? (
+                        <span key={`s-${i}`} className="s" aria-hidden="true">
                           {c.ch}
                         </span>
-                      </span>
-                    ),
-                  )}
-                </b>
+                      ) : (
+                        <span
+                          key={`d-${i}`}
+                          className="d"
+                          aria-hidden="true"
+                          style={
+                            {
+                              "--digit-ms": `${digitMs}ms`,
+                              "--p": c.pos,
+                            } as CSSProperties
+                          }
+                        >
+                          {/* Reel face: slide up 40% with spring + stagger (not a grey fade). */}
+                          <span key={c.ch} className="d-face">
+                            {c.ch}
+                          </span>
+                        </span>
+                      ),
+                    )}
+                  </b>
+                  {delta ? (
+                    <span key={deltaKey} className="hero-delta">
+                      {delta}
+                    </span>
+                  ) : null}
+                </div>
                 {chips.map((p) => (
                   <span
                     key={p.id}
@@ -488,11 +504,6 @@ export function HeroDemo() {
                     +${p.amount.toFixed(2)}
                   </span>
                 ))}
-                {delta ? (
-                  <span key={deltaKey} className="hero-delta">
-                    {delta}
-                  </span>
-                ) : null}
               </div>
               <div className="hero-bars" data-baseline>
                 {PRIOR_BARS.map((h, i) => (
