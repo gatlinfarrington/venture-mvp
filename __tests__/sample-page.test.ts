@@ -1,14 +1,22 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   DASHBOARD,
+  HERO_FINAL,
+  HERO_LANDINGS,
   ORDER_HEADERS,
+  ORDERS,
+  SAMPLE_HEADLINE,
+  SAMPLE_MRR_OCT,
   SAMPLE_ORDERS,
   SAMPLE_SUBS,
   SAMPLE_TAB_NAMES,
   SUB_HEADERS,
 } from "@/lib/sample-data";
+
+const TODAY = "2026-10-12";
 
 describe("/sample acceptance data", () => {
   it("tab names match the add-on sheet names", () => {
@@ -43,34 +51,30 @@ describe("/sample acceptance data", () => {
     ]);
   });
 
-  it("Dashboard KPIs match the example stack and orders totals", () => {
-    const paidNet = SAMPLE_ORDERS.filter((o) => o.status === "paid").reduce(
-      (sum, o) => sum + o.amount,
-      0,
+  it("sample-dataset.json sha256 matches the design pin", () => {
+    const buf = readFileSync(join(process.cwd(), "lib/sample-dataset/sample-dataset.json"));
+    expect(createHash("sha256").update(buf).digest("hex")).toBe(
+      "1e5dd0981614f73e99a832745214fcf0aac78462b47477293e98bcb954059605",
     );
-    const active = SAMPLE_SUBS.filter((s) => s.status === "active").length;
-    const count = (src: string) => SAMPLE_ORDERS.filter((o) => o.source === src).length;
-    expect(DASHBOARD.mrr).toBe("$11.7k");
-    expect(DASHBOARD.mrrDelta).toBe("▲ 1.7% MoM");
-    expect(DASHBOARD.netRevenue).toBe(`$${paidNet.toLocaleString("en-US")}`);
-    expect(DASHBOARD.netDelta).toMatch(/excerpt/i);
-    expect(DASHBOARD.activeSubs).toBe(String(active));
-    expect(DASHBOARD.activeDelta).toBe(`of ${SAMPLE_SUBS.length} in excerpt`);
-    expect(DASHBOARD.churn).toBe("1.9%");
-    expect(DASHBOARD.pastDueLine).toMatch(/^Past due \d+/);
-    expect(DASHBOARD.sources.find((s) => s.name === "Polar")?.detail).toBe(
-      `${count("Polar")} in excerpt`,
+  });
+
+  it("Dashboard KPIs match the reconciled headline (not the excerpt)", () => {
+    expect(DASHBOARD.mrr).toBe("$4,476");
+    expect(DASHBOARD.mrrDelta).toBe("▲ 4.6% MoM");
+    expect(DASHBOARD.netRevenue).toBe("$7,099");
+    expect(DASHBOARD.netDelta).toBe("30D · showing 24 example orders");
+    expect(DASHBOARD.activeSubs).toBe(String(SAMPLE_HEADLINE.activeSubs));
+    expect(DASHBOARD.activeSubs).toBe("233");
+    expect(DASHBOARD.churn).toBe("2.2%");
+    expect(DASHBOARD.pastDueLine).toBe(
+      "Past due 5 · $95 · MRR counts active subscriptions only",
     );
-    expect(DASHBOARD.sources.find((s) => s.name === "Lemon Squeezy")?.detail).toBe(
-      `${count("Lemon Squeezy")} in excerpt`,
-    );
-    expect(DASHBOARD.sources.find((s) => s.name === "Gumroad")?.detail).toBe(
-      `${count("Gumroad")} in excerpt`,
-    );
-    expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.detail).toBe(
-      `${count("Stripe")} in excerpt`,
-    );
+    expect(DASHBOARD.sources.find((s) => s.name === "Polar")?.detail).toBe("94 orders");
+    expect(DASHBOARD.sources.find((s) => s.name === "Lemon Squeezy")?.detail).toBe("71 orders");
+    expect(DASHBOARD.sources.find((s) => s.name === "Gumroad")?.detail).toBe("38 orders");
+    expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.detail).toBe("58 orders");
     expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.state).toBe("Synced");
+    expect(SAMPLE_MRR_OCT).toBe(4476);
   });
 
   it("sample caption is buyer-facing with a realistic example.com address", async () => {
@@ -81,8 +85,8 @@ describe("/sample acceptance data", () => {
     expect(SAMPLE_CAPTION).toContain("alex@example.com");
     expect(SAMPLE_CAPTION).not.toMatch(/customer###/);
     expect(SAMPLE_CAPTION).not.toMatch(/Marketplace screenshots/i);
-    expect(SAMPLE_ORDERS_CAPTION).toMatch(/Excerpt/i);
-    expect(SAMPLE_SUBS_CAPTION).toMatch(/Excerpt/i);
+    expect(SAMPLE_ORDERS_CAPTION).toMatch(/Showing 24 example orders/);
+    expect(SAMPLE_SUBS_CAPTION).toMatch(/Showing 24 example subscriptions/);
   });
 
   it("canceled subscriptions never have created dates after cancel", () => {
@@ -92,19 +96,28 @@ describe("/sample acceptance data", () => {
     }
   });
 
-  it("orders are one ORDERS continuum shared with the hero final state", async () => {
-    const { ORDERS, HERO_FINAL, HERO_LANDINGS } = await import("@/lib/sample-data");
-    expect(SAMPLE_ORDERS).toBe(ORDERS);
-    expect(SAMPLE_ORDERS).toHaveLength(24);
-    expect(SAMPLE_ORDERS[0]?.id).toBe("EX-10470");
-    expect(HERO_FINAL[0]?.id).toBe(SAMPLE_ORDERS[0]?.id);
-    expect(HERO_FINAL[0]?.amount).toBe(SAMPLE_ORDERS[0]?.amount);
-    expect(HERO_LANDINGS[0]?.id).toBe("EX-10457");
-    expect(SAMPLE_ORDERS[13]?.id).toBe("EX-10457");
+  it("no sample dates are in the future", () => {
+    for (const o of ORDERS) {
+      expect(o.created.slice(0, 10) <= TODAY).toBe(true);
+    }
+    for (const s of SAMPLE_SUBS) {
+      expect(s.created <= TODAY).toBe(true);
+      if (s.cancelled) expect(s.cancelled <= TODAY).toBe(true);
+    }
   });
 
-  it("subscriptions start at EXS-2241 with 20+ rows", () => {
-    expect(SAMPLE_SUBS[0]?.id).toBe("EXS-2241");
+  it("orders are one ORDERS continuum shared with the hero final state", () => {
+    expect(SAMPLE_ORDERS).toEqual(ORDERS.slice(0, 24));
+    expect(SAMPLE_ORDERS).toHaveLength(24);
+    expect(SAMPLE_ORDERS[0]?.id).toBe("EX-10261");
+    expect(HERO_FINAL[0]?.id).toBe(SAMPLE_ORDERS[0]?.id);
+    expect(HERO_FINAL[0]?.amount).toBe(SAMPLE_ORDERS[0]?.amount);
+    expect(HERO_LANDINGS[0]?.id).toBe("EX-10248");
+    expect(HERO_FINAL.map((o) => o.id)).toEqual(SAMPLE_ORDERS.slice(0, 9).map((o) => o.id));
+  });
+
+  it("subscriptions excerpt starts at newest EXS id with 20+ rows", () => {
+    expect(SAMPLE_SUBS[0]?.id.startsWith("EXS-")).toBe(true);
     expect(SAMPLE_SUBS.length).toBeGreaterThanOrEqual(20);
   });
 
@@ -121,7 +134,9 @@ describe("/sample acceptance data", () => {
     expect(readFileSync(join(root, "components/SampleSheet.tsx"), "utf8")).toContain(
       "Sheet tabs",
     );
-    expect(readFileSync(join(root, "lib/sample-data.ts"), "utf8")).toContain("EX-10457");
+    expect(readFileSync(join(root, "lib/sample-dataset/sample-dataset.json"), "utf8")).toContain(
+      "EX-10261",
+    );
   });
 
   it("copy has no em dashes", () => {

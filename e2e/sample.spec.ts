@@ -35,14 +35,15 @@ test.describe("/sample acceptance", () => {
     await expect(page.locator(".sample-example-pill")).toHaveText("EXAMPLE DATA");
     await expect(page.locator(".sample-caption")).toContainText("alex@example.com");
 
-    await expect(page.getByText("$11.7k")).toBeVisible();
+    await expect(page.getByText(DASHBOARD.mrr)).toBeVisible();
     await expect(page.getByText(DASHBOARD.netRevenue)).toBeVisible();
     await expect(
       page.locator(".sample-kv", { hasText: new RegExp(`^${DASHBOARD.activeSubs}$`) }),
     ).toBeVisible();
-    await expect(page.getByText("1.9%")).toBeVisible();
-    await expect(page.getByText("▲ 1.7% MoM")).toBeVisible();
+    await expect(page.getByText(DASHBOARD.churn, { exact: true })).toBeVisible();
+    await expect(page.getByText(DASHBOARD.mrrDelta)).toBeVisible();
     await expect(page.getByText(DASHBOARD.pastDueLine)).toBeVisible();
+    await expect(page.getByText("30D · showing 24 example orders")).toBeVisible();
     for (const src of DASHBOARD.sources) {
       if (!src.detail) continue;
       const name = page.locator(".sample-src-name", {
@@ -136,7 +137,7 @@ test.describe("/sample acceptance", () => {
       "aria-selected",
       "true",
     );
-    await expect(page.getByRole("gridcell", { name: "EX-10458" })).toBeVisible();
-    await expect(page.getByRole("gridcell", { name: "EX-10457" })).toBeVisible();
+    await expect(page.getByRole("gridcell", { name: SAMPLE_ORDERS[0]!.id })).toBeVisible();
+    await expect(page.getByRole("gridcell", { name: "EX-10257" })).toBeVisible();
   });
 });

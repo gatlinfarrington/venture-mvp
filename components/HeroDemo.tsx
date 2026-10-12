@@ -8,10 +8,9 @@ import {
   type CSSProperties,
 } from "react";
 import {
-  BASE_MRR,
   FINAL_MRR,
   HERO_LANDINGS,
-  MAX_DELTA,
+  MOM_DELTA_LABEL,
   START_MRR,
   applyLanding,
   buildFinalRows,
@@ -47,10 +46,9 @@ function packetsAllowed() {
   );
 }
 
-function deltaLabel(mrr: number) {
-  const raw = mrr / BASE_MRR - 1;
-  const capped = Math.min(MAX_DELTA, Math.max(0, raw));
-  return `+${(capped * 100).toFixed(1)}%`;
+/** Always the 30-day MoM figure from the shared sample dataset. */
+function deltaLabel() {
+  return MOM_DELTA_LABEL;
 }
 
 /** Current-month bar: 62% at START_MRR → 92% at FINAL_MRR (readable growth). */
@@ -114,7 +112,7 @@ export function HeroDemo() {
   const rowsRef = useRef<HeroRow[]>(buildFinalRows());
   // First paint matches /sample Orders (HERO_FINAL). The loop crossfades to seed.
   const [mrr, setMrr] = useState(FINAL_MRR);
-  const [delta, setDelta] = useState<string | null>(() => deltaLabel(FINAL_MRR));
+  const [delta, setDelta] = useState<string | null>(() => deltaLabel());
   const [deltaKey, setDeltaKey] = useState(0);
   const [rows, setRows] = useState<HeroRow[]>(() => buildFinalRows());
   const [ghost, setGhost] = useState<HeroRow[] | null>(null);
@@ -176,6 +174,7 @@ export function HeroDemo() {
       if (!order) return;
       const s = sourceIndex(order.source);
       const amount = order.amount;
+      const mrrTick = order.mrrDelta ?? 0;
 
       if (transitioning.current) finishInstant();
 
@@ -231,10 +230,12 @@ export function HeroDemo() {
           setEnterPhase("from");
           setRows((prev) => applyLanding(trimOutgoing(prev), index));
 
-          mrrRef.current = Math.min(FINAL_MRR, mrrRef.current + amount);
-          setMrr(mrrRef.current);
-          setDelta(deltaLabel(mrrRef.current));
-          setDeltaKey((k) => k + 1);
+          if (mrrTick !== 0) {
+            mrrRef.current = Math.min(FINAL_MRR, mrrRef.current + mrrTick);
+            setMrr(mrrRef.current);
+            setDelta(deltaLabel());
+            setDeltaKey((k) => k + 1);
+          }
 
           // Double rAF so the 'from' positions paint with transition:none first.
           requestAnimationFrame(() => {
@@ -318,7 +319,7 @@ export function HeroDemo() {
       setReduced(true);
       mrrRef.current = FINAL_MRR;
       setMrr(FINAL_MRR);
-      setDelta(deltaLabel(FINAL_MRR));
+      setDelta(deltaLabel());
       const finalRows = buildFinalRows();
       setRows(finalRows);
       rowsRef.current = finalRows;
@@ -368,11 +369,26 @@ export function HeroDemo() {
       }
       if (startTimer != null) return;
       // Short delay so phone viewports autoplay without waiting on Replay.
+      // First start swaps to seed with no ghost (ghost is only for mid-loop reset).
       startTimer = window.setTimeout(() => {
         started = true;
         startTimer = null;
         clearTimers();
-        resetAndRestart(() => scheduleLoopRef.current());
+        setGhost(null);
+        setInstant(true);
+        setEnteringId(null);
+        setEnterPhase("to");
+        const seed = buildSeedRows();
+        setRows(seed);
+        rowsRef.current = seed;
+        setActiveStores([false, false, false, false]);
+        mrrRef.current = START_MRR;
+        setMrr(START_MRR);
+        setDelta(null);
+        requestAnimationFrame(() => {
+          setInstant(false);
+          scheduleLoopRef.current();
+        });
       }, 400);
     };
 
@@ -457,7 +473,7 @@ export function HeroDemo() {
               <div className="eyebrow">MRR · all sources · example</div>
               <div className="hero-mrr">
                 <b className="hero-mrr-num">
-                  <span className="visually-hidden">{formatMrr(mrr)}</span>
+                  <span className="sr-only">{formatMrr(mrr)}</span>
                   {digits.map((c, i) =>
                     c.kind === "s" ? (
                       <span key={`s-${i}`} className="s" aria-hidden="true">
@@ -507,7 +523,7 @@ export function HeroDemo() {
                   <th style={{ textAlign: "right" }}>Amount</th>
                 </tr>
               </thead>
-              <tbody className="hero-rows">
+              <tbody className={`hero-rows${ghost ? " is-crossfade-in" : ""}`}>
                 {rows.map((r, i) => {
                   const entering = enteringId === r.id;
                   // from: new at -1, others at i-1 (prior slots). to: index i.

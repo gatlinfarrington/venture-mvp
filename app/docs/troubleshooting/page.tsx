@@ -39,8 +39,8 @@ export default function TroubleshootingPage() {
           </li>
           <li>Confirm you are online: verify calls {siteHostname()}.</li>
           <li>
-            Still failing after purchase? See <Link href="/support">Support</Link> with the checkout
-            session id from your receipt.
+            Once paid plans open, still failing after purchase? See{" "}
+            <Link href="/support">Support</Link> with the checkout session id from your receipt.
           </li>
         </ul>
         <h2>Wrong MRR number</h2>

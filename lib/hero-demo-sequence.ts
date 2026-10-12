@@ -1,17 +1,22 @@
 import {
   HERO_FINAL,
+  HERO_FINAL_MRR,
   HERO_LANDINGS,
   HERO_SEED,
-  LANDING_TOTAL,
+  HERO_START_MRR,
+  LANDING_MRR_DELTA,
+  SAMPLE_MRR_MOM,
   SAMPLE_MRR_OCT,
   type SampleOrder,
 } from "@/lib/sample-data";
 
-/** Final hero MRR matches /sample Oct stacked MRR ($11.7k). */
-export const FINAL_MRR = SAMPLE_MRR_OCT;
-export const START_MRR = FINAL_MRR - LANDING_TOTAL;
+/** Final hero MRR matches /sample headline MRR. */
+export const FINAL_MRR = HERO_FINAL_MRR;
+export const START_MRR = HERO_START_MRR;
 export const BASE_MRR = START_MRR;
-export const MAX_DELTA = (FINAL_MRR - START_MRR) / START_MRR;
+/** Delta pill shows the 30-day MoM figure, not the loop's narrower climb. */
+export const MAX_DELTA = SAMPLE_MRR_MOM / 100;
+export const MOM_DELTA_LABEL = `+${SAMPLE_MRR_MOM.toFixed(1)}%`;
 export const ROW_COUNT = 9;
 
 export type HeroRow = {
@@ -19,6 +24,7 @@ export type HeroRow = {
   source: string;
   product: string;
   amount: number;
+  mrrDelta: number;
   fresh: boolean;
 };
 
@@ -28,6 +34,7 @@ export function toHeroRow(o: SampleOrder, fresh = false): HeroRow {
     source: o.source,
     product: o.product,
     amount: o.amount,
+    mrrDelta: o.mrrDelta ?? 0,
     fresh,
   };
 }
@@ -73,4 +80,14 @@ export function assertUniqueIds(rows: HeroRow[]): string[] {
   return dupes;
 }
 
-export { HERO_LANDINGS, HERO_SEED, HERO_FINAL, LANDING_TOTAL };
+/** Assert start + Σ mrrDelta = final = sample Oct headline. */
+export function assertMrrContinuum(): boolean {
+  const sum = HERO_LANDINGS.reduce((s, o) => s + o.mrrDelta, 0);
+  return (
+    Math.abs(START_MRR + sum - FINAL_MRR) < 0.01 &&
+    Math.abs(FINAL_MRR - SAMPLE_MRR_OCT) < 0.01 &&
+    Math.abs(sum - LANDING_MRR_DELTA) < 0.01
+  );
+}
+
+export { HERO_LANDINGS, HERO_SEED, HERO_FINAL, LANDING_MRR_DELTA as LANDING_TOTAL };

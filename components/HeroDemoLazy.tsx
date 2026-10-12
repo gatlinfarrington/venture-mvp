@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { FINAL_MRR, MAX_DELTA, START_MRR } from "@/lib/hero-demo-sequence";
+import { FINAL_MRR, MOM_DELTA_LABEL, START_MRR } from "@/lib/hero-demo-sequence";
 
 const PRIOR_BARS = [30, 33, 35, 36, 39, 42, 44, 47, 50, 54, 58];
 
@@ -9,7 +9,7 @@ const PRIOR_BARS = [30, 33, 35, 36, 39, 42, 44, 47, 50, 54, 58];
 function HeroDemoFallback({ final = true }: { final?: boolean }) {
   const value = final ? FINAL_MRR : START_MRR;
   const mrr = `$${Math.round(value).toLocaleString("en-US")}`;
-  const delta = final ? `+${(MAX_DELTA * 100).toFixed(1)}%` : null;
+  const delta = final ? MOM_DELTA_LABEL : null;
   const digits = [...mrr];
   return (
     <div className="hero-stage" aria-hidden="true" data-hero-demo>
@@ -22,7 +22,7 @@ function HeroDemoFallback({ final = true }: { final?: boolean }) {
             <div className="eyebrow">MRR · all sources · example</div>
             <div className="hero-mrr">
               <b className="hero-mrr-num">
-                <span className="visually-hidden">{mrr}</span>
+                <span className="sr-only">{mrr}</span>
                 {digits.map((ch, i) =>
                   ch >= "0" && ch <= "9" ? (
                     <span

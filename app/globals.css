@@ -368,6 +368,7 @@ a.badge {
   display: block;
 }
 
+.sr-only,
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -1063,14 +1064,32 @@ tr.reveal.reveal-rise {
   bottom: 0;
   height: calc(9 * 36px);
   background: var(--c-surface);
+  opacity: 1;
   animation: hero-ghost-out 360ms var(--ease-standard) forwards;
   pointer-events: none;
   z-index: 2;
 }
 
+/* Live layer fades in under the ghost so both are never at full opacity. */
+.hero-sheet tbody.hero-rows.is-crossfade-in {
+  animation: hero-live-in 360ms var(--ease-standard) forwards;
+}
+
 @keyframes hero-ghost-out {
+  from {
+    opacity: 1;
+  }
   to {
     opacity: 0;
+  }
+}
+
+@keyframes hero-live-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -1293,6 +1312,11 @@ tr.reveal.reveal-rise {
 
   .hero-rows-ghost {
     display: none;
+  }
+
+  .hero-sheet tbody.hero-rows.is-crossfade-in {
+    animation: none !important;
+    opacity: 1;
   }
 
   .hero-sheet tbody tr {
@@ -1890,11 +1914,27 @@ html:not(.motion) .pricing-grid-reveal .pricing-grid > .price-card {
   transform: none;
 }
 
+/* Featured Pro lift must win over the reveal's transform: none (and any flatten). */
+@media (min-width: 1024px) {
+  .pricing-grid-reveal.is-visible .pricing-grid > .price-card.is-featured,
+  html:not(.motion) .pricing-grid-reveal .pricing-grid > .price-card.is-featured,
+  .price-card.is-featured {
+    transform: translateY(-8px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pricing-grid-reveal .pricing-grid > .price-card {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  @media (min-width: 1024px) {
+    .pricing-grid-reveal .pricing-grid > .price-card.is-featured,
+    .price-card.is-featured {
+      transform: translateY(-8px);
+    }
   }
 }
 
@@ -4401,9 +4441,11 @@ a.tag-pill:focus-visible {
 
 .sample-swatch-polar,
 .sample-swatch-ls,
+.sample-swatch-stripe,
 .sample-swatch-gum,
 .sample-seg-polar,
 .sample-seg-ls,
+.sample-seg-stripe,
 .sample-seg-gum {
   display: inline-block;
   /* design-exception: A8 legend/bar swatch */
@@ -4411,20 +4453,29 @@ a.tag-pill:focus-visible {
   height: 9px;
 }
 
+/* 4-step greyscale: Polar, Lemon Squeezy, Stripe, Gumroad (SAMPLE-DATASET). */
 .sample-swatch-polar,
 .sample-seg-polar {
-  background: var(--c-ink);
+  /* design-exception: light-only SAMPLE-DATASET Polar series */
+  background: #0d0d0d; /* design-exception: token-color SAMPLE-DATASET Polar series */
 }
 
 .sample-swatch-ls,
 .sample-seg-ls {
-  background: var(--c-ink-muted);
+  /* design-exception: light-only SAMPLE-DATASET Lemon Squeezy series */
+  background: #5c5c5c; /* design-exception: token-color SAMPLE-DATASET Lemon Squeezy series */
+}
+
+.sample-swatch-stripe,
+.sample-seg-stripe {
+  /* design-exception: light-only SAMPLE-DATASET Stripe series */
+  background: #8c8c8c; /* design-exception: token-color SAMPLE-DATASET Stripe series */
 }
 
 .sample-swatch-gum,
 .sample-seg-gum {
-  /* design-exception: light-only Gumroad series from sample design spec */
-  background: #bfbfbf; /* design-exception: token-color Gumroad series */
+  /* design-exception: light-only SAMPLE-DATASET Gumroad series */
+  background: #bfbfbf; /* design-exception: token-color SAMPLE-DATASET Gumroad series */
 }
 
 .sample-bars {
