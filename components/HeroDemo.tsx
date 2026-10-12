@@ -3,81 +3,28 @@
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
-import { HERO_ORDERS } from "@/lib/sample-data";
-
-const SOURCES = ["Lemon Squeezy", "Polar", "Gumroad", "Stripe"] as const;
-
-/**
- * MOTION.md storyboard: frame 0 shows MRR $4,180 with 9 seeded rows.
- * 14 deterministic landings add each order’s real amount; sum ≈ $251 → ~+6% delta.
- * Same sequence on every viewport (packets are visual-only).
- */
-const BASE_MRR = 4180;
-const START_MRR = BASE_MRR;
-/** Cap displayed delta near +6% (storyboard rest state). */
-const MAX_DELTA = 0.06;
-
-type Row = {
-  id: string;
-  source: string;
-  product: string;
-  amount: number;
-  fresh: boolean;
-};
-
-type OrderSpec = {
-  source: 0 | 1 | 2 | 3;
-  product: string;
-  amount: number;
-};
-
-/** 14 landings; amounts sum to 251 → final MRR $4,431 (+6.0%). */
-const LANDING_SPECS: OrderSpec[] = [
-  { source: 0, product: "Demo SaaS · Pro", amount: 29 },
-  { source: 1, product: "Example Course", amount: 19 },
-  { source: 2, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Demo SaaS · Team", amount: 9 },
-  { source: 1, product: "Template Kit", amount: 29 },
-  { source: 2, product: "Demo SaaS · Pro", amount: 19 },
-  { source: 0, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Example Course", amount: 9 },
-  { source: 2, product: "Demo SaaS · Team", amount: 29 },
-  { source: 0, product: "Template Kit", amount: 19 },
-  { source: 1, product: "Sample Icon Pack", amount: 12 },
-  { source: 3, product: "Demo SaaS · Pro", amount: 9 },
-  { source: 0, product: "Example Course", amount: 29 },
-  { source: 1, product: "Demo SaaS · Team", amount: 15 },
-];
-
-const LANDING_TOTAL = LANDING_SPECS.reduce((s, o) => s + o.amount, 0);
-const FINAL_MRR = START_MRR + LANDING_TOTAL;
+import {
+  BASE_MRR,
+  FINAL_MRR,
+  FINAL_ROWS,
+  LANDING_SPECS,
+  MAX_DELTA,
+  START_MRR,
+  applyLanding,
+  buildSeedRows,
+  type HeroRow,
+} from "@/lib/hero-demo-sequence";
 
 const BASE_BARS = [52, 55, 58, 57, 61, 64, 66, 70, 73, 76, 80, 84];
 
-function rowFromSpec(spec: OrderSpec, id: string, fresh: boolean): Row {
-  return {
-    id,
-    source: SOURCES[spec.source]!,
-    product: spec.product,
-    amount: spec.amount,
-    fresh,
-  };
-}
-
-/** Shared with /sample (content from EXAMPLE_ORDER_SPECS; hero IDs start at EX-10457). */
-const SHARED_HERO_ROWS: Row[] = HERO_ORDERS.map((o) => ({
-  id: o.id,
-  source: o.source,
-  product: o.product,
-  amount: o.amount,
-  fresh: false,
-}));
-
-const SEED_ROWS: Row[] = SHARED_HERO_ROWS;
+/** One landing every gapMs after the first; fly completes before the next insert. */
+const GAP_MS = 1100;
+const FLY_MS = 900;
+const START_DELAY_MS = 600;
+const SETTLE_PAD_MS = 400;
 
 function fmt(v: number) {
   return `$${Math.round(v).toLocaleString("en-US")}`;
@@ -123,19 +70,14 @@ function DemoFoot({ onReplay }: { onReplay: () => void }) {
   );
 }
 
-function finalRows(): Row[] {
-  return SHARED_HERO_ROWS;
-}
-
 export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
   const raf = useRef<number | null>(null);
   const mrrRef = useRef(START_MRR);
-  const nextId = useRef(10450);
   const [mrr, setMrr] = useState(START_MRR);
   const [delta, setDelta] = useState<string | null>(null);
-  const [rows, setRows] = useState<Row[]>(SEED_ROWS);
+  const [rows, setRows] = useState<HeroRow[]>(() => buildSeedRows());
   const [activeStores, setActiveStores] = useState([false, false, false, false]);
   const [barHeights, setBarHeights] = useState(
     () => BASE_BARS.map((h) => (h - 40) * 2),
@@ -144,11 +86,6 @@ export function HeroDemo() {
     Array<{ id: string; amount: number; path: string; dissolving?: boolean }>
   >([]);
   const packetBusy = useRef(false);
-  const pendingFlip = useRef<{
-    newId: string;
-    tops: Map<string, number>;
-  } | null>(null);
-  const [flipId, setFlipId] = useState<string | null>(null);
 
   function packetPath(storeIndex: number): string {
     const stage = stageRef.current;
@@ -166,10 +103,8 @@ export function HeroDemo() {
     const storeRect = store.getBoundingClientRect();
     const tableRect = table.getBoundingClientRect();
     const headRect = thead.getBoundingClientRect();
-    // Spawn at the card's right edge +8px (never over the status dot).
     const startX = storeRect.right - stageRect.left + 8;
     const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    // Aim at the new row's ORDER cell: table left + 12px, header bottom + half a row.
     const firstRow = sheet.querySelector<HTMLElement>("tbody tr");
     const rowH = firstRow?.getBoundingClientRect().height ?? 36;
     const endX = tableRect.left - stageRect.left + 12;
@@ -231,10 +166,7 @@ export function HeroDemo() {
         return next;
       });
 
-      // Fly to the new ORDER cell, then insert the row and dissolve the packet.
-      const flyMs = 900;
       const dissolveMs = 160;
-
       const spawnPacket = packetsAllowed() && !packetBusy.current;
       if (spawnPacket) {
         packetBusy.current = true;
@@ -246,47 +178,21 @@ export function HeroDemo() {
             setPackets((prev) =>
               prev.map((p) => (p.id === pid ? { ...p, dissolving: true } : p)),
             );
-          }, flyMs),
+          }, FLY_MS),
         );
         timers.current.push(
           window.setTimeout(() => {
             setPackets([]);
             packetBusy.current = false;
-          }, flyMs + dissolveMs + 20),
+          }, FLY_MS + dissolveMs + 20),
         );
       }
 
       timers.current.push(
         window.setTimeout(
           () => {
-            const id = `EX-${nextId.current++}`;
-            const stage = stageRef.current;
-            const tbody = stage?.querySelector<HTMLElement>(".hero-sheet tbody");
-
-            // Record each existing row's top by id before insert (FLIP first).
-            if (!reduced && tbody) {
-              const tops = new Map<string, number>();
-              for (const tr of tbody.querySelectorAll<HTMLElement>("tr[data-row-id]")) {
-                const rid = tr.dataset.rowId;
-                if (rid) tops.set(rid, tr.getBoundingClientRect().top);
-              }
-              if (tops.size > 0) {
-                pendingFlip.current = { newId: id, tops };
-              }
-            }
-
-            setRows((prev) => {
-              const next: Row[] = [
-                rowFromSpec(spec, id, true),
-                ...prev,
-              ].slice(0, 9);
-              return next;
-            });
-            if (!reduced && pendingFlip.current?.newId === id) {
-              setFlipId(id);
-            }
-
-            // Add the order’s real amount (not ×4) so delta stays near +6%.
+            // Keyed insert at top; drop last row. IDs never collide with seed/landings.
+            setRows((prev) => applyLanding(prev, index));
             tickMrr(mrrRef.current + amount, 700);
             setBarHeights((heights) => {
               const next = [...heights];
@@ -296,69 +202,23 @@ export function HeroDemo() {
             });
             timers.current.push(
               window.setTimeout(() => {
-                setRows((prev) =>
-                  prev.map((r) => (r.id === id ? { ...r, fresh: false } : r)),
-                );
+                setRows((prev) => prev.map((r) => (r.fresh ? { ...r, fresh: false } : r)));
               }, 1200),
             );
           },
-          reduced ? 0 : spawnPacket ? flyMs : 0,
+          reduced ? 0 : spawnPacket ? FLY_MS : 0,
         ),
       );
     },
     [tickMrr],
   );
 
-  // FLIP: after the new row mounts, invert existing rows by measured delta, then play.
-  useLayoutEffect(() => {
-    if (!flipId || prefersReducedMotion()) return;
-    const pending = pendingFlip.current;
-    if (!pending || pending.newId !== flipId) return;
-    const tbody = stageRef.current?.querySelector<HTMLElement>(".hero-sheet tbody");
-    if (!tbody) return;
-
-    const movers: HTMLElement[] = [];
-    for (const tr of tbody.querySelectorAll<HTMLElement>("tr[data-row-id]")) {
-      const rid = tr.dataset.rowId;
-      if (!rid || rid === flipId) continue;
-      const oldTop = pending.tops.get(rid);
-      if (oldTop == null) continue;
-      const newTop = tr.getBoundingClientRect().top;
-      const deltaY = oldTop - newTop;
-      if (Math.abs(deltaY) < 0.5) continue;
-      tr.style.transition = "none";
-      tr.style.transform = `translateY(${deltaY}px)`;
-      tr.getBoundingClientRect();
-      movers.push(tr);
-    }
-
-    requestAnimationFrame(() => {
-      for (const tr of movers) {
-        tr.style.transition = "";
-        tr.classList.add("hero-flip");
-        tr.style.transform = "translateY(0)";
-        timers.current.push(
-          window.setTimeout(() => {
-            tr.classList.remove("hero-flip");
-            tr.style.transform = "";
-          }, 260),
-        );
-      }
-    });
-
-    pendingFlip.current = null;
-    setFlipId(null);
-  }, [flipId]);
-
   const run = useCallback(() => {
     clearTimers();
-    nextId.current = 10450;
     mrrRef.current = START_MRR;
-    pendingFlip.current = null;
-    setFlipId(null);
     setMrr(START_MRR);
     setDelta(null);
-    setRows(SEED_ROWS);
+    setRows(buildSeedRows());
     setActiveStores([false, false, false, false]);
     setBarHeights(BASE_BARS.map((h) => (h - 40) * 2));
     setPackets([]);
@@ -366,28 +226,26 @@ export function HeroDemo() {
 
     const reduced = prefersReducedMotion();
     if (reduced) {
-      // MOTION.md: final state immediately. Identical numbers on every viewport.
       mrrRef.current = FINAL_MRR;
       setMrr(FINAL_MRR);
       setDelta(deltaLabel(FINAL_MRR));
-      setRows(finalRows());
+      setRows(FINAL_ROWS);
       setActiveStores([true, true, true, true]);
       setBarHeights(BASE_BARS.map((h) => Math.min(98, (h - 40) * 2 + 14)));
       return;
     }
 
-    // Stagger so only one packet is in flight (fly 900ms + dissolve 160ms + gap).
-    const gapMs = 1100;
     for (let i = 0; i < LANDING_SPECS.length; i++) {
       timers.current.push(
-        window.setTimeout(() => landOrder(i), 600 + i * gapMs),
+        window.setTimeout(() => landOrder(i), START_DELAY_MS + i * GAP_MS),
       );
     }
-    // Settle on the shared example rows (same content as /sample, IDs from EX-10457).
-    const settleAt = 600 + LANDING_SPECS.length * gapMs + 400;
+    const settleAt = START_DELAY_MS + LANDING_SPECS.length * GAP_MS + SETTLE_PAD_MS;
     timers.current.push(
       window.setTimeout(() => {
-        setRows(SHARED_HERO_ROWS);
+        setRows(FINAL_ROWS);
+        setPackets([]);
+        packetBusy.current = false;
       }, settleAt),
     );
   }, [clearTimers, landOrder]);
@@ -450,7 +308,7 @@ export function HeroDemo() {
 
   return (
     <div className="hero-demo">
-      <div ref={stageRef} className="hero-stage">
+      <div ref={stageRef} className="hero-stage" data-hero-demo>
         <div className="hero-stores-col">
           <div className="hero-stores" aria-hidden="true">
             {[
@@ -472,7 +330,6 @@ export function HeroDemo() {
               </div>
             ))}
           </div>
-          {/* Pinned to bottom of source column at desktop width. */}
           <DemoFoot onReplay={run} />
         </div>
 

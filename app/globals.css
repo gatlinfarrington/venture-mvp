@@ -920,6 +920,7 @@ tr.reveal.reveal-rise {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--t-mono-size);
+  table-layout: fixed;
 }
 
 .hero-sheet th {
@@ -931,12 +932,21 @@ tr.reveal.reveal-rise {
   background: var(--c-surface-2);
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--c-border);
+  height: 28px;
+}
+
+.hero-sheet tbody tr {
+  height: 36px;
 }
 
 .hero-sheet td {
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--c-hairline);
   white-space: nowrap;
+  height: 36px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hero-sheet td.n {
@@ -945,7 +955,7 @@ tr.reveal.reveal-rise {
   font-variant-numeric: tabular-nums;
 }
 
-/* New row: fade + translateY -8px to 0. Existing rows FLIP via measured deltas. */
+/* New row: fade only (no FLIP transforms; avoids overlap mid-loop). */
 .hero-sheet tr.new {
   animation: hero-rowin 240ms var(--ease-out);
 }
@@ -954,19 +964,12 @@ tr.reveal.reveal-rise {
   animation: hero-hl 1.2s var(--ease-standard);
 }
 
-.hero-sheet tr.hero-flip {
-  transition: transform 240ms var(--ease-out);
-  will-change: transform;
-}
-
 @keyframes hero-rowin {
   from {
     opacity: 0;
-    transform: translateY(-8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -1114,7 +1117,6 @@ tr.reveal.reveal-rise {
 
   .hero-sheet tr.new,
   .hero-sheet tr.new td,
-  .hero-sheet tr.hero-flip,
   .hero-store.on .st {
     animation: none;
     transition: none;
