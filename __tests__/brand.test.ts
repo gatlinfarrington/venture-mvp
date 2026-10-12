@@ -5,12 +5,15 @@ import { siteConfig } from "@/lib/site";
 describe("brand config", () => {
   const prevSite = process.env.NEXT_PUBLIC_SITE_URL;
   const prevVercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const prevVercelEnv = process.env.VERCEL_ENV;
 
   afterEach(() => {
     if (prevSite === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
     else process.env.NEXT_PUBLIC_SITE_URL = prevSite;
     if (prevVercel === undefined) delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
     else process.env.VERCEL_PROJECT_PRODUCTION_URL = prevVercel;
+    if (prevVercelEnv === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = prevVercelEnv;
   });
 
   it("keeps a single swappable name wired through siteConfig", () => {
@@ -37,18 +40,29 @@ describe("brand config", () => {
     expect(siteUrl()).toBe(siteConfig.url);
   });
 
-  it("falls back to VERCEL_PROJECT_PRODUCTION_URL when site URL unset", () => {
+  it("falls back to VERCEL_PROJECT_PRODUCTION_URL outside production", () => {
     delete process.env.NEXT_PUBLIC_SITE_URL;
+    delete process.env.VERCEL_ENV;
     process.env.VERCEL_PROJECT_PRODUCTION_URL = "venture-mvp.vercel.app";
+    // Vitest NODE_ENV is "test", so preview/dev still use the Vercel host.
     expect(siteUrl()).toBe("https://venture-mvp.vercel.app");
     expect(siteHostname()).toBe("venture-mvp.vercel.app");
   });
 
-  it("never hardcodes revenuesheet.app", () => {
+  it("uses www.revenuesheet.app as production canonical (not *.vercel.app)", () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_PROJECT_PRODUCTION_URL = "venture-mvp.vercel.app";
+    expect(siteUrl()).toBe("https://www.revenuesheet.app");
+    expect(siteHostname()).toBe("www.revenuesheet.app");
+    delete process.env.VERCEL_ENV;
+  });
+
+  it("local / test without env does not invent a custom domain", () => {
     delete process.env.NEXT_PUBLIC_SITE_URL;
     delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
-    expect(siteUrl()).not.toContain("revenuesheet.app");
-    expect(siteHostname()).not.toBe("revenuesheet.app");
+    delete process.env.VERCEL_ENV;
+    expect(siteUrl()).toBe("http://localhost:3000");
   });
 
   it("returns null install URL when marketplace unset", () => {

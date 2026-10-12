@@ -70,7 +70,7 @@ const setup = [
   {
     href: "/docs/mrr-and-churn",
     title: "How we calculate MRR and churn",
-    body: "Interval normalization, monthly conversion, and logo churn windows from the add-on code.",
+    body: "How yearly plans become monthly MRR, and how we count cancelled subscriptions over 30 days.",
   },
 ] as const;
 
@@ -121,7 +121,7 @@ export default function DocsIndexPage() {
           <h2 className="docs-group-label mono">Setup</h2>
           <ul className="docs-card-list">
             {setup.map((card, i) => (
-              <Reveal as="li" key={card.href} className="reveal-rise" delay={i * 80}>
+              <Reveal as="li" key={card.href} className="reveal-rise" delay={Math.min(i, 3) * 40}>
                 <Link href={card.href}>
                   <span className="docs-card-title">{card.title}</span>
                   <span className="muted">{card.body}</span>
@@ -137,7 +137,7 @@ export default function DocsIndexPage() {
           <h2 className="docs-group-label mono">Help</h2>
           <ul className="docs-card-list">
             {help.map((card, i) => (
-              <Reveal as="li" key={card.href} className="reveal-rise" delay={i * 80}>
+              <Reveal as="li" key={card.href} className="reveal-rise" delay={Math.min(i, 3) * 40}>
                 <Link href={card.href}>
                   <span className="docs-card-title">{card.title}</span>
                   <span className="muted">{card.body}</span>

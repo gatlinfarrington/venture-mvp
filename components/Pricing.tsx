@@ -11,7 +11,6 @@ import {
   pricing,
   type BillingInterval,
 } from "@/lib/site";
-import Link from "next/link";
 
 type Props = {
   /** Dedicated /pricing page uses inner-page H1; homepage keeps section H2. */
@@ -101,9 +100,6 @@ export function Pricing({ variant = "section" }: Props) {
             <InstallCta className={btnClass} source="pricing-free" launchHref={launchHref}>
               {listing ? "Install free" : "Join the launch list"}
             </InstallCta>
-            <Link className="btn btn-secondary" href="/sample">
-              See a sample sheet
-            </Link>
           </div>
         ) : paidCheckoutReady ? (
           <div className="price-cta-stack">
@@ -136,7 +132,7 @@ export function Pricing({ variant = "section" }: Props) {
         className={cardClass}
         style={
           variant === "section"
-            ? { transitionDelay: `${Math.min(i, 2) * 80}ms` }
+            ? { transitionDelay: `${Math.min(i, 2) * 40}ms` }
             : undefined
         }
       >

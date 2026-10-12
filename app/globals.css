@@ -820,7 +820,7 @@ tr.reveal.reveal-rise {
   position: relative;
   flex: 1;
   min-width: 0;
-  max-width: 400px;
+  max-width: 440px;
   margin-left: auto;
   align-self: stretch;
   display: flex;
@@ -914,6 +914,10 @@ tr.reveal.reveal-rise {
   align-items: baseline;
   gap: var(--space-3);
   margin-top: var(--space-2);
+  position: relative;
+  /* Room for the flying +$ chip to the right of the number. */
+  min-height: 1.2em;
+  padding-right: 3.5rem;
 }
 
 .hero-mrr-num {
@@ -926,14 +930,17 @@ tr.reveal.reveal-rise {
   display: inline-flex;
   align-items: flex-start;
   user-select: none;
+  /* Extra lead so digit strips do not clip glyph tops. */
+  --digit-h: 1.12em;
+  line-height: var(--digit-h);
 }
 
 .hero-mrr-num .d {
   display: inline-block;
   width: 1ch;
-  height: 1em;
+  height: var(--digit-h);
   overflow: hidden;
-  line-height: 1;
+  line-height: var(--digit-h);
   vertical-align: top;
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -942,7 +949,7 @@ tr.reveal.reveal-rise {
 .hero-mrr-num .d-strip {
   display: block;
   font-style: normal;
-  transform: translateY(calc(var(--v) * -1em));
+  transform: translateY(calc(var(--v) * -1 * var(--digit-h)));
   transition: transform var(--digit-ms, 560ms) var(--ease-out);
   transition-delay: calc(var(--p) * 40ms);
   will-change: transform;
@@ -951,14 +958,14 @@ tr.reveal.reveal-rise {
 .hero-mrr-num .d-strip > span {
   display: block;
   width: 1ch;
-  height: 1em;
-  line-height: 1;
+  height: var(--digit-h);
+  line-height: var(--digit-h);
   font-variant-numeric: tabular-nums;
 }
 
 .hero-mrr-num .s {
   display: inline-block;
-  line-height: 1;
+  line-height: var(--digit-h);
   width: 0.55ch;
   text-align: center;
 }
@@ -968,6 +975,7 @@ tr.reveal.reveal-rise {
   color: var(--c-signal);
   font-variant-numeric: tabular-nums;
   width: 5ch;
+  flex-shrink: 0;
   display: inline-block;
   animation: hero-delta-in 140ms var(--ease-standard);
 }
@@ -1032,7 +1040,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet thead tr {
   display: grid;
-  grid-template-columns: 96px 1fr 1.3fr 72px;
+  grid-template-columns: 5.5rem minmax(0, 0.9fr) minmax(0, 1.35fr) 4.5rem;
   height: 30px;
   background: var(--c-surface-2);
   border-bottom: 1px solid var(--c-border);
@@ -1101,7 +1109,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet tbody tr {
   display: grid;
-  grid-template-columns: 96px 1fr 1.3fr 72px;
+  grid-template-columns: 5.5rem minmax(0, 0.9fr) minmax(0, 1.35fr) 4.5rem;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1142,6 +1150,14 @@ tr.reveal.reveal-rise {
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.hero-sheet td.hero-col-product {
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .hero-sheet tr.new td {
@@ -1219,7 +1235,8 @@ tr.reveal.reveal-rise {
   }
 }
 
-@media (max-width: 768px) {
+/* One column through tablet so Join / email never spill over source pills. */
+@media (max-width: 900px) {
   .hero-stage {
     height: auto;
     display: flex;
@@ -1233,11 +1250,13 @@ tr.reveal.reveal-rise {
     width: 100%;
     flex-direction: column;
     justify-content: flex-start;
+    min-height: 0;
   }
 
   .hero-stores-col .hero-demo-foot {
     margin-top: var(--space-3);
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
@@ -1280,7 +1299,11 @@ tr.reveal.reveal-rise {
 
   .hero-sheet thead tr,
   .hero-sheet tbody tr {
-    grid-template-columns: 96px 1fr 72px;
+    grid-template-columns: 5.5rem minmax(0, 1fr) 4.5rem;
+  }
+
+  .hero-mrr {
+    padding-right: 0;
   }
 
   .hero-mrr-num .d-strip {
@@ -1690,7 +1713,8 @@ table.compare-table thead th:nth-child(2) {
   flex-direction: column;
   gap: var(--space-2);
   align-items: stretch;
-  margin-top: var(--space-8); /* list → button 32px */
+  margin-top: auto; /* pin CTAs to card bottom so Free/Pro/Business rows align */
+  padding-top: var(--space-8); /* list → button 32px */
 }
 
 .price-cta-stack .btn {
@@ -3031,7 +3055,7 @@ h2.docs-group-label {
   padding-inline: 0;
   margin-inline: 0;
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
 }
 

@@ -141,28 +141,41 @@ export function HeroDemo() {
     timers.current = [];
   }, []);
 
+  /** Land the +$ chip inside the MRR card, to the right of the number (not over digits/bar). */
+  const packetEnd = useCallback((stage: HTMLElement, sheet: HTMLElement, storeEl: HTMLElement) => {
+    const stageRect = stage.getBoundingClientRect();
+    const storeRect = storeEl.getBoundingClientRect();
+    const num = sheet.querySelector<HTMLElement>(".hero-mrr-num");
+    const mrrRow = sheet.querySelector<HTMLElement>(".hero-mrr");
+    const top = sheet.querySelector<HTMLElement>(".hero-sheet-top");
+    const numRect = (num ?? mrrRow)?.getBoundingClientRect();
+    const topRect = top?.getBoundingClientRect();
+    const startX = storeRect.right - stageRect.left + 8;
+    const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
+    // Slot: right of the MRR digits, vertically centered on the number, inside the card top.
+    const endX = numRect
+      ? Math.min(
+          numRect.right - stageRect.left + 12,
+          (topRect?.right ?? numRect.right) - stageRect.left - 36,
+        )
+      : sheet.getBoundingClientRect().left - stageRect.left + sheet.getBoundingClientRect().width * 0.72;
+    const endY = numRect
+      ? numRect.top + numRect.height / 2 - stageRect.top
+      : startY;
+    const midX = startX + (endX - startX) * 0.55;
+    return { startX, startY, endX, endY, midX };
+  }, []);
+
   const computePacketPath = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
-    // Aim at the active store when possible; path ends above the table header
-    // so the +$N pill never covers order IDs.
     const stores = stage.querySelectorAll<HTMLElement>(".hero-store");
     const store = stores[0] ?? null;
     const sheet = stage.querySelector<HTMLElement>(".hero-sheet");
-    const head = sheet?.querySelector<HTMLElement>("thead");
-    if (!store || !sheet || !head) return;
-    const stageRect = stage.getBoundingClientRect();
-    const storeRect = store.getBoundingClientRect();
-    const headRect = head.getBoundingClientRect();
-    const sheetRect = sheet.getBoundingClientRect();
-    const startX = storeRect.right - stageRect.left + 8;
-    const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-    // Land just above the thead, centered on the sheet (outside the row area).
-    const endX = sheetRect.left - stageRect.left + sheetRect.width * 0.35;
-    const endY = headRect.top - stageRect.top - 10;
-    const midX = startX + (endX - startX) * 0.55;
+    if (!store || !sheet) return;
+    const { startX, startY, endX, endY, midX } = packetEnd(stage, sheet, store);
     packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
-  }, []);
+  }, [packetEnd]);
 
   const finishInstant = useCallback(() => {
     setInstant(true);
@@ -193,21 +206,12 @@ export function HeroDemo() {
 
       const spawnPacket = packetsAllowed();
       if (spawnPacket) {
-        // Recompute from the active store so the path starts on the right pill.
+        // Recompute from the active store; land beside the MRR number inside the card.
         const stage = stageRef.current;
         const storeEl = stage?.querySelectorAll<HTMLElement>(".hero-store")[s];
         const sheet = stage?.querySelector<HTMLElement>(".hero-sheet");
-        const head = sheet?.querySelector<HTMLElement>("thead");
-        if (stage && storeEl && sheet && head) {
-          const stageRect = stage.getBoundingClientRect();
-          const storeRect = storeEl.getBoundingClientRect();
-          const headRect = head.getBoundingClientRect();
-          const sheetRect = sheet.getBoundingClientRect();
-          const startX = storeRect.right - stageRect.left + 8;
-          const startY = storeRect.top + storeRect.height / 2 - stageRect.top;
-          const endX = sheetRect.left - stageRect.left + sheetRect.width * 0.35;
-          const endY = headRect.top - stageRect.top - 10;
-          const midX = startX + (endX - startX) * 0.55;
+        if (stage && storeEl && sheet) {
+          const { startX, startY, endX, endY, midX } = packetEnd(stage, sheet, storeEl);
           packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
         }
         const pid = `p-${index}`;
@@ -236,10 +240,17 @@ export function HeroDemo() {
           setRows((prev) => applyLanding(trimOutgoing(prev), index));
 
           if (mrrTick !== 0) {
-            mrrRef.current = Math.min(FINAL_MRR, mrrRef.current + mrrTick);
-            setMrr(mrrRef.current);
+            const next = Math.min(FINAL_MRR, Math.round((mrrRef.current + mrrTick) * 100) / 100);
+            mrrRef.current = next;
+            setMrr(next);
             setDelta(deltaLabel());
             setDeltaKey((k) => k + 1);
+          }
+          // Last landing: force exact FINAL so the read-out never stalls mid-climb.
+          if (index === HERO_LANDINGS.length - 1) {
+            mrrRef.current = FINAL_MRR;
+            setMrr(FINAL_MRR);
+            setDelta(deltaLabel());
           }
 
           // Double rAF so the 'from' positions paint with transition:none first.
@@ -260,7 +271,7 @@ export function HeroDemo() {
         }, insertDelay),
       );
     },
-    [finishInstant],
+    [finishInstant, packetEnd],
   );
 
   const scheduleLoopRef = useRef<() => void>(() => {});
@@ -551,7 +562,7 @@ export function HeroDemo() {
                       <td className="mono">{r.id}</td>
                       <td>{r.source}</td>
                       <td className="hero-col-product">{r.product}</td>
-                      <td className="n">${r.amount}.00</td>
+                      <td className="n">${r.amount}</td>
                     </tr>
                   );
                 })}
@@ -567,7 +578,7 @@ export function HeroDemo() {
                       <td className="mono">{r.id}</td>
                       <td>{r.source}</td>
                       <td className="hero-col-product">{r.product}</td>
-                      <td className="n">${r.amount}.00</td>
+                      <td className="n">${r.amount}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -79,8 +79,8 @@
   --ease-in:cubic-bezier(.4,0,1,1);             /* exits */
   --ease-in-out:cubic-bezier(.65,0,.35,1);      /* moves across screen */
   --ease-spring:linear(0, .22 8%, .6 18%, 1.04 32%, 1.06 38%, 1.02 48%, .995 60%, 1); /* subtle overshoot ~6% */
-  --dur-instant:80ms; --dur-fast:140ms; --dur-base:220ms; --dur-slow:360ms; --dur-reveal:560ms; --dur-hero:3200ms;
-  --press-scale:.97; --hover-lift:-1px; --reveal-distance:12px; --stagger:60ms;
+  --dur-instant:80ms; --dur-fast:140ms; --dur-base:220ms; --dur-slow:360ms; --dur-reveal:360ms; --dur-hero:3200ms;
+  --press-scale:.97; --hover-lift:-1px; --reveal-distance:12px; --stagger:40ms;
   /* JS spring (Framer Motion / motion.dev): */
   --spring-press:"stiffness:520, damping:30, mass:.6";
   --spring-hover:"stiffness:380, damping:26, mass:.7";

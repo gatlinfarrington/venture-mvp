@@ -43,14 +43,24 @@ function stripTrailingSlash(url: string) {
   return url.replace(/\/+$/, "");
 }
 
+/** Production canonical — avoids *.vercel.app duplicate content. */
+export const CANONICAL_SITE_URL = "https://www.revenuesheet.app";
+
 /**
  * Canonical site origin for metadata, sitemap, and absolute links.
- * Prefer NEXT_PUBLIC_SITE_URL; else https://${VERCEL_PROJECT_PRODUCTION_URL};
- * local fallback is http://localhost:3000 — never a hardcoded custom domain.
+ * Prefer NEXT_PUBLIC_SITE_URL; production falls back to www.revenuesheet.app
+ * (not *.vercel.app); local fallback is http://localhost:3000.
  */
 export function siteUrl(): string {
   const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (explicit) return stripTrailingSlash(explicit);
+
+  if (
+    process.env.VERCEL_ENV === "production" ||
+    process.env.NODE_ENV === "production"
+  ) {
+    return CANONICAL_SITE_URL;
+  }
 
   const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
   if (vercelHost) {
