@@ -47,7 +47,8 @@ function packetsAllowed() {
   return (
     typeof window !== "undefined" &&
     !prefersReducedMotion() &&
-    window.matchMedia("(min-width: 769px)").matches
+    // Match one-column hero breakpoint (≤900 hides the flying chip).
+    window.matchMedia("(min-width: 901px)").matches
   );
 }
 
@@ -191,8 +192,9 @@ export function HeroDemo() {
       const order = HERO_LANDINGS[index];
       if (!order) return;
       const s = sourceIndex(order.source);
-      const amount = order.amount;
       const mrrTick = order.mrrDelta ?? 0;
+      // Pill and counter share the same MRR delta (not order amount).
+      const pillDelta = mrrTick > 0 ? mrrTick : 0;
 
       if (transitioning.current) finishInstant();
 
@@ -204,7 +206,8 @@ export function HeroDemo() {
       setPulseStore(s);
       timers.current.push(window.setTimeout(() => setPulseStore(null), PULSE_MS));
 
-      const spawnPacket = packetsAllowed();
+      // Only fly a +$ chip when MRR actually moves — amount may differ (e.g. annual).
+      const spawnPacket = packetsAllowed() && pillDelta > 0;
       if (spawnPacket) {
         // Recompute from the active store; land beside the MRR number inside the card.
         const stage = stageRef.current;
@@ -215,7 +218,7 @@ export function HeroDemo() {
           packetPathRef.current = `M ${startX.toFixed(1)} ${startY.toFixed(1)} C ${midX.toFixed(1)} ${startY.toFixed(1)}, ${midX.toFixed(1)} ${endY.toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
         }
         const pid = `p-${index}`;
-        setPackets([{ id: pid, amount, path: packetPathRef.current }]);
+        setPackets([{ id: pid, amount: pillDelta, path: packetPathRef.current }]);
         timers.current.push(
           window.setTimeout(() => {
             setPackets((prev) =>
@@ -291,9 +294,22 @@ export function HeroDemo() {
       rowsRef.current = HERO_SEED.map((o) => toHeroRow(o));
       transitioning.current = false;
       setActiveStores([false, false, false, false]);
-      mrrRef.current = START_MRR;
-      setMrr(START_MRR);
       setDelta(null);
+      // Roll MRR down over RESET_MS (digit strips animate); do not snap.
+      const from = mrrRef.current;
+      const steps = 14;
+      for (let i = 1; i <= steps; i++) {
+        timers.current.push(
+          window.setTimeout(() => {
+            const v =
+              i === steps
+                ? START_MRR
+                : Math.round(from + (START_MRR - from) * (i / steps));
+            mrrRef.current = v;
+            setMrr(v);
+          }, Math.round((RESET_MS * i) / steps)),
+        );
+      }
       requestAnimationFrame(() => setInstant(false));
       timers.current.push(window.setTimeout(() => setGhost(null), RESET_MS / 2));
       timers.current.push(window.setTimeout(thenRun, RESET_MS));
@@ -539,7 +555,10 @@ export function HeroDemo() {
                   <th style={{ textAlign: "right" }}>Amount</th>
                 </tr>
               </thead>
-              <tbody className={`hero-rows${ghost ? " is-crossfade-in" : ""}`}>
+              <tbody
+                className={`hero-rows${ghost ? " is-crossfade-in" : ""}`}
+                data-hero-live-rows
+              >
                 {rows.map((r, i) => {
                   const entering = enteringId === r.id;
                   // from: new at -1, others at i-1 (prior slots). to: index i.
@@ -562,23 +581,27 @@ export function HeroDemo() {
                       <td className="mono">{r.id}</td>
                       <td>{r.source}</td>
                       <td className="hero-col-product">{r.product}</td>
-                      <td className="n">${r.amount}</td>
+                      <td className="n">${r.amount.toFixed(2)}</td>
                     </tr>
                   );
                 })}
               </tbody>
               {ghost ? (
-                <tbody className="hero-rows hero-rows-ghost" aria-hidden="true">
+                <tbody
+                  className="hero-rows-ghost"
+                  aria-hidden="true"
+                  data-hero-ghost-rows
+                >
                   {ghost.map((r, i) => (
                     <tr
                       key={`g-${r.id}`}
-                      className="hero-row"
+                      className="hero-ghost-row"
                       style={{ "--i": i } as CSSProperties}
                     >
                       <td className="mono">{r.id}</td>
                       <td>{r.source}</td>
                       <td className="hero-col-product">{r.product}</td>
-                      <td className="n">${r.amount}</td>
+                      <td className="n">${r.amount.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>

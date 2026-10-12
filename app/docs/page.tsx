@@ -19,7 +19,7 @@ const quickstart = [
   {
     n: "01",
     title: "Install",
-    body: "Add RevenueSheet from the Workspace Marketplace (or join the launch list until listing day).",
+    body: "Join the launch list until listing day, then add RevenueSheet from the Workspace Marketplace.",
     href: "/#launch",
   },
   {

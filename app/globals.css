@@ -930,9 +930,10 @@ tr.reveal.reveal-rise {
   display: inline-flex;
   align-items: flex-start;
   user-select: none;
-  /* Extra lead so digit strips do not clip glyph tops. */
-  --digit-h: 1.12em;
+  /* Integer px slot so translateY never lands on a half-glyph (esp. 375). */
+  --digit-h: 40px;
   line-height: var(--digit-h);
+  height: var(--digit-h);
 }
 
 .hero-mrr-num .d {
@@ -944,6 +945,8 @@ tr.reveal.reveal-rise {
   vertical-align: top;
   font-variant-numeric: tabular-nums;
   text-align: center;
+  /* Isolate each strip so subpixel compositing cannot bleed half digits. */
+  contain: strict;
 }
 
 .hero-mrr-num .d-strip {
@@ -961,6 +964,7 @@ tr.reveal.reveal-rise {
   height: var(--digit-h);
   line-height: var(--digit-h);
   font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 .hero-mrr-num .s {
@@ -1040,7 +1044,8 @@ tr.reveal.reveal-rise {
 
 .hero-sheet thead tr {
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 0.9fr) minmax(0, 1.35fr) 4.5rem;
+  /* Amount col fits $150.00 (7ch mono) without clipping at 375/1280. */
+  grid-template-columns: 5.5rem minmax(0, 0.85fr) minmax(0, 1.25fr) 5.75rem;
   height: 30px;
   background: var(--c-surface-2);
   border-bottom: 1px solid var(--c-border);
@@ -1071,7 +1076,9 @@ tr.reveal.reveal-rise {
   width: 100%;
 }
 
+/* Ghost overlay only — not a live .hero-rows layer (avoids 18-row DOM counts). */
 .hero-sheet tbody.hero-rows-ghost {
+  display: block;
   position: absolute;
   left: 0;
   right: 0;
@@ -1082,6 +1089,20 @@ tr.reveal.reveal-rise {
   animation: hero-ghost-out 360ms var(--ease-standard) forwards;
   pointer-events: none;
   z-index: 2;
+}
+
+.hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 0.85fr) minmax(0, 1.25fr) 5.75rem;
+  height: 36px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
+  box-sizing: border-box;
+  transform: translateY(calc(var(--i, 0) * 36px));
+  background: var(--c-surface);
 }
 
 /* Live layer fades in under the ghost so both are never at full opacity. */
@@ -1109,7 +1130,7 @@ tr.reveal.reveal-rise {
 
 .hero-sheet tbody tr {
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 0.9fr) minmax(0, 1.35fr) 4.5rem;
+  grid-template-columns: 5.5rem minmax(0, 0.85fr) minmax(0, 1.25fr) 5.75rem;
   height: 36px;
   position: absolute;
   left: 0;
@@ -1150,8 +1171,10 @@ tr.reveal.reveal-rise {
   text-align: right;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  overflow: visible;
+  /* Stay inside the amount track; tbody overflow:hidden would clip overflow:visible. */
+  overflow: hidden;
   text-overflow: clip;
+  padding-left: var(--space-2);
 }
 
 .hero-sheet td.hero-col-product {
@@ -1298,12 +1321,18 @@ tr.reveal.reveal-rise {
   }
 
   .hero-sheet thead tr,
-  .hero-sheet tbody tr {
-    grid-template-columns: 5.5rem minmax(0, 1fr) 4.5rem;
+  .hero-sheet tbody tr,
+  .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
+    grid-template-columns: 5.5rem minmax(0, 1fr) 5.75rem;
   }
 
   .hero-mrr {
     padding-right: 0;
+  }
+
+  .hero-mrr-num {
+    /* Keep integer slot height when KPI size is unchanged on phone. */
+    --digit-h: 40px;
   }
 
   .hero-mrr-num .d-strip {

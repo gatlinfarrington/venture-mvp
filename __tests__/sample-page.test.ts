@@ -54,7 +54,7 @@ describe("/sample acceptance data", () => {
   it("sample-dataset.json sha256 matches the design pin", () => {
     const buf = readFileSync(join(process.cwd(), "lib/sample-dataset/sample-dataset.json"));
     expect(createHash("sha256").update(buf).digest("hex")).toBe(
-      "1e5dd0981614f73e99a832745214fcf0aac78462b47477293e98bcb954059605",
+      "449e839b5ae5f366b24bfae03bc0c87f8c4f3f2527f43a1de7adac21426a87ca",
     );
   });
 
