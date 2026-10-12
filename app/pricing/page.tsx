@@ -58,7 +58,7 @@ function billingFaq(): Array<{ q: string; a: ReactNode }> {
         }
       : {
           q: "When do paid plans open?",
-          a: "With the Google Workspace Marketplace listing (the add-on is pending Google review). Until then, join the launch list from any Join the launch list button. Free stays available to try.",
+          a: "With the Google Workspace Marketplace listing (the add-on is pending Google review). Until then, join the launch list from any Join the launch list button for install updates.",
         },
     {
       q: "How does billing work?",

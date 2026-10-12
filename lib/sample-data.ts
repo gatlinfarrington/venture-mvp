@@ -60,62 +60,97 @@ const PRODUCTS = [
 ] as const;
 const COUNTRIES = ["US", "GB", "DE", "CA", "AU", "NL", "FR", "SE"] as const;
 
-/**
- * Shared example order content for the hero table and /sample Orders tab.
- * /sample assigns IDs from EX-10456 downward; hero from EX-10457 downward.
- */
-export type ExampleOrderSpec = {
+type OrderSeed = {
   source: (typeof SOURCES)[number];
   product: (typeof PRODUCTS)[number];
   amount: number;
 };
 
-export const EXAMPLE_ORDER_SPECS: ExampleOrderSpec[] = (() => {
-  const firstNine: ExampleOrderSpec[] = [
-    { source: "Lemon Squeezy", product: "Sample Icon Pack", amount: 12 },
-    { source: "Gumroad", product: "Demo SaaS · Pro", amount: 19 },
-    { source: "Polar", product: "Demo SaaS · Team", amount: 29 },
-    { source: "Stripe", product: "Template Kit", amount: 9 },
-    { source: "Lemon Squeezy", product: "Example Course", amount: 49 },
-    { source: "Gumroad", product: "Sample Icon Pack", amount: 12 },
-    { source: "Polar", product: "Demo SaaS · Pro", amount: 29 },
-    { source: "Stripe", product: "Demo SaaS · Team", amount: 79 },
-    { source: "Lemon Squeezy", product: "Template Kit", amount: 19 },
-  ];
-  const rows: ExampleOrderSpec[] = [...firstNine];
-  for (let i = firstNine.length; i < 24; i++) {
-    rows.push({
-      source: SOURCES[i % SOURCES.length]!,
-      product: PRODUCTS[i % PRODUCTS.length]!,
-      amount: [29, 19, 12, 49, 9, 79][i % 6]!,
-    });
+/**
+ * 14 landings in time order (first → last). Amounts sum to 251 → +6% on $4,180.
+ * Stored in ORDERS[13]…ORDERS[0] so HERO_LANDINGS = ORDERS.slice(0,14).reverse().
+ */
+const LANDING_SEEDS: OrderSeed[] = [
+  { source: "Lemon Squeezy", product: "Demo SaaS · Pro", amount: 29 },
+  { source: "Polar", product: "Example Course", amount: 19 },
+  { source: "Gumroad", product: "Sample Icon Pack", amount: 12 },
+  { source: "Stripe", product: "Demo SaaS · Team", amount: 9 },
+  { source: "Polar", product: "Template Kit", amount: 29 },
+  { source: "Gumroad", product: "Demo SaaS · Pro", amount: 19 },
+  { source: "Lemon Squeezy", product: "Sample Icon Pack", amount: 12 },
+  { source: "Stripe", product: "Example Course", amount: 9 },
+  { source: "Gumroad", product: "Demo SaaS · Team", amount: 29 },
+  { source: "Lemon Squeezy", product: "Template Kit", amount: 19 },
+  { source: "Polar", product: "Sample Icon Pack", amount: 12 },
+  { source: "Stripe", product: "Demo SaaS · Pro", amount: 9 },
+  { source: "Lemon Squeezy", product: "Example Course", amount: 29 },
+  { source: "Polar", product: "Demo SaaS · Team", amount: 15 },
+];
+
+/** 9 seed rows + 1 older filler for the 24-order continuum. */
+const SEED_AND_TAIL: OrderSeed[] = [
+  { source: "Lemon Squeezy", product: "Sample Icon Pack", amount: 12 },
+  { source: "Gumroad", product: "Demo SaaS · Pro", amount: 19 },
+  { source: "Polar", product: "Demo SaaS · Team", amount: 29 },
+  { source: "Stripe", product: "Template Kit", amount: 9 },
+  { source: "Lemon Squeezy", product: "Example Course", amount: 49 },
+  { source: "Gumroad", product: "Sample Icon Pack", amount: 12 },
+  { source: "Polar", product: "Demo SaaS · Pro", amount: 29 },
+  { source: "Stripe", product: "Demo SaaS · Team", amount: 79 },
+  { source: "Lemon Squeezy", product: "Template Kit", amount: 19 },
+  { source: "Gumroad", product: "Example Course", amount: 49 },
+];
+
+function orderFromSeed(seed: OrderSeed, idNum: number, i: number): SampleOrder {
+  const day = 9 - Math.floor(i / 3);
+  const hour = 16 - (i % 8);
+  const min = (i * 7) % 60;
+  return {
+    id: `EX-${idNum}`,
+    created: `2026-10-${String(Math.max(1, day)).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`,
+    source: seed.source,
+    product: seed.product,
+    email: `customer${100 + i}@example.com`,
+    amount: seed.amount,
+    status: (i === 11 || i === 19 ? "refunded" : "paid") as SampleOrder["status"],
+    country: COUNTRIES[i % COUNTRIES.length]!,
+  };
+}
+
+/**
+ * One shared continuum: EX-10470…EX-10447 (24 unique IDs).
+ * - HERO_SEED = ORDERS.slice(14, 23) → EX-10456…EX-10448
+ * - HERO_LANDINGS = ORDERS.slice(0, 14).reverse() → EX-10457…EX-10470 in time order
+ * - Final hero = ORDERS.slice(0, 9) → EX-10470…EX-10462
+ * - /sample Orders = ORDERS in full
+ */
+export const ORDERS: SampleOrder[] = (() => {
+  const seeds: OrderSeed[] = [];
+  // Indices 0..13: reverse of landings (newest first in the array).
+  for (let i = LANDING_SEEDS.length - 1; i >= 0; i--) {
+    seeds.push(LANDING_SEEDS[i]!);
   }
-  return rows;
+  // Indices 14..23: seed rows + one older tail.
+  for (const s of SEED_AND_TAIL) seeds.push(s);
+  return seeds.map((seed, i) => orderFromSeed(seed, 10470 - i, i));
 })();
 
-function buildOrders(startId: number): SampleOrder[] {
-  return EXAMPLE_ORDER_SPECS.map((seed, i) => {
-    const day = 9 - Math.floor(i / 3);
-    const hour = 16 - (i % 8);
-    const min = (i * 7) % 60;
-    return {
-      id: `EX-${startId - i}`,
-      created: `2026-10-${String(Math.max(1, day)).padStart(2, "0")} ${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`,
-      source: seed.source,
-      product: seed.product,
-      email: `customer${100 + i}@example.com`,
-      amount: seed.amount,
-      status: (i === 11 || i === 19 ? "refunded" : "paid") as SampleOrder["status"],
-      country: COUNTRIES[i % COUNTRIES.length]!,
-    };
-  });
-}
+export const HERO_SEED = ORDERS.slice(14, 23);
+export const HERO_LANDINGS = ORDERS.slice(0, 14).reverse();
+export const HERO_FINAL = ORDERS.slice(0, 9);
+
+/** @deprecated Prefer HERO_FINAL; kept for any lingering imports. */
+export const HERO_ORDERS = HERO_FINAL;
+
+export const SAMPLE_ORDERS = ORDERS;
+
+export const LANDING_TOTAL = HERO_LANDINGS.reduce((s, o) => s + o.amount, 0);
 
 function buildSubs(): SampleSub[] {
   const rows: SampleSub[] = [];
   for (let i = 0; i < 24; i++) {
     const id = `EXS-${2241 - i}`;
-    const source = SOURCES[i % 3]!; // Polar / LS / Gumroad heavy
+    const source = SOURCES[i % 3]!;
     const product = PRODUCTS[i % PRODUCTS.length]!;
     const mrr = [29, 79, 19, 49, 12][i % 5]!;
     const canceled = i % 9 === 0;
@@ -137,18 +172,19 @@ function buildSubs(): SampleSub[] {
   return rows;
 }
 
-/** /sample Orders tab - IDs EX-10456 downward. */
-export const SAMPLE_ORDERS = buildOrders(10456);
-/** Hero table final rows - same content, IDs EX-10457 downward. */
-export const HERO_ORDERS = buildOrders(10457).slice(0, 9);
 export const SAMPLE_SUBS = buildSubs();
+
+const SAMPLE_PAID_NET = SAMPLE_ORDERS.filter((o) => o.status === "paid").reduce(
+  (sum, o) => sum + o.amount,
+  0,
+);
 
 export const DASHBOARD = {
   /** Oct stacked MRR ($11,700); MoM vs Sep ($11,500) = +1.7%. */
   mrr: "$11.7k",
   mrrDelta: "▲ 1.7% MoM",
   /** Sum of paid Orders tab amounts in the example set. */
-  netRevenue: "$690",
+  netRevenue: `$${SAMPLE_PAID_NET.toLocaleString("en-US")}`,
   netDelta: "-",
   activeSubs: "342",
   activeDelta: "▲ 24 net new",

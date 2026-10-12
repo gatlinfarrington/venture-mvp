@@ -270,7 +270,7 @@ export function Comparison() {
             </thead>
             <tbody>
               {rows.map((r, i) => (
-                <Reveal as="tr" key={r.feature} className="reveal-rise" delay={i * 40}>
+                <Reveal as="tr" key={r.feature} className="reveal-rise" delay={i * 80}>
                   <td>{r.feature}</td>
                   <td
                     data-label={brand.name}
@@ -320,7 +320,7 @@ export function FAQ() {
     },
     {
       q: "How do I cancel?",
-      a: "Open the Stripe customer portal from your receipt email. Your license stays active through the period you already paid for. When that period ends, paid features turn off and Free limits apply if you keep the add-on installed. Your sheet data stays.",
+      a: "Once paid plans open, open the Stripe customer portal from your receipt email. Your license stays active through the period you already paid for. When that period ends, paid features turn off and Free limits apply if you keep the add-on installed. Your sheet data stays.",
     },
   ];
 
