@@ -70,7 +70,7 @@ export const pricing = {
     tier: "pro" as const,
     name: "Pro",
     monthly: 9,
-    /** Annual = 10× monthly (2 months free). Catalog only; UI is monthly. */
+    /** Stripe catalog amount (10× monthly). Not shown on /pricing; UI is monthly only. */
     annual: 90,
     sources: 4,
     refresh: "Hourly, every 6 hours, daily or weekly",
@@ -87,6 +87,7 @@ export const pricing = {
     tier: "business" as const,
     name: "Business",
     monthly: 19,
+    /** Stripe catalog amount (10× monthly). Not shown on /pricing; UI is monthly only. */
     annual: 190,
     sources: 4,
     /** Same allowSchedule / cadence options as Pro (hourly, 6h, daily, weekly). */

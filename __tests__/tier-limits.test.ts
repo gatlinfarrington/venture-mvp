@@ -26,7 +26,7 @@ describe("tierLimits", () => {
 });
 
 describe("pricing", () => {
-  it("annual plans equal ten months (two months free)", () => {
+  it("annual catalog amounts equal ten months of monthly (not advertised on /pricing)", () => {
     expect(pricing.pro.annual).toBe(pricing.pro.monthly * 10);
     expect(pricing.business.annual).toBe(pricing.business.monthly * 10);
   });
