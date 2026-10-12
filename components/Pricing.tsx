@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { InstallCta } from "@/components/InstallCta";
 import { Reveal } from "@/components/Reveal";
 import { REFUND_LINE } from "@/lib/copy";
@@ -66,6 +66,85 @@ export function Pricing({ variant = "section" }: Props) {
     }
   }
 
+  const cards = plans.map((plan, i) => {
+    const amount = plan.tier === "free" ? 0 : plan.monthly;
+    const featured = plan.tier === "pro";
+    const btnClass = featured ? "btn btn-primary" : "btn btn-secondary";
+    const lead = "lead" in plan ? plan.lead : null;
+    const cardClass = `price-card${featured ? " is-featured" : ""}${
+      variant === "section" ? " reveal-rise" : ""
+    }`;
+    const body: ReactNode = (
+      <>
+        <div className="price-card-top">
+          <p className="eyebrow">
+            {plan.name}
+            {featured ? <span className="price-badge mono">Recommended</span> : null}
+          </p>
+          <p className="price-amount">
+            ${amount}
+            <span>{plan.tier === "free" ? " forever" : "/mo"}</span>
+          </p>
+        </div>
+        {lead ? (
+          <div className="price-pro-lead">
+            <p className="price-pro-lead-text">{lead}</p>
+          </div>
+        ) : null}
+        <ul className={`price-features${lead ? " has-lead" : ""}`}>
+          {plan.features.map((f) => (
+            <li key={f}>{f}</li>
+          ))}
+        </ul>
+        {plan.tier === "free" ? (
+          <div className="price-cta-stack">
+            <InstallCta className={btnClass} source="pricing-free" launchHref={launchHref}>
+              {listing ? "Install free" : "Join the launch list"}
+            </InstallCta>
+            <Link className="btn btn-secondary" href="/sample">
+              See a sample sheet
+            </Link>
+          </div>
+        ) : paidCheckoutReady ? (
+          <div className="price-cta-stack">
+            <button
+              type="button"
+              className={btnClass}
+              disabled={pendingTier === plan.tier}
+              onClick={() => startCheckout(plan.tier, interval)}
+            >
+              {pendingTier === plan.tier ? "Opening…" : `Get ${plan.name}`}
+            </button>
+            <p className="price-cta-caption mono muted">{REFUND_LINE}</p>
+          </div>
+        ) : (
+          <div className="price-cta-stack">
+            <InstallCta
+              className={btnClass}
+              source={`pricing-${plan.tier}`}
+              launchHref={launchHref}
+            >
+              Join the launch list
+            </InstallCta>
+          </div>
+        )}
+      </>
+    );
+    return (
+      <div
+        key={plan.tier}
+        className={cardClass}
+        style={
+          variant === "section"
+            ? { transitionDelay: `${Math.min(i, 2) * 80}ms` }
+            : undefined
+        }
+      >
+        {body}
+      </div>
+    );
+  });
+
   return (
     <section id="pricing" className={`section${variant === "page" ? " pricing-section-page" : ""}`}>
       <div className="container">
@@ -81,91 +160,13 @@ export function Pricing({ variant = "section" }: Props) {
           </Reveal>
         )}
 
-        <div className="pricing-grid">
-          {plans.map((plan, i) => {
-            const amount = plan.tier === "free" ? 0 : plan.monthly;
-            const featured = plan.tier === "pro";
-            const btnClass = featured ? "btn btn-primary" : "btn btn-secondary";
-            const cardClass = `price-card${featured ? " is-featured" : ""}`;
-            const lead = "lead" in plan ? plan.lead : null;
-            const body = (
-              <>
-                <div className="price-card-top">
-                  <p className="eyebrow">
-                    {plan.name}
-                    {featured ? <span className="price-badge mono">Recommended</span> : null}
-                  </p>
-                  <p className="price-amount">
-                    ${amount}
-                    <span>{plan.tier === "free" ? " forever" : "/mo"}</span>
-                  </p>
-                </div>
-                {lead ? (
-                  <div className="price-pro-lead">
-                    <p className="price-pro-lead-text">{lead}</p>
-                  </div>
-                ) : null}
-                <ul className={`price-features${lead ? " has-lead" : ""}`}>
-                  {plan.features.map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
-                </ul>
-                {plan.tier === "free" ? (
-                  <div className="price-cta-stack">
-                    <InstallCta
-                      className={btnClass}
-                      source="pricing-free"
-                      launchHref={launchHref}
-                    >
-                      {listing ? "Install free" : "Join the launch list"}
-                    </InstallCta>
-                    <Link className="btn btn-secondary" href="/sample">
-                      See a sample sheet
-                    </Link>
-                  </div>
-                ) : paidCheckoutReady ? (
-                  <div className="price-cta-stack">
-                    <button
-                      type="button"
-                      className={btnClass}
-                      disabled={pendingTier === plan.tier}
-                      onClick={() => startCheckout(plan.tier, interval)}
-                    >
-                      {pendingTier === plan.tier ? "Opening…" : `Get ${plan.name}`}
-                    </button>
-                    <p className="price-cta-caption mono muted">{REFUND_LINE}</p>
-                  </div>
-                ) : (
-                  <div className="price-cta-stack">
-                    <InstallCta
-                      className={btnClass}
-                      source={`pricing-${plan.tier}`}
-                      launchHref={launchHref}
-                    >
-                      Join the launch list
-                    </InstallCta>
-                  </div>
-                )}
-              </>
-            );
-            if (variant === "page") {
-              return (
-                <div key={plan.tier} className={cardClass}>
-                  {body}
-                </div>
-              );
-            }
-            return (
-              <Reveal
-                key={plan.tier}
-                className={`${cardClass} reveal-rise`}
-                delay={Math.min(i, 2) * 80}
-              >
-                {body}
-              </Reveal>
-            );
-          })}
-        </div>
+        {variant === "page" ? (
+          <div className="pricing-grid">{cards}</div>
+        ) : (
+          <Reveal className="pricing-grid-reveal">
+            <div className="pricing-grid">{cards}</div>
+          </Reveal>
+        )}
         <p className="pricing-shared-note muted">
           Every plan includes the help docs and the support form.
         </p>
