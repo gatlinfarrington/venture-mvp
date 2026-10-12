@@ -124,6 +124,11 @@ export interface ImportResult {
   totalCount?: number;
   /** Non-fatal problems (e.g. one Stripe resource not permitted); sync continues. */
   warnings?: string[];
+  /**
+   * True when bundle.subscriptions is the complete current list of *active* subscriptions
+   * (Gumroad): rows previously stored for this store that are missing get marked cancelled.
+   */
+  subscriptionsSnapshot?: boolean;
 }
 
 export interface Importer {

@@ -1,3 +1,4 @@
+import { toMajor } from "../lib/money";
 import { deadlinePassed } from "../lib/deadline";
 import { buildQuery } from "../lib/query";
 import { CONFIG } from "../lib/config";
@@ -27,15 +28,9 @@ interface StripeList {
   has_more?: boolean;
 }
 
-const ZERO_DECIMAL = new Set([
-  "bif", "clp", "djf", "gnf", "jpy", "kmf", "krw", "mga", "pyg", "rwf", "ugx", "vnd", "vuv", "xaf", "xof", "xpf",
-]);
-
 /** Stripe amounts are in the smallest unit; zero-decimal currencies (JPY, KRW, …) are already whole units. */
 export function stripeToMajor(amount: unknown, currency: unknown): number {
-  const n = Number(amount);
-  if (!Number.isFinite(n)) return 0;
-  return ZERO_DECIMAL.has(String(currency || "usd").toLowerCase()) ? n : Math.round(n) / 100;
+  return toMajor(amount, currency);
 }
 
 /** Product id → name, filled from /v1/products when the key can read Products. */

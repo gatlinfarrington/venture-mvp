@@ -23,7 +23,9 @@ export function resolveFetchCursor(
         pageToken: stored.pageToken,
         resource: stored.resource,
         backfillComplete: false,
-        // Do not pass lastSyncedAt during resume — backfill must walk all pages.
+        // Keep the incremental watermark (if this was an incremental run) so importers
+        // that stop at a look-back window keep doing so after a resume.
+        ...(stored.lastSyncedAt ? { lastSyncedAt: stored.lastSyncedAt } : {}),
       },
       mode: "backfill",
     };

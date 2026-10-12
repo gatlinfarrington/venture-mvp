@@ -22,8 +22,10 @@ import {
   type SheetsAddonEvent,
 } from "./lib/fileScope";
 import { mapCsvToBundle } from "./importers/csv";
-import { checkLicenseSync } from "./lib/license";
+import { checkLicenseSync, type LicenseStatus } from "./lib/license";
+import { accountEditorCard, accountsSection, newAccountId, sourceLabel } from "./ui/accountsCard";
 import {
+  clearSyncCursor,
   getAllSettingsForSidebar,
   getConnectedSources,
   getCsvColumnMap,
@@ -65,7 +67,7 @@ import {
   runSync,
 } from "./sync";
 import { buildDashboard } from "./sheets/dashboard";
-import { readOrders, readRefunds, readSubscriptions, writeImportBundle } from "./sheets/dataTabs";
+import { deleteAccountRows, readOrders, readRefunds, readSubscriptions, relabelAccountRows, writeImportBundle } from "./sheets/dataTabs";
 
 /** Card: ask for per-file `drive.file` — no SpreadsheetApp. */
 function requestFileScopeCard(): GoogleAppsScript.Card_Service.Card {
@@ -113,58 +115,71 @@ function readyHomepageCard(notice?: string): GoogleAppsScript.Card_Service.Card 
           ? `Last sync: ${String(settings.lastSyncAt)}`
           : "Not synced yet.";
 
+  let license: LicenseStatus | null = null;
+  try {
+    license = checkLicenseSync();
+  } catch {
+    /* offline: treat as free */
+  }
+  const lic = license || { maxStores: 1, maxSources: 1, tier: "free" };
+
   const card = CardService.newCardBuilder().setHeader(
     CardService.newCardHeader().setTitle(BRAND.name).setSubtitle(BRAND.pitch),
   );
   if (notice) {
-    card.addSection(CardService.newCardSection().addWidget(CardService.newTextParagraph().setText(notice)));
+    card.addSection(CardService.newCardSection().addWidget(CardService.newTextParagraph().setText(escapeCardText(notice))));
   }
   card.addSection(
     CardService.newCardSection()
-      .setHeader("Connect")
-      .addWidget(input("licenseKey", "License key", masked(settings.licenseKey) || "From your purchase email"))
-      .addWidget(input("lemonSqueezy", "Lemon Squeezy API key", masked(settings.lemonSqueezy)))
-      .addWidget(input("polar", "Polar access token", masked(settings.polar)))
-      .addWidget(input("gumroad", "Gumroad access token", masked(settings.gumroad)))
-      .addWidget(input("stripe", "Stripe restricted key (rk_...)", masked(settings.stripe)))
-      .addWidget(input("currency", "Display currency", "e.g. USD", String(settings.currency || "USD")))
-      .addWidget(input("mrrGoal", "MRR goal (optional)", "e.g. 5000", String(settings.mrrGoal || "")))
-      .addWidget(
-        CardService.newTextButton()
-          .setText("Save")
-          .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-          .setOnClickAction(CardService.newAction().setFunctionName("cardSave")),
-      ),
-  );
-  card.addSection(
-    CardService.newCardSection()
       .setHeader("Sync")
-      .addWidget(CardService.newTextParagraph().setText(lastSync))
+      .addWidget(CardService.newDecoratedText().setText(lastSync).setWrapText(true))
       .addWidget(
         CardService.newButtonSet()
           .addButton(
             CardService.newTextButton()
-              .setText("Sync now")
+              .setText(bg?.state === "running" ? "Continue sync" : "Sync now")
               .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
               .setOnClickAction(CardService.newAction().setFunctionName("cardSync")),
           )
           .addButton(
             CardService.newTextButton()
-              .setText(bg?.state === "running" ? "Continue sync" : "Refresh")
-              .setOnClickAction(
-                CardService.newAction().setFunctionName(bg?.state === "running" ? "cardSync" : "cardRefresh"),
-              ),
+              .setText("Refresh")
+              .setOnClickAction(CardService.newAction().setFunctionName("cardRefresh")),
+          ),
+      ),
+  );
+  card.addSection(accountsSection(getStoresBySource(), lic as LicenseStatus));
+  card.addSection(
+    CardService.newCardSection()
+      .setHeader("Settings")
+      .setCollapsible(true)
+      .setNumUncollapsibleWidgets(0)
+      .addWidget(input("licenseKey", "License key", masked(settings.licenseKey) || "From your purchase email"))
+      .addWidget(input("currency", "Display currency", "e.g. USD", String(settings.currency || "USD")))
+      .addWidget(input("mrrGoal", "MRR goal (optional)", "e.g. 5000", String(settings.mrrGoal || "")))
+      .addWidget(
+        CardService.newDecoratedText()
+          .setTopLabel("Plan")
+          .setText(planLine(lic as LicenseStatus))
+          .setWrapText(true),
+      )
+      .addWidget(
+        CardService.newButtonSet()
+          .addButton(
+            CardService.newTextButton()
+              .setText("Save settings")
+              .setOnClickAction(CardService.newAction().setFunctionName("cardSave")),
           )
           .addButton(
             CardService.newTextButton()
               .setText("Load demo data")
               .setOnClickAction(CardService.newAction().setFunctionName("cardDemo")),
+          )
+          .addButton(
+            CardService.newTextButton()
+              .setText("More settings")
+              .setOnClickAction(CardService.newAction().setFunctionName("showSidebar")),
           ),
-      )
-      .addWidget(
-        CardService.newTextButton()
-          .setText("Advanced settings (sidebar)")
-          .setOnClickAction(CardService.newAction().setFunctionName("showSidebar")),
       ),
   );
   return card.build();
@@ -202,10 +217,6 @@ function cardSave(e: CardEvent): GoogleAppsScript.Card_Service.ActionResponse {
   try {
     const msg = sidebarSaveSettings({
       licenseKey: formValue(e, "licenseKey"),
-      lemonSqueezy: formValue(e, "lemonSqueezy"),
-      polar: formValue(e, "polar"),
-      gumroad: formValue(e, "gumroad"),
-      stripe: formValue(e, "stripe"),
       currency: formValue(e, "currency") || undefined,
       mrrGoal: formValue(e, "mrrGoal"),
     });
@@ -216,10 +227,120 @@ function cardSave(e: CardEvent): GoogleAppsScript.Card_Service.ActionResponse {
   }
 }
 
+function planLine(l: LicenseStatus): string {
+  const tier = String(l.tier || "free");
+  const name = tier.charAt(0).toUpperCase() + tier.slice(1);
+  const stores = l.maxStores > 1 ? `up to ${l.maxStores} accounts per provider` : "1 account per provider";
+  return `${name} · ${l.maxSources} provider${l.maxSources === 1 ? "" : "s"} · ${stores}`;
+}
+
+function escapeCardText(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+type ParamEvent = CardEvent & { parameters?: Record<string, string>; commonEventObject?: { parameters?: Record<string, string> } };
+
+function params(e: ParamEvent): Record<string, string> {
+  return { ...(e?.commonEventObject?.parameters || {}), ...(e?.parameters || {}) };
+}
+
+function pushCard(card: GoogleAppsScript.Card_Service.Card): GoogleAppsScript.Card_Service.ActionResponse {
+  return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().pushCard(card)).build();
+}
+
+function backHome(message: string): GoogleAppsScript.Card_Service.ActionResponse {
+  return CardService.newActionResponseBuilder()
+    .setNotification(CardService.newNotification().setText(message.slice(0, 250)))
+    .setNavigation(CardService.newNavigation().popToRoot().updateCard(readyHomepageCard(message)))
+    .build();
+}
+
+function planNoteFor(source: SourceId | "", adding: boolean): string | undefined {
+  try {
+    const lic = checkLicenseSync();
+    const stores = getStoresBySource();
+    if (adding && source && (stores[source] || []).length >= lic.maxStores) {
+      return `Your plan syncs ${lic.maxStores} ${sourceLabel(source)} account${lic.maxStores === 1 ? "" : "s"}. Extra accounts are saved but won't sync until you upgrade to Business (up to 20 per provider).`;
+    }
+    const connected = getConnectedSources();
+    if (adding && source && !connected.includes(source) && connected.length >= lic.maxSources) {
+      return `Your plan includes ${lic.maxSources} provider${lic.maxSources === 1 ? "" : "s"}. Upgrade to Pro to sync Stripe, Lemon Squeezy, Polar and Gumroad together.`;
+    }
+  } catch {
+    /* license check offline */
+  }
+  return undefined;
+}
+
+function cardEditAccount(e: ParamEvent): GoogleAppsScript.Card_Service.ActionResponse {
+  const p = params(e);
+  const source = (p.source || "") as SourceId | "";
+  const store = source && p.id ? (getStoresBySource()[source] || []).find((s) => s.id === p.id) : undefined;
+  return pushCard(accountEditorCard(source || "stripe", store, { planNote: planNoteFor(source || "stripe", !store) }));
+}
+
+function cardPickSource(e: ParamEvent): GoogleAppsScript.Card_Service.ActionResponse {
+  const source = (formValue(e, "source") || "stripe") as SourceId;
+  return CardService.newActionResponseBuilder()
+    .setNavigation(CardService.newNavigation().updateCard(accountEditorCard(source, undefined, { planNote: planNoteFor(source, true) })))
+    .build();
+}
+
+function cardBack(): GoogleAppsScript.Card_Service.ActionResponse {
+  return CardService.newActionResponseBuilder().setNavigation(CardService.newNavigation().popCard()).build();
+}
+
+function cardSaveAccount(e: ParamEvent): GoogleAppsScript.Card_Service.ActionResponse {
+  try {
+    const p = params(e);
+    const source = (p.source || formValue(e, "source") || "") as SourceId;
+    if (!SOURCES.some((s) => s.id === source)) return cardResponse("Pick a provider.");
+    const current = getStoresBySource()[source] || [];
+    const existing = p.id ? current.find((s) => s.id === p.id) : undefined;
+    const label = formValue(e, "label") || existing?.label || `${sourceLabel(source)}${current.length ? ` ${current.length + 1}` : ""}`;
+    const apiKey = formValue(e, "apiKey");
+    if (!existing && !apiKey) return cardResponse("Paste the API key or token to connect.");
+    if (current.some((s) => s.id !== existing?.id && s.label.toLowerCase() === label.toLowerCase())) {
+      return cardResponse(`You already have a ${sourceLabel(source)} account named “${label}”. Pick a different name.`);
+    }
+    const id = existing?.id || newAccountId(current, label);
+    setStoresForSource(source, upsertStoresForSource(current, [{ id, label, apiKey: apiKey || "" }]));
+    if (existing && existing.label !== label && canAccessActiveSpreadsheet()) {
+      relabelAccountRows(SpreadsheetApp.getActive(), source, existing.label, label);
+    }
+    if (existing && apiKey && apiKey !== existing.apiKey) clearSyncCursor(source, id); // new key → fresh backfill
+    const note = planNoteFor(source, false);
+    return backHome(
+      `${existing ? "Saved" : "Connected"} ${sourceLabel(source)} · ${label}.${existing ? "" : " Click Sync now to import."}${note ? ` ${note}` : ""}`,
+    );
+  } catch (err) {
+    console.error("cardSaveAccount failed", err);
+    return cardResponse(`Couldn't save account: ${errText(err)}`);
+  }
+}
+
+function cardRemoveAccount(e: ParamEvent): GoogleAppsScript.Card_Service.ActionResponse {
+  try {
+    const p = params(e);
+    const source = p.source as SourceId;
+    const current = getStoresBySource()[source] || [];
+    const store = current.find((s) => s.id === p.id);
+    if (!store) return backHome("Account already removed.");
+    setStoresForSource(source, current.filter((s) => s.id !== store.id));
+    clearSyncCursor(source, store.id);
+    let removed = 0;
+    if (canAccessActiveSpreadsheet()) removed = deleteAccountRows(SpreadsheetApp.getActive(), source, store.label);
+    return backHome(`Removed ${sourceLabel(source)} · ${store.label}${removed ? ` and ${removed} rows` : ""}. Sync to refresh the dashboard.`);
+  } catch (err) {
+    console.error("cardRemoveAccount failed", err);
+    return cardResponse(`Couldn't remove account: ${errText(err)}`);
+  }
+}
+
 function cardSync(e: CardEvent): GoogleAppsScript.Card_Service.ActionResponse {
   try {
     // Save anything typed into the form first so "Save" isn't a required extra click.
-    const typed = ["licenseKey", "lemonSqueezy", "polar", "gumroad", "stripe"].some((n) => formValue(e, n));
+    const typed = ["licenseKey", "mrrGoal"].some((n) => formValue(e, n));
     if (typed) cardSave(e);
     if (!canAccessActiveSpreadsheet()) {
       return cardResponse("Allow access to this spreadsheet from the RevenueSheet card first.");
@@ -556,6 +677,11 @@ g.cardSave = cardSave;
 g.cardSync = cardSync;
 g.cardDemo = cardDemo;
 g.cardRefresh = cardRefresh;
+g.cardEditAccount = cardEditAccount;
+g.cardPickSource = cardPickSource;
+g.cardBack = cardBack;
+g.cardSaveAccount = cardSaveAccount;
+g.cardRemoveAccount = cardRemoveAccount;
 g.continueSyncInBackground = continueSyncInBackground;
 g.menuSync = menuSync;
 g.menuBackfill = menuBackfill;

@@ -30,7 +30,7 @@ import { fetchGumroadResultSync } from "./importers/gumroad";
 import { fetchLemonSqueezyResultSync } from "./importers/lemonSqueezy";
 import { fetchPolarResultSync } from "./importers/polar";
 import { fetchStripeResultSync } from "./importers/stripe";
-import type { ImportBundle, ImportResult, SyncCursor } from "./importers/types";
+import type { ImportBundle, ImportResult, NormalizedSubscription, SyncCursor } from "./importers/types";
 import { buildSampleBundle } from "./demo/sampleData";
 import { computeMrr } from "./metrics/mrr";
 import { buildDashboard } from "./sheets/dashboard";
@@ -178,6 +178,7 @@ export function runSync(
   const totalKnownBySource: Partial<Record<SourceId, number>> = {};
   let resuming = false;
   const syncedStoreLabels: string[] = [];
+  let existingSubs: NormalizedSubscription[] | null = null;
 
   for (const { source, store } of storeLimit.allowed) {
     if (deadlinePassed()) {
@@ -192,6 +193,10 @@ export function runSync(
       const { cursor } = resolveFetchCursor(stored, !!opts.full);
       const result = fetchSourceResult(source, store.apiKey, cursor);
       const tagged = tagBundleWithStore(result.bundle, store);
+      if (result.subscriptionsSnapshot) {
+        existingSubs ||= readSubscriptions(ss);
+        tagged.subscriptions.push(...vanishedSubscriptions(existingSubs, tagged.subscriptions, source, store.label));
+      }
       bundle = mergeBundles(bundle, tagged);
       setSyncCursor(source, result.cursor, store.id);
       for (const w of result.warnings || []) {
@@ -299,6 +304,28 @@ export function runSync(
         : `Synced ${syncedStoreLabels.join(", ") || "no stores"}.`,
     sources: sourcesSynced,
   };
+}
+
+/**
+ * For snapshot providers (Gumroad lists only live subscriptions): rows we stored earlier
+ * for this account that are no longer in the list ended since the last sync → mark cancelled.
+ */
+export function vanishedSubscriptions(
+  existing: NormalizedSubscription[],
+  current: NormalizedSubscription[],
+  source: string,
+  accountLabel: string,
+  now: Date = new Date(),
+): NormalizedSubscription[] {
+  const live = new Set(current.map((s) => s.id));
+  const out: NormalizedSubscription[] = [];
+  for (const s of existing) {
+    if (s.source !== source || (s.storeLabel || "Default") !== accountLabel || live.has(s.id)) continue;
+    const st = String(s.status || "").toLowerCase();
+    if (st === "canceled" || st === "cancelled" || st === "expired") continue;
+    out.push({ ...s, status: "canceled", cancelledAt: s.cancelledAt || now.toISOString() });
+  }
+  return out;
 }
 
 function sumNetRevenue30d(

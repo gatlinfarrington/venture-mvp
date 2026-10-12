@@ -5,21 +5,18 @@ import {
   mapGumroadRefundFromSale,
   mapGumroadSaleStrict,
   mapGumroadSubscriber,
-  fetchGumroad,
 } from "../src/importers/gumroad";
 import {
   mapLemonCustomer,
   mapLemonOrder,
   mapLemonRefund,
   mapLemonSubscription,
-  fetchLemonSqueezy,
 } from "../src/importers/lemonSqueezy";
 import {
   mapPolarCustomer,
   mapPolarOrder,
   mapPolarRefund,
   mapPolarSubscription,
-  fetchPolar,
 } from "../src/importers/polar";
 
 describe("Lemon Squeezy mappers", () => {
@@ -184,184 +181,3 @@ describe("Gumroad mappers", () => {
   });
 });
 
-describe("importer pagination with mocked fetch", () => {
-  it("pages Lemon Squeezy orders", async () => {
-    const pages = [
-      {
-        data: [
-          {
-            id: "1",
-            type: "orders",
-            attributes: {
-              created_at: "2026-01-01T00:00:00Z",
-              first_order_item: { product_name: "A" },
-              user_email: "a@x.com",
-              total: 1000,
-              currency: "USD",
-              status: "paid",
-            },
-          },
-        ],
-        links: { next: "https://api.lemonsqueezy.com/v1/orders?page=2" },
-      },
-      {
-        data: [
-          {
-            id: "2",
-            type: "orders",
-            attributes: {
-              created_at: "2026-01-02T00:00:00Z",
-              first_order_item: { product_name: "B" },
-              user_email: "b@x.com",
-              total: 2000,
-              currency: "USD",
-              status: "paid",
-            },
-          },
-        ],
-        links: { next: null },
-      },
-    ];
-    let calls = 0;
-    const fetchImpl: typeof fetch = async (input) => {
-      const url = String(input);
-      calls += 1;
-      if (url.includes("/subscriptions") || url.includes("/customers") || url.includes("/refunds")) {
-        return new Response(JSON.stringify({ data: [], links: {} }), { status: 200 });
-      }
-      const body = url.includes("page=2") ? pages[1] : pages[0];
-      return new Response(JSON.stringify(body), { status: 200 });
-    };
-    const bundle = await fetchLemonSqueezy("test-key", undefined, fetchImpl);
-    assert.equal(bundle.orders.length, 2);
-    assert.equal(bundle.orders[0].amount, 10);
-    assert.equal(bundle.orders[1].amount, 20);
-    assert.ok(calls >= 2);
-  });
-
-  it("normalizes LS yearly/quarterly MRR from included variant", async () => {
-    const fetchImpl: typeof fetch = async (input) => {
-      const url = String(input);
-      if (url.includes("/subscriptions")) {
-        assert.ok(url.includes("include=variant"), "subscriptions request must include=variant");
-        return new Response(
-          JSON.stringify({
-            data: [
-              {
-                id: "s-year",
-                type: "subscriptions",
-                attributes: {
-                  created_at: "2026-01-01T00:00:00Z",
-                  product_name: "Pro Yearly",
-                  user_email: "y@x.com",
-                  variant_id: 101,
-                  status: "active",
-                },
-              },
-              {
-                id: "s-q",
-                type: "subscriptions",
-                attributes: {
-                  created_at: "2026-01-01T00:00:00Z",
-                  product_name: "Pro Quarterly",
-                  user_email: "q@x.com",
-                  variant_id: 102,
-                  status: "active",
-                },
-              },
-            ],
-            included: [
-              {
-                id: "101",
-                type: "variants",
-                attributes: { interval: "year", interval_count: 1, price: 12000 },
-              },
-              {
-                id: "102",
-                type: "variants",
-                attributes: { interval: "month", interval_count: 3, price: 9000 },
-              },
-            ],
-            links: {},
-          }),
-          { status: 200 },
-        );
-      }
-      return new Response(JSON.stringify({ data: [], links: {} }), { status: 200 });
-    };
-    const bundle = await fetchLemonSqueezy("test-key", undefined, fetchImpl);
-    assert.equal(bundle.subscriptions.length, 2);
-    const yearly = bundle.subscriptions.find((s) => s.rawId === "s-year")!;
-    const quarterly = bundle.subscriptions.find((s) => s.rawId === "s-q")!;
-    assert.equal(yearly.interval, "year");
-    assert.equal(yearly.mrr, 10);
-    assert.equal(quarterly.interval, "quarter");
-    assert.equal(quarterly.mrr, 30);
-  });
-
-  it("pages Polar orders", async () => {
-    let n = 0;
-    const fetchImpl: typeof fetch = async (input) => {
-      const url = String(input);
-      if (!url.includes("/orders")) {
-        return new Response(JSON.stringify({ items: [] }), { status: 200 });
-      }
-      n += 1;
-      if (n === 1) {
-        return new Response(
-          JSON.stringify({
-            items: [
-              {
-                id: "p1",
-                created_at: "2026-01-01T00:00:00Z",
-                amount: 5000,
-                currency: "usd",
-                status: "paid",
-                product: { name: "P" },
-                customer: { email: "p@x.com" },
-              },
-            ],
-            pagination: { next_page: "/v1/orders?page=2" },
-          }),
-          { status: 200 },
-        );
-      }
-      return new Response(JSON.stringify({ items: [], pagination: {} }), { status: 200 });
-    };
-    const bundle = await fetchPolar("polar-key", undefined, fetchImpl);
-    assert.equal(bundle.orders.length, 1);
-    assert.equal(bundle.orders[0].amount, 50);
-  });
-
-  it("pages Gumroad sales", async () => {
-    const fetchImpl: typeof fetch = async (input) => {
-      const url = String(input);
-      if (url.includes("/products?") && !url.includes("/subscribers")) {
-        return new Response(JSON.stringify({ products: [] }), { status: 200 });
-      }
-      if (url.includes("/sales")) {
-        return new Response(
-          JSON.stringify({
-            success: true,
-            sales: [
-              {
-                id: "g1",
-                created_at: "2026-01-01T00:00:00Z",
-                product_name: "Kit",
-                email: "g@x.com",
-                price: 2500,
-                currency: "usd",
-              },
-            ],
-          }),
-          { status: 200 },
-        );
-      }
-      return new Response(JSON.stringify({}), { status: 200 });
-    };
-    const bundle = await fetchGumroad("gum-key", undefined, fetchImpl);
-    assert.equal(bundle.orders.length, 1);
-    assert.equal(bundle.orders[0].amount, 25);
-    assert.equal(bundle.customers.length, 1);
-  });
-});

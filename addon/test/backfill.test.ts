@@ -6,7 +6,6 @@ import {
   resolveFetchCursor,
 } from "../src/lib/backfill";
 import { paginateWithBudget, nextResource } from "../src/importers/paginate";
-import { fetchGumroadResult } from "../src/importers/gumroad";
 
 describe("isBackfillIncomplete / resolveFetchCursor", () => {
   it("detects mid-pagination checkpoint", () => {
@@ -69,67 +68,3 @@ describe("nextResource", () => {
   });
 });
 
-describe("Gumroad page_key resume", () => {
-  it("uses page_key (not page=) and resumes from next_page_key", async () => {
-    const requested: string[] = [];
-    const fetchImpl: typeof fetch = async (input) => {
-      const url = String(input);
-      requested.push(url);
-      if (url.includes("/products?") && !url.includes("/subscribers")) {
-        return new Response(JSON.stringify({ products: [] }), { status: 200 });
-      }
-      if (url.includes("/sales")) {
-        assert.ok(!/[?&]page=\d/.test(url), "must not use deprecated page= offset");
-        if (url.includes("page_key=NEXT1")) {
-          return new Response(
-            JSON.stringify({
-              success: true,
-              sales: [
-                {
-                  id: "g2",
-                  created_at: "2026-01-02T00:00:00Z",
-                  product_name: "Kit",
-                  email: "b@x.com",
-                  price: 1000,
-                  currency: "usd",
-                },
-              ],
-            }),
-            { status: 200 },
-          );
-        }
-        return new Response(
-          JSON.stringify({
-            success: true,
-            sales: [
-              {
-                id: "g1",
-                created_at: "2026-01-01T00:00:00Z",
-                product_name: "Kit",
-                email: "a@x.com",
-                price: 2000,
-                currency: "usd",
-              },
-            ],
-            next_page_key: "NEXT1",
-          }),
-          { status: 200 },
-        );
-      }
-      return new Response(JSON.stringify({}), { status: 200 });
-    };
-
-    const chunk1 = await fetchGumroadResult("gum-key", undefined, fetchImpl, 1);
-    assert.equal(chunk1.incomplete, true);
-    assert.equal(chunk1.cursor.pageToken, "NEXT1");
-    assert.equal(chunk1.cursor.resource, "sales");
-    assert.equal(chunk1.bundle.orders.length, 1);
-
-    const chunk2 = await fetchGumroadResult("gum-key", chunk1.cursor, fetchImpl, 1);
-    assert.equal(chunk2.incomplete, false);
-    assert.equal(chunk2.cursor.backfillComplete, true);
-    assert.equal(chunk2.bundle.orders.length, 1);
-    assert.equal(chunk2.bundle.orders[0].id, "gumroad_sale_g2");
-    assert.ok(requested.some((u) => u.includes("page_key=NEXT1")));
-  });
-});

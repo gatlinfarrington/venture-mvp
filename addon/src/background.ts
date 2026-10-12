@@ -115,7 +115,7 @@ export function startCardSync(full = false): SyncResult & { busy?: boolean } {
   const ss = SpreadsheetApp.getActive();
   props().setProperty(SSID_KEY, ss.getId());
   // Data format changed (UTC timestamps, Stripe fields): rebuild the tabs once.
-  const DATA_VERSION = "2";
+  const DATA_VERSION = "3";
   const key = `RS_DATA_VERSION_${ss.getId()}`;
   const needsRebuild = props().getProperty(key) !== DATA_VERSION;
   const r = runSlice(ss, CARD_SLICE_MS, full || needsRebuild);
