@@ -22,6 +22,7 @@ def new_sub(created):
     global cust
     prod, price = pick(PLANS, PLAN_W); interval = "year" if random.random() < 0.18 else "month"
     # SaaS Team stays monthly: a $490 annual charge reads as a typo next to other $49 Team rows.
+    # MRR rises vs annual Team because annual MRR is plan*10/12 (~$40.83), not the $490 cash charge.
     if prod == "SaaS Team":
         interval = "month"
     cust += 1

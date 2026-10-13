@@ -2047,8 +2047,43 @@ table.compare-table thead th:nth-child(2) {
     margin-inline: auto;
   }
 
+  /* 2+1: Business centered at one card width, not full-bleed under Free/Pro. */
   .pricing-grid > .price-card:last-child {
     grid-column: 1 / -1;
+    width: 100%;
+    max-width: calc((100% - var(--space-4)) / 2);
+    justify-self: center;
+  }
+
+  /* Business feature list: two columns so four bullets stay compact under Free/Pro. */
+  .price-features.is-business {
+    display: block;
+    columns: 2;
+    column-gap: var(--space-4);
+  }
+
+  .price-features.is-business li {
+    break-inside: avoid;
+  }
+}
+
+/* 1120-1279: three cards are tight; shrink pad/gap so feature lines do not wrap early. */
+@media (min-width: 1120px) and (max-width: 1279px) {
+  .price-card {
+    padding: var(--space-4);
+  }
+
+  .price-card-top {
+    gap: var(--space-3);
+  }
+
+  .price-card .price-features,
+  .price-card .price-features.has-lead {
+    margin-top: var(--space-4);
+  }
+
+  .price-features {
+    gap: var(--space-2);
   }
 }
 
@@ -2067,8 +2102,8 @@ html:not(.motion) .pricing-grid-reveal .pricing-grid > .price-card {
   transform: none;
 }
 
-/* Featured Pro lift must win over the reveal's transform: none (and any flatten). */
-@media (min-width: 1024px) {
+/* Featured Pro lift from tablet up (2+1 and 3-col). */
+@media (min-width: 768px) {
   .pricing-grid-reveal.is-visible .pricing-grid > .price-card.is-featured,
   html:not(.motion) .pricing-grid-reveal .pricing-grid > .price-card.is-featured,
   .price-card.is-featured {
@@ -2083,7 +2118,7 @@ html:not(.motion) .pricing-grid-reveal .pricing-grid > .price-card {
     transition: none;
   }
 
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     .pricing-grid-reveal .pricing-grid > .price-card.is-featured,
     .price-card.is-featured {
       transform: translateY(-8px);
