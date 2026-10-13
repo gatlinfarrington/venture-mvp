@@ -38,7 +38,7 @@ const FIRST_TICK_ID = landings[FIRST_TICK_INDEX]?.id;
 
 const GAP_MS = 1100;
 const CHIP_MS = 420;
-const CHIP_HOLD_MS = 520;
+const CHIP_HOLD_MS = 720;
 const START_DELAY_MS = 600;
 // Match HeroDemo chipsAllowed (≥1120 shows the +$ chip below the number).
 const packetsOn = WIDTH >= 1120;
