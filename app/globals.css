@@ -1205,22 +1205,18 @@ tr.reveal.reveal-rise {
   width: 112px;
 }
 
-/* Two-column sheet (1120+): tighter Order/Source so Product does not clip at 1120/1200. */
+/* Two-column sheet (1120+): shrink Order only. Source stays 112px so Lemon Squeezy fits
+   (design's 84/104/1fr/84 clipped Source; Product still gets the freed 8px). */
 @media (min-width: 1120px) {
   .hero-sheet thead tr,
   .hero-sheet tbody tr,
   .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
-    grid-template-columns: 84px 104px minmax(0, 1fr) 84px;
+    grid-template-columns: 84px 112px minmax(0, 1fr) 84px;
   }
 
   .hero-sheet th:nth-child(1),
   .hero-sheet td:nth-child(1) {
     width: 84px;
-  }
-
-  .hero-sheet th:nth-child(2),
-  .hero-sheet td:nth-child(2) {
-    width: 104px;
   }
 }
 
