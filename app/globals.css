@@ -2067,7 +2067,7 @@ table.compare-table thead th:nth-child(2) {
   }
 }
 
-/* 1120–1279: three cards are tight — shrink pad/gap so feature lines don't wrap early. */
+/* 1120-1279: three cards are tight; shrink pad/gap so feature lines do not wrap early. */
 @media (min-width: 1120px) and (max-width: 1279px) {
   .price-card {
     padding: var(--space-4);
