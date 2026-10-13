@@ -24,14 +24,14 @@ Import it with **File > Import > Upload** in Google Sheets and choose "Insert ne
 
 If you're comfortable pasting code, Google Sheets can call Gumroad's API directly. The script below writes every sale into a tab and survives the two limits that usually break homemade versions:
 
-- **Gumroad returns 10 sales per request.** A store with 5,000 sales needs 500 requests.
-- **Apps Script stops any run after 6 minutes.** A big store won't finish in one go.
+- **Gumroad paginates sales.** (`GET /v2/sales` uses `page_key` / `next_page_key`; see [Gumroad's sales API](https://gumroad.com/api#sales).) Large stores need many requests.
+- **Apps Script stops any run after 6 minutes.** ([Script runtime](https://developers.google.com/apps-script/guides/services/quotas): 6 min / execution.) A big store won't finish in one go.
 
 So the script saves its place (Gumroad's `next_page_key`) after each page, stops itself before the time limit, and picks up where it left off the next time you run it.
 
 ### Get an access token
 
-1. Sign in to Gumroad and open **Settings › Advanced**.
+1. Sign in to Gumroad and open advanced settings (in your Gumroad settings).
 2. Create an application. Name it **RevenueSheet**. For your own account, Redirect URI can be `http://127.0.0.1`.
 3. Open the application and click **Generate access token**. Copy it and treat it like a password.
 
@@ -175,4 +175,4 @@ RevenueSheet is a Google Sheets add-on. You paste your Gumroad access token once
 
 Your data stays in your Google account. The add-on can only open the sheet it's installed in, and our server checks your license key and nothing else.
 
-Free for one store with manual refresh at launch; $9/mo Pro for scheduled sync (hourly, every 6 hours, daily or weekly) across all four sources (one store per source) plus CSV import. [Join the launch list](/#launch)
+Free for one store with manual refresh at launch; once paid plans open, Pro ($9/mo) adds scheduled sync (hourly, every 6 hours, daily or weekly) across all four sources (one store per source) plus CSV import. RevenueSheet is pending Google Workspace Marketplace review. [Join the launch list](/#launch)
