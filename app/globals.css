@@ -948,6 +948,7 @@ tr.reveal.reveal-rise {
   height: var(--digit-h);
 }
 
+/* overflow:hidden clips the incoming reel face so it cannot brush the +$ chip. */
 .hero-mrr-num .d {
   position: relative;
   display: inline-block;
@@ -1204,6 +1205,25 @@ tr.reveal.reveal-rise {
   width: 112px;
 }
 
+/* Two-column sheet (1120+): tighter Order/Source so Product does not clip at 1120/1200. */
+@media (min-width: 1120px) {
+  .hero-sheet thead tr,
+  .hero-sheet tbody tr,
+  .hero-sheet tbody.hero-rows-ghost tr.hero-ghost-row {
+    grid-template-columns: 84px 104px minmax(0, 1fr) 84px;
+  }
+
+  .hero-sheet th:nth-child(1),
+  .hero-sheet td:nth-child(1) {
+    width: 84px;
+  }
+
+  .hero-sheet th:nth-child(2),
+  .hero-sheet td:nth-child(2) {
+    width: 104px;
+  }
+}
+
 .hero-sheet th:last-child,
 .hero-sheet td.n {
   width: 84px;
@@ -1241,6 +1261,7 @@ tr.reveal.reveal-rise {
   min-height: 22px;
   width: 100%;
   z-index: 3;
+  margin-top: var(--space-1); /* 4px: keep reel face from brushing the +$ chip */
 }
 
 /* In-place just below the MRR number: fade/scale, never over digits, badge, or table. */
@@ -1371,13 +1392,13 @@ tr.reveal.reveal-rise {
   }
 }
 
-/* 980-1119: one centered unit. Headline + sheet tight together. */
+/* 980-1119: left-align pills, tighter gap, hide facts so the demo sits higher. */
 @media (min-width: 980px) and (max-width: 1119px) {
   .hero-grid {
-    max-width: 720px;
-    margin-inline: auto;
+    max-width: none;
+    margin-inline: 0;
     width: 100%;
-    gap: var(--space-5);
+    gap: var(--space-4);
   }
 
   .hero-copy,
@@ -1388,14 +1409,19 @@ tr.reveal.reveal-rise {
   }
 
   .hero-copy {
-    gap: var(--space-5);
+    gap: var(--space-4);
+  }
+
+  .hero-facts {
+    display: none;
   }
 
   .hero-stores {
     grid-template-columns: repeat(4, max-content);
     width: max-content;
     max-width: 100%;
-    margin-inline: auto;
+    margin-inline: 0;
+    justify-content: flex-start;
   }
 
   .hero-store {
@@ -2000,6 +2026,11 @@ table.compare-table thead th:nth-child(2) {
   position: relative;
 }
 
+/* Business: lead with the multi-store line at 600 (reorder only; copy unchanged). */
+.price-features.is-business li:first-child {
+  font-weight: 600;
+}
+
 .price-features li::before {
   content: "";
   position: absolute;
@@ -2033,12 +2064,24 @@ table.compare-table thead th:nth-child(2) {
   max-width: 48ch;
 }
 
-/* Single column until cards are wide enough that Business features stay 1 line. */
-@media (max-width: 1099px) {
+/* Phone: stack. Tablet 768–1023: 2+1 so cards stay readable (not a crushed 3-col). */
+@media (max-width: 767px) {
   .pricing-grid {
     grid-template-columns: 1fr;
     max-width: 480px;
     margin-inline: auto;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pricing-grid {
+    grid-template-columns: 1fr 1fr;
+    max-width: 720px;
+    margin-inline: auto;
+  }
+
+  .pricing-grid > .price-card:last-child {
+    grid-column: 1 / -1;
   }
 }
 

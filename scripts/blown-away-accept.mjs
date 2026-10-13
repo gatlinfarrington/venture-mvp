@@ -418,7 +418,7 @@ async function measureCellBounds(page) {
 // —— Check 7/8 (match hero-loop-test): sheet ≥400px at 1024+, no clipped
 // cells/badge, row lines span the full card ——
 {
-  const BOUND_WIDTHS = [1440, 1280, 1024, 768, 375];
+  const BOUND_WIDTHS = [1440, 1280, 1200, 1120, 1024, 768, 375];
   const byWidth = {};
   let boundsOk = true;
   let widthOk = true;

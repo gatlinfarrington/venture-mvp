@@ -90,7 +90,11 @@ export function Pricing({ variant = "section" }: Props) {
             <p className="price-pro-lead-text">{lead}</p>
           </div>
         ) : null}
-        <ul className={`price-features${lead ? " has-lead" : ""}`}>
+        <ul
+          className={`price-features${lead ? " has-lead" : ""}${
+            plan.tier === "business" ? " is-business" : ""
+          }`}
+        >
           {plan.features.map((f) => (
             <li key={f}>{f}</li>
           ))}
