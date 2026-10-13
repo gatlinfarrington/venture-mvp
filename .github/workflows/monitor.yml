@@ -1,0 +1,113 @@
+name: Monitor
+
+on:
+  schedule:
+    # Hourly at :17 — odd minute to spread load off the hour.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: monitor-production
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    name: Health + links
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run production monitor
+        id: check
+        continue-on-error: true
+        env:
+          BASE_URL: https://www.revenuesheet.app
+          MONITOR_SUMMARY_PATH: monitor-summary.json
+        run: node scripts/monitor.mjs
+
+      - name: Ensure monitor label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create monitor \
+            --description "Production monitoring failures" \
+            --color "B60205" \
+            --force >/dev/null
+
+      - name: Open or update monitor issue on failure
+        if: steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE='[monitor] Production health / link check failing'
+          BODY_FILE="$(mktemp)"
+          {
+            echo "## Monitor failure"
+            echo
+            echo "- Run: ${RUN_URL}"
+            echo "- Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "- Base: https://www.revenuesheet.app"
+            echo
+            echo "### Failures"
+            if [[ -f monitor-summary.json ]]; then
+              node -e '
+                const s = JSON.parse(require("fs").readFileSync("monitor-summary.json","utf8"));
+                const lines = (s.failures || []).map((f) => `- ${f}`);
+                console.log(lines.length ? lines.join("\n") : "- (no details)");
+                if ((s.warnings || []).length) {
+                  console.log("\n### External warnings (non-blocking)\n");
+                  console.log(s.warnings.map((w) => `- ${w}`).join("\n"));
+                }
+              '
+            else
+              echo "- monitor-summary.json missing"
+            fi
+            echo
+            echo "_This issue is opened/updated by \`.github/workflows/monitor.yml\` and closed when a run passes._"
+          } > "$BODY_FILE"
+
+          EXISTING="$(gh issue list --label monitor --state open --limit 50 --json number,title --jq '.[] | select(.title=="[monitor] Production health / link check failing") | .number' | head -n1 || true)"
+          if [[ -n "${EXISTING}" ]]; then
+            echo "Updating issue #${EXISTING}"
+            gh issue comment "${EXISTING}" --body-file "$BODY_FILE"
+          else
+            echo "Creating monitor issue"
+            gh issue create --title "$TITLE" --label monitor --body-file "$BODY_FILE"
+          fi
+
+      - name: Close monitor issue on success
+        if: steps.check.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          ISSUES="$(gh issue list --label monitor --state open --limit 50 --json number,title --jq '.[] | select(.title=="[monitor] Production health / link check failing") | .number' || true)"
+          if [[ -z "${ISSUES}" ]]; then
+            echo "No open monitor issue to close."
+            exit 0
+          fi
+          while IFS= read -r num; do
+            [[ -z "$num" ]] && continue
+            echo "Closing issue #${num}"
+            gh issue comment "${num}" --body "Monitor recovered on [this run](${RUN_URL}). Closing."
+            gh issue close "${num}" --reason completed
+          done <<< "${ISSUES}"
+
+      - name: Fail job if checks failed
+        if: steps.check.outcome == 'failure'
+        run: |
+          echo "Monitor checks failed."
+          exit 1
