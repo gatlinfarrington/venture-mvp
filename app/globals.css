@@ -658,6 +658,8 @@ tr.reveal.reveal-rise {
   align-items: flex-start;
   gap: var(--space-6);
   max-width: 28rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .hero .display {
@@ -697,6 +699,27 @@ tr.reveal.reveal-rise {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Keep launch-invite inside the copy column at every width (flex min-content
+   otherwise lets the form spill past max-width: 28rem and under the demo). */
+.hero-copy .launch-invite-wrap,
+.hero-copy .launch-invite {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.hero-copy .launch-invite input[type="email"] {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.hero-copy .launch-invite .btn {
+  flex: 0 0 auto;
 }
 
 @media (max-width: 600px) {
@@ -1391,14 +1414,18 @@ tr.reveal.reveal-rise {
   }
 }
 
-/* 980-1119: Design band base (gap + hide facts + 4 max-content store pills)
-   without #79's .container override. Keep two columns so the demo fills the
-   right half above the fold (stacked left MRR near y=895 / blank right half). */
+/* 980-1119: Design band: equal columns so launch-invite (~435px) fits the
+   copy column; shrink-wrap the form; 4 store pills that can compress and drop
+   account-name subtitles so the sheet keeps >=16px from the right edge. */
 @media (min-width: 980px) and (max-width: 1119px) {
   .hero-grid {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--space-4);
     align-items: start;
+  }
+
+  .hero-copy {
+    max-width: none;
   }
 
   .hero-facts {
@@ -1407,7 +1434,7 @@ tr.reveal.reveal-rise {
 
   .hero-stores {
     display: grid;
-    grid-template-columns: repeat(4, max-content);
+    grid-template-columns: repeat(4, minmax(0, max-content));
     width: max-content;
     max-width: 100%;
     gap: var(--space-2);
@@ -1415,6 +1442,13 @@ tr.reveal.reveal-rise {
 
   .hero-store {
     width: auto;
+    min-width: 0;
+  }
+
+  /* Hide account-name subtitles so four pills fit the stage. */
+  .hero-store br,
+  .hero-store small {
+    display: none;
   }
 
   /* Stage: one column so the 4 pills sit above a full-width sheet. */

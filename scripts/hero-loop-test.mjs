@@ -10,6 +10,8 @@
 // sheet's right edge is <16px from the right viewport edge (container inset).
 // At 1000/1060/1100, fails if the right half above the fold has no hero demo
 // (stacked layout leaving blank white beside the copy).
+// Fails at any width if the launch-invite input/button overlaps the demo or is
+// clipped by the viewport / copy column.
 // The reset ghost layer (.hero-rows-ghost) is excluded: it is a deliberate fade-out overlay.
 //
 // Widths: VIEWPORT_WIDTH / WIDTH for one run. Or WIDTHS=suite / a comma list.
@@ -110,6 +112,8 @@ async function sampleFrame() {
         edgeOk: false,
         rightHalfOk: true,
         stageW: 0,
+        formOk: true,
+        formIssues: [],
       };
     }
 
@@ -217,6 +221,46 @@ async function sampleFrame() {
       stageRect.top < foldBottom - 48 &&
       stageRect.bottom > 64;
 
+    // Launch-invite form must stay inside the copy column and not cover the demo.
+    let formOk = true;
+    let formIssues = [];
+    const form =
+      document.querySelector(".hero .launch-invite") ||
+      document.querySelector(".hero-copy .launch-invite");
+    if (form) {
+      const input = form.querySelector('input[type="email"]');
+      const btn = form.querySelector(".btn, button[type='submit']");
+      const demo =
+        document.querySelector("[data-hero-demo]") ||
+        document.querySelector(".hero-frame") ||
+        document.querySelector(".hero-stage");
+      const copy = document.querySelector(".hero-copy");
+      const demoR = demo ? demo.getBoundingClientRect() : null;
+      const copyR = copy ? copy.getBoundingClientRect() : null;
+      const overlaps = (a, b) =>
+        a.left < b.right - 0.5 &&
+        a.right > b.left + 0.5 &&
+        a.top < b.bottom - 0.5 &&
+        a.bottom > b.top + 0.5;
+      for (const el of [input, btn].filter(Boolean)) {
+        const r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) continue;
+        if (r.left < -0.5 || r.right > innerWidth + 0.5) {
+          formOk = false;
+          formIssues.push("form clipped by viewport");
+        }
+        if (copyR && (r.left < copyR.left - 1 || r.right > copyR.right + 1)) {
+          formOk = false;
+          formIssues.push("form clipped by copy column");
+        }
+        if (demoR && overlaps(r, demoR)) {
+          formOk = false;
+          formIssues.push("form overlaps demo");
+        }
+      }
+      formIssues = [...new Set(formIssues)];
+    }
+
     return {
       rows: rows.filter((r) => r.top < clip.bottom - 1),
       clipBottom: clip.bottom,
@@ -233,6 +277,8 @@ async function sampleFrame() {
       edgeOk,
       rightHalfOk,
       stageW: +stageRect.width.toFixed(1),
+      formOk,
+      formIssues,
     };
   }, ROWSEL);
 }
@@ -316,6 +362,9 @@ while (Date.now() - t0 < LOOP_MS) {
   }
   if ([1000, 1060, 1100].includes(f.vw) && f.rightHalfOk === false) {
     issues.push("right half above the fold is blank (hero demo missing)");
+  }
+  if (f.formOk === false) {
+    issues.push("launch-invite " + (f.formIssues?.join("|") || "overlap/clip"));
   }
   if (f.clipped.length) {
     issues.push("clipped " + [...new Set(f.clipped)].slice(0, 6).join("|"));
