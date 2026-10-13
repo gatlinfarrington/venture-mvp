@@ -4,13 +4,12 @@ import { describe, expect, it } from "vitest";
 
 /**
  * Buyer-facing copy must not claim a Workspace Marketplace listing after
- * Google rejected it. docs/ and privacy/ are intentionally left alone.
- * Matches the word "Marketplace" in string literals only — not identifiers
- * like marketplaceUrl / NEXT_PUBLIC_MARKETPLACE_URL.
+ * Google rejected it. /privacy is intentionally left alone; docs must not
+ * mention Marketplace. Matches the word in string literals only — not
+ * identifiers like marketplaceUrl / NEXT_PUBLIC_MARKETPLACE_URL.
  */
 const ROOTS = ["app", "components", "content"] as const;
 const ALLOW_PATH_PARTS = [
-  `${path.sep}docs${path.sep}`,
   `${path.sep}privacy${path.sep}`,
   `${path.sep}design${path.sep}`,
 ];
@@ -35,7 +34,7 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe("no Marketplace buyer copy", () => {
-  it("keeps Marketplace out of string literals outside docs/privacy", () => {
+  it("keeps Marketplace out of string literals outside privacy", () => {
     const hits: string[] = [];
     for (const root of ROOTS) {
       for (const file of walk(path.join(process.cwd(), root))) {
