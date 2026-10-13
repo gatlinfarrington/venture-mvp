@@ -14,6 +14,11 @@ const components = {
       </a>
     );
   },
+  table: ({ children }: { children?: ReactNode }) => (
+    <div className="mdx-table">
+      <table>{children}</table>
+    </div>
+  ),
 };
 
 export function MdxContent({ source }: { source: string }) {
