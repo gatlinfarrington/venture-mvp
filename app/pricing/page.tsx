@@ -54,11 +54,11 @@ function billingFaq(): Array<{ q: string; a: ReactNode }> {
     paidOpen
       ? {
           q: "Can I buy a paid plan now?",
-          a: "Yes. Pro and Business check out on this page through Stripe. The Google Sheets add-on is not on the Google Workspace Marketplace yet (pending Google review); join the launch list for install updates.",
+          a: "Yes. Pro and Business check out on this page through Stripe. Join the launch list for install updates.",
         }
       : {
           q: "When do paid plans open?",
-          a: "With the Google Workspace Marketplace listing (the add-on is pending Google review). Until then, join the launch list from any Join the launch list button for install updates.",
+          a: "Paid plans aren't open yet. Join the launch list from any Join the launch list button for updates.",
         },
     {
       q: "How does billing work?",
@@ -142,9 +142,7 @@ export default function PricingPage() {
 
           <div className="final-cta pricing-launch-cta">
             <h2 className="h2 final-cta-title">
-              Be first in when the
-              <br />
-              listing goes live.
+              Get an email when RevenueSheet is ready.
             </h2>
             <LaunchInvite id="launch" source="pricing-page" />
           </div>

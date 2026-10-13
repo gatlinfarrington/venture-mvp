@@ -57,7 +57,7 @@ describe("CHECKOUT_OPEN gate", () => {
     );
     expect(res.status).toBe(403);
     const body = (await res.json()) as { error?: string };
-    expect(body.error).toMatch(/Marketplace listing/i);
+    expect(body.error).toMatch(/Checkout isn't open yet/i);
     expect(body.error).not.toMatch(/Stripe|env|secret|key/i);
   });
 

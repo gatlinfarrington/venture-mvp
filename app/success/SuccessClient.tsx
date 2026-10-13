@@ -326,7 +326,7 @@ function SuccessInner() {
         rel="noopener noreferrer"
         onClick={() => markCheck(2)}
       >
-        Install from Marketplace
+        Install for Google Sheets
       </a>
     ) : null,
   });

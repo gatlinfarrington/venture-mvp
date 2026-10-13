@@ -31,8 +31,8 @@ export default function TermsPage() {
           source coverage may change. Free, Pro, and Business tiers are described on the{" "}
           <Link href="/pricing">pricing</Link> page.{" "}
           {paidOpen
-            ? "Paid plans can be purchased on this site. The add-on is not listed on the Google Workspace Marketplace yet (pending Google review)."
-            : "Paid plans open with the Google Workspace Marketplace listing; the add-on is not listed yet (pending Google review)."}
+            ? "Paid plans can be purchased on this site."
+            : "Paid plans aren't open yet."}
         </p>
 
         <h2>Accounts and eligibility</h2>
