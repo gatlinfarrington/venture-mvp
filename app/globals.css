@@ -1371,7 +1371,7 @@ tr.reveal.reveal-rise {
   }
 }
 
-/* 980-1119: one centered unit — headline + sheet tight together. */
+/* 980-1119: one centered unit. Headline + sheet tight together. */
 @media (min-width: 980px) and (max-width: 1119px) {
   .hero-grid {
     max-width: 720px;

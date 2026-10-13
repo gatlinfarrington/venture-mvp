@@ -9,10 +9,10 @@
   "Stripe": "example-acct"
  },
  "headline": {
-  "mrr": 4476,
-  "mrrExact": 4475.89,
-  "mrrMoMPct": 4.6,
-  "net30d": 7099,
+  "mrr": 4516,
+  "mrrExact": 4516.74,
+  "mrrMoMPct": 4.5,
+  "net30d": 6658,
   "refunds30dCount": 4,
   "refunds30dAmount": 146,
   "activeSubs": 233,
@@ -23,11 +23,11 @@
   "pastDueCount": 5,
   "pastDueMrr": 95,
   "orders30d": 261,
-  "mrr30dAgo": 4280.73
+  "mrr30dAgo": 4321.58
  },
  "bySource": {
   "Lemon Squeezy": {
-   "mrr": 1387,
+   "mrr": 1395,
    "activeSubs": 69,
    "orders30d": 71
   },
@@ -37,12 +37,12 @@
    "orders30d": 94
   },
   "Gumroad": {
-   "mrr": 749,
+   "mrr": 765,
    "activeSubs": 38,
    "orders30d": 38
   },
   "Stripe": {
-   "mrr": 863,
+   "mrr": 879,
    "activeSubs": 46,
    "orders30d": 58
   }
@@ -50,104 +50,104 @@
  "mrrByMonth": [
   {
    "month": "Nov 2025",
-   "Lemon Squeezy": 628,
+   "Lemon Squeezy": 636,
    "Polar": 888,
    "Gumroad": 425,
-   "Stripe": 567,
-   "total": 2508
+   "Stripe": 583,
+   "total": 2532
   },
   {
    "month": "Dec 2025",
-   "Lemon Squeezy": 775,
+   "Lemon Squeezy": 783,
    "Polar": 934,
    "Gumroad": 441,
-   "Stripe": 605,
-   "total": 2755
+   "Stripe": 621,
+   "total": 2779
   },
   {
    "month": "Jan 2026",
-   "Lemon Squeezy": 775,
+   "Lemon Squeezy": 783,
    "Polar": 1002,
    "Gumroad": 512,
-   "Stripe": 575,
-   "total": 2864
+   "Stripe": 591,
+   "total": 2888
   },
   {
    "month": "Feb 2026",
-   "Lemon Squeezy": 794,
+   "Lemon Squeezy": 802,
    "Polar": 1057,
    "Gumroad": 493,
-   "Stripe": 603,
-   "total": 2947
+   "Stripe": 619,
+   "total": 2971
   },
   {
    "month": "Mar 2026",
-   "Lemon Squeezy": 941,
+   "Lemon Squeezy": 949,
    "Polar": 1114,
    "Gumroad": 512,
-   "Stripe": 731,
-   "total": 3298
+   "Stripe": 747,
+   "total": 3322
   },
   {
    "month": "Apr 2026",
-   "Lemon Squeezy": 1050,
+   "Lemon Squeezy": 1058,
    "Polar": 1249,
    "Gumroad": 528,
-   "Stripe": 773,
-   "total": 3600
+   "Stripe": 789,
+   "total": 3624
   },
   {
    "month": "May 2026",
-   "Lemon Squeezy": 1055,
+   "Lemon Squeezy": 1063,
    "Polar": 1309,
    "Gumroad": 621,
-   "Stripe": 822,
-   "total": 3807
+   "Stripe": 838,
+   "total": 3831
   },
   {
    "month": "Jun 2026",
-   "Lemon Squeezy": 1055,
+   "Lemon Squeezy": 1063,
    "Polar": 1394,
    "Gumroad": 647,
-   "Stripe": 825,
-   "total": 3921
+   "Stripe": 841,
+   "total": 3945
   },
   {
    "month": "Jul 2026",
-   "Lemon Squeezy": 1055,
+   "Lemon Squeezy": 1063,
    "Polar": 1456,
-   "Gumroad": 669,
-   "Stripe": 844,
-   "total": 4024
+   "Gumroad": 677,
+   "Stripe": 860,
+   "total": 4056
   },
   {
    "month": "Aug 2026",
-   "Lemon Squeezy": 1206,
+   "Lemon Squeezy": 1214,
    "Polar": 1456,
-   "Gumroad": 729,
-   "Stripe": 879,
-   "total": 4270
+   "Gumroad": 745,
+   "Stripe": 895,
+   "total": 4310
   },
   {
    "month": "Sep 2026",
-   "Lemon Squeezy": 1336,
+   "Lemon Squeezy": 1344,
    "Polar": 1438,
-   "Gumroad": 759,
-   "Stripe": 896,
-   "total": 4429
+   "Gumroad": 775,
+   "Stripe": 912,
+   "total": 4469
   },
   {
    "month": "Oct 2026",
-   "Lemon Squeezy": 1387,
+   "Lemon Squeezy": 1395,
    "Polar": 1477,
-   "Gumroad": 749,
-   "Stripe": 863,
-   "total": 4476
+   "Gumroad": 765,
+   "Stripe": 879,
+   "total": 4516
   }
  ],
  "hero": {
-  "startMrr": 4374.0,
-  "finalMrr": 4476,
+  "startMrr": 4414.0,
+  "finalMrr": 4516,
   "seedIds": [
    "EX-10247",
    "EX-10246",
@@ -255,7 +255,7 @@
     "id": "EX-10256",
     "source": "Stripe",
     "product": "SaaS Team",
-    "amount": 490,
+    "amount": 49,
     "kind": "renewal",
     "mrrDelta": 0
    },
@@ -368,7 +368,7 @@
    "source": "Stripe",
    "product": "SaaS Team",
    "email": "customer183@example.com",
-   "amount": 490,
+   "amount": 49,
    "status": "paid",
    "country": "CA",
    "kind": "renewal",
@@ -3910,9 +3910,9 @@
    "source": "Gumroad",
    "product": "SaaS Team",
    "email": "customer337@example.com",
-   "price": 490,
-   "interval": "year",
-   "mrr": 40.83,
+   "price": 49,
+   "interval": "month",
+   "mrr": 49,
    "status": "active",
    "cancelled": "",
    "country": "US"
@@ -3988,9 +3988,9 @@
    "source": "Gumroad",
    "product": "SaaS Team",
    "email": "customer331@example.com",
-   "price": 490,
-   "interval": "year",
-   "mrr": 40.83,
+   "price": 49,
+   "interval": "month",
+   "mrr": 49,
    "status": "active",
    "cancelled": "",
    "country": "CA"
@@ -5548,9 +5548,9 @@
    "source": "Stripe",
    "product": "SaaS Team",
    "email": "customer183@example.com",
-   "price": 490,
-   "interval": "year",
-   "mrr": 40.83,
+   "price": 49,
+   "interval": "month",
+   "mrr": 49,
    "status": "active",
    "cancelled": "",
    "country": "CA"
@@ -6029,9 +6029,9 @@
    "source": "Lemon Squeezy",
    "product": "SaaS Team",
    "email": "customer218@example.com",
-   "price": 490,
-   "interval": "year",
-   "mrr": 40.83,
+   "price": 49,
+   "interval": "month",
+   "mrr": 49,
    "status": "active",
    "cancelled": "",
    "country": "CA"
@@ -6458,9 +6458,9 @@
    "source": "Stripe",
    "product": "SaaS Team",
    "email": "customer172@example.com",
-   "price": 490,
-   "interval": "year",
-   "mrr": 40.83,
+   "price": 49,
+   "interval": "month",
+   "mrr": 49,
    "status": "active",
    "cancelled": "",
    "country": "DE"

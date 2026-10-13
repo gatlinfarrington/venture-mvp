@@ -21,6 +21,9 @@ subs = []; cust = 100
 def new_sub(created):
     global cust
     prod, price = pick(PLANS, PLAN_W); interval = "year" if random.random() < 0.18 else "month"
+    # SaaS Team stays monthly: a $490 annual charge reads as a typo next to other $49 Team rows.
+    if prod == "SaaS Team":
+        interval = "month"
     cust += 1
     return dict(source=pick(SOURCES, SRC_W), product=prod, price=price if interval == "month" else price * 10,
                 interval=interval, mrr=mo(price, interval), created=created, cancelled=None, status="active",
@@ -144,6 +147,8 @@ assert abs(sum(s["mrr"] for s in out["subscriptions"] if s["status"] == "active"
 assert sum(v["mrr"] for v in out["bySource"].values()) == out["mrrByMonth"][-1]["total"] == out["headline"]["mrr"]
 assert round(out["hero"]["startMrr"] + sum(l["mrrDelta"] for l in out["hero"]["landings"]), 2) == out["hero"]["finalMrr"]
 assert all(9 <= p <= 49 for _, p in PLANS + ONE_TIME)
+assert all(s["price"] <= 49 for s in out["subscriptions"] if s["product"] == "SaaS Team"), "Team stays monthly ($49), never $490 annual"
+assert all(o["amount"] <= 49 for o in ORD if o["product"] == "SaaS Team"), "Team order amounts stay at $49"
 assert 1 <= MOM <= 8 and 1 <= CHURN <= 4.5, "keep it believable for an indie studio"
 out["headline"]["mrr30dAgo"] = round(prev30, 2)
 json.dump(out, open("sample-dataset.json", "w"), indent=1)
