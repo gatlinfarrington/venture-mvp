@@ -54,7 +54,7 @@ describe("/sample acceptance data", () => {
   it("sample-dataset.json sha256 matches the design pin", () => {
     const buf = readFileSync(join(process.cwd(), "lib/sample-dataset/sample-dataset.json"));
     expect(createHash("sha256").update(buf).digest("hex")).toBe(
-      "7142e2ccb44d578e112ea85d67f4c58de6c0ec203a048534278b9b63d4793558",
+      "ce5222c996696b35a013b7e184d0dd801e0f37c320cb4369f70cbb9b91760426",
     );
   });
 
@@ -70,9 +70,9 @@ describe("/sample acceptance data", () => {
   });
 
   it("Dashboard KPIs match the reconciled headline (not the excerpt)", () => {
-    expect(DASHBOARD.mrr).toBe("$4,476");
-    expect(DASHBOARD.mrrDelta).toBe("▲ 4.6% MoM");
-    expect(DASHBOARD.netRevenue).toBe("$7,099");
+    expect(DASHBOARD.mrr).toBe("$4,516");
+    expect(DASHBOARD.mrrDelta).toBe("▲ 4.5% MoM");
+    expect(DASHBOARD.netRevenue).toBe("$6,658");
     expect(DASHBOARD.netDelta).toBe("30D net · 261 orders across sources");
     expect(DASHBOARD.activeSubs).toBe(String(SAMPLE_HEADLINE.activeSubs));
     expect(DASHBOARD.activeSubs).toBe("233");
@@ -87,7 +87,7 @@ describe("/sample acceptance data", () => {
     expect(DASHBOARD.sources.find((s) => s.name === "Gumroad")?.detail).toBe("38 orders · 30D");
     expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.detail).toBe("58 orders · 30D");
     expect(DASHBOARD.sources.find((s) => s.name === "Stripe")?.state).toBe("Synced");
-    expect(SAMPLE_MRR_OCT).toBe(4476);
+    expect(SAMPLE_MRR_OCT).toBe(4516);
   });
 
   it("sample caption is buyer-facing with a realistic example.com address", async () => {

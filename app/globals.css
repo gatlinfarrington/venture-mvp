@@ -1060,6 +1060,11 @@ tr.reveal.reveal-rise {
 .hero-sheet thead {
   display: block;
   width: 100%;
+  height: 30px;
+  min-height: 30px;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
 }
 
 .hero-sheet thead tr {
@@ -1067,6 +1072,7 @@ tr.reveal.reveal-rise {
   /* Fixed tracks: Order 92 / Source 112 / Product flex / Amount 84. */
   grid-template-columns: 92px 112px minmax(0, 1fr) 84px;
   height: 30px;
+  min-height: 30px;
   background: var(--c-surface-2);
   border-bottom: 1px solid var(--c-border);
 }
@@ -1092,6 +1098,7 @@ tr.reveal.reveal-rise {
   display: block;
   position: relative;
   height: calc(9 * 36px);
+  min-height: calc(9 * 36px);
   overflow: hidden;
   width: 100%;
 }
@@ -1364,13 +1371,24 @@ tr.reveal.reveal-rise {
   }
 }
 
-/* 980-1119: centered single column (not a crushed two-column sheet). */
+/* 980-1119: one centered unit. Headline + sheet tight together. */
 @media (min-width: 980px) and (max-width: 1119px) {
-  .hero-copy,
-  .hero-stage {
+  .hero-grid {
     max-width: 720px;
     margin-inline: auto;
     width: 100%;
+    gap: var(--space-5);
+  }
+
+  .hero-copy,
+  .hero-stage {
+    max-width: none;
+    margin-inline: 0;
+    width: 100%;
+  }
+
+  .hero-copy {
+    gap: var(--space-5);
   }
 
   .hero-stores {

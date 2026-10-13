@@ -19,8 +19,8 @@ import { ORDERS, SAMPLE_MRR_MOM, SAMPLE_MRR_OCT, SAMPLE_ORDERS } from "@/lib/sam
 describe("hero demo sequence (SAMPLE-DATASET)", () => {
   it("uses one ORDERS continuum and ends at sample headline MRR", () => {
     expect(FINAL_MRR).toBe(SAMPLE_MRR_OCT);
-    expect(FINAL_MRR).toBe(4476);
-    expect(START_MRR).toBe(4374);
+    expect(FINAL_MRR).toBe(4516);
+    expect(START_MRR).toBe(4414);
     expect(LANDING_TOTAL).toBe(
       HERO_LANDINGS.reduce((s, o) => s + o.mrrDelta, 0),
     );
@@ -32,7 +32,7 @@ describe("hero demo sequence (SAMPLE-DATASET)", () => {
     expect(HERO_FINAL[0]?.id).toBe("EX-10261");
     expect(SAMPLE_ORDERS).toEqual(ORDERS.slice(0, 24));
     expect(MOM_DELTA_LABEL).toBe(`+${SAMPLE_MRR_MOM.toFixed(1)}%`);
-    expect(MOM_DELTA_LABEL).toBe("+4.6%");
+    expect(MOM_DELTA_LABEL).toBe("+4.5%");
   });
 
   it("final hero rows are the first 9 ORDERS; sample shares them", () => {
