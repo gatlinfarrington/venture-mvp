@@ -30,7 +30,8 @@ test.describe("no Marketplace on rendered pages", () => {
       expect(res, `navigation to ${route}`).not.toBeNull();
       expect(res!.status(), `${route} status`).toBeLessThan(400);
       const text = await page.locator("body").innerText();
-      expect(text, `${route} still mentions Marketplace`).not.toMatch(/Marketplace/i);
+      // Capital-M Marketplace only (Google Workspace listing), not "marketplaces".
+      expect(text, `${route} still mentions Marketplace`).not.toMatch(/\bMarketplace\b/);
     });
   }
 });
