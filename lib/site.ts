@@ -35,8 +35,7 @@ export const checkoutEnabled = Boolean(
 );
 
 /** Buyer-facing line when Checkout is gated closed. */
-export const CHECKOUT_CLOSED_MESSAGE =
-  "Paid plans open with the Marketplace listing. Join the launch list for updates.";
+export const CHECKOUT_CLOSED_MESSAGE = "Checkout isn't open yet.";
 
 export type Tier = "free" | "pro" | "business";
 

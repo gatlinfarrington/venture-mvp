@@ -51,7 +51,7 @@ export function Hero() {
             <dl className="hero-facts hero-reveal" style={{ animationDelay: "240ms" }}>
               <div>
                 <dt>Status</dt>
-                <dd>Built and in testing. Not yet on the Marketplace.</dd>
+                <dd>Built and in testing.</dd>
               </div>
               <div>
                 <dt>Sources</dt>
@@ -365,9 +365,7 @@ export function FinalCTA() {
           ) : (
             <>
               <h2 className="h2 final-cta-title">
-                Be first in when the
-                <br />
-                listing goes live.
+                Get an email when RevenueSheet is ready.
               </h2>
               <LaunchInvite source="final-cta" />
             </>

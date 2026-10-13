@@ -65,7 +65,7 @@ export function SampleCopyAction({ source }: Props) {
         id={tipId}
         className={`sample-copy-tip${open ? " is-open" : ""}`}
       >
-        Template copy opens with the Marketplace listing
+        Template copy isn&apos;t available yet
       </span>
     </div>
   );

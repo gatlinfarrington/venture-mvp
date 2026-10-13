@@ -28,7 +28,6 @@ export function Pricing({ variant = "section" }: Props) {
   const listing = marketplaceUrlClient();
   const paidCheckoutReady = checkoutEnabled;
   const launchHref = variant === "page" ? "#launch" : "/#launch";
-  const showLaunchCaption = !listing && !paidCheckoutReady;
   const headline = paidCheckoutReady
     ? "Free to start. Buy Pro or Business here."
     : "Free to start. Paid plans open at launch.";
@@ -174,11 +173,6 @@ export function Pricing({ variant = "section" }: Props) {
           Free covers one store with one-click refresh. Upgrade when you sell in two places or want
           it to run on its own.
         </p>
-        {showLaunchCaption ? (
-          <p className="pricing-grid-caption mono muted">
-            Opens with the Marketplace listing
-          </p>
-        ) : null}
         {checkoutMessage ? (
           <p role="status" className="checkout-status">
             {checkoutMessage}

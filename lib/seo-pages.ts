@@ -98,7 +98,7 @@ export const seoPages: SeoPage[] = [
     description:
       "Polar.sh analytics in Google Sheets: orders, subscriptions, refunds, and an MRR dashboard that stacks Polar with Lemon Squeezy or Gumroad.",
     h1: "Polar analytics without leaving your spreadsheet",
-    lede: `Polar’s product UI is built for shipping. ${brand.name} is built for the operators who still open a Sheet every Monday, backfilling Polar history into named tabs and keeping MRR honest across marketplaces. Multiple Polar orgs need separate tokens and Business (up to 20 stores).`,
+    lede: `Polar’s product UI is built for shipping. ${brand.name} is built for the operators who still open a Sheet every Monday, backfilling Polar history into named tabs and keeping MRR honest across storefronts. Multiple Polar orgs need separate tokens and Business (up to 20 stores).`,
     ogEyebrow: "Polar.sh",
     ogTitle: "Polar analytics in Google Sheets",
     sections: [

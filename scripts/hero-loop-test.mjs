@@ -39,6 +39,8 @@ const START_WAIT = Number(process.env.START_WAIT || 700);
 const SAVE_ALL = Boolean(process.env.SAVE_ALL);
 const REPLAY_AT = process.env.REPLAY_AT ? Number(process.env.REPLAY_AT) : null;
 const COLD_LOAD = Boolean(process.env.COLD_LOAD);
+/** When COLD=1, skip jump-up checks for the first 500ms of the loop (entrance). */
+const COLD = process.env.COLD === "1" || COLD_LOAD;
 /** Default suite widths when WIDTHS is set to "suite" or a comma list. */
 const SUITE_WIDTHS = [375, 768, 1000, 1024, 1060, 1100, 1120, 1200, 1280, 1440];
 const EDGE_INSET_MIN = 16;
@@ -377,7 +379,8 @@ while (Date.now() - t0 < LOOP_MS) {
   if (prevF) {
     for (const r of f.rows) {
       const o = prevF.pos?.[r.id];
-      if (o != null && r.top - o < -2) {
+      // Under COLD=1, ignore jump-up for the first 500ms (hero entrance).
+      if (o != null && r.top - o < -2 && !(COLD && t < 500)) {
         issues.push(`jump-up ${r.id} ${(r.top - o).toFixed(1)}px`);
       }
       if (o != null && r.top - o > 40) {
