@@ -10,7 +10,7 @@ draft: false
 
 Selling in more than one place happens gradually. You start on Gumroad because it was the fastest way to put an ebook online. A year later the software product goes on Lemon Squeezy, or Polar, because you need license keys and subscriptions. Then someone asks how much you made last month, and the honest answer is "let me open three tabs and add them up."
 
-This page is the version of that spreadsheet that holds up: one column layout every platform fits into, a decision about currencies, and a formula for spotting customers who bought from you in two places. It works by hand with CSV exports. If you'd rather not paste exports every month, [RevenueSheet](/?utm_source=blog&utm_medium=seo&utm_campaign=combine) fills the Orders tab from Lemon Squeezy, Polar, Gumroad and Stripe for you, free for one source. Once paid plans open, Pro unlocks the rest.
+This page is the version of that spreadsheet that holds up: one column layout every platform fits into, a decision about currencies, and a formula for spotting customers who bought from you in two places. It works by hand with CSV exports. If you'd rather not paste exports every month, [RevenueSheet](/?utm_source=blog&utm_medium=seo&utm_campaign=combine) fills the Orders tab from Lemon Squeezy, Polar, Gumroad and Stripe for you, free for one source at launch. Once paid plans open, Pro unlocks the rest.
 
 ## The shared layout
 
@@ -89,10 +89,10 @@ Two caveats. People use different emails at different times, so this undercounts
 
 The by-hand version has two costs. The obvious one is the monthly export-and-paste. The less obvious one is refunds: a sale you pasted in March might be refunded in April, and your March export doesn't know that. To keep the sheet honest by hand, re-export at least the last 60 to 90 days each time and replace those rows, rather than appending only new ones.
 
-RevenueSheet is a Google Sheets add-on that does the import part for you. It pulls orders, subscriptions, customers and refunds from Lemon Squeezy, Polar, Gumroad and Stripe into named tabs, using a layout like the one on this page: one row per order, a Source column, amounts in major units, a currency column. It goes back to your first sale on the first run and refreshes hourly, every 6 hours, daily or weekly after that. The Dashboard tab breaks revenue and MRR down by store and by product.
+RevenueSheet is a Google Sheets add-on that does the import part for you. It pulls orders, subscriptions, customers and refunds from Lemon Squeezy, Polar, Gumroad and Stripe into named tabs, using a layout like the one on this page: one row per order, a Source column, amounts in major units, a currency column. It goes back to your first sale on the first run and, at launch, refreshes hourly, every 6 hours, daily or weekly after that. The Dashboard tab breaks revenue and MRR down by store and by product.
 
 To be clear about what it doesn't do: it doesn't convert currencies for you, and it doesn't merge the same customer across platforms. The currency decision and the dedupe formulas above still apply, and you can add them in columns to the right of the synced data, where the add-on won't overwrite them.
 
 For the subscription side of the same problem, see [How to Track MRR Across Gumroad, Polar and Lemon Squeezy](/blog/mrr-across-gumroad-polar-lemon-squeezy). For Gumroad alone, with a working Apps Script, see the [Gumroad sales spreadsheet guide](/blog/gumroad-sales-spreadsheet).
 
-[Join the launch list](/#launch). Free covers one source with manual refresh. Once paid plans open, Pro adds scheduled sync (hourly, every 6 hours, daily or weekly) across all sources.
+[Join the launch list](/#launch). Free covers one source with manual refresh at launch. Once paid plans open, Pro adds scheduled sync (hourly, every 6 hours, daily or weekly) across all sources (one store per source) at launch.

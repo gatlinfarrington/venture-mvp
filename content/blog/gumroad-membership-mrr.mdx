@@ -32,7 +32,7 @@ One-time sales (an ebook, a template pack) are revenue, but they aren't recurrin
 
 You need one row per membership, with the customer, product, status, price, and billing period. Gumroad's API returns subscribers per membership product (`GET https://api.gumroad.com/v2/products/:id/subscribers`), so you call it once per product. Each subscriber comes back with a `recurrence` (one of the labels above) and a `status`. You need an access token: in Gumroad, open **Settings › Advanced**, create an application, and click **Generate access token**. Treat the token like a password.
 
-The API returns money in cents. A $9.00 membership comes back as `900`, so divide by 100 when you write it to the sheet.
+The API returns money in cents ([Gumroad sale `price`](https://gumroad.com/api#sales)). A $9.00 membership comes back as `900`, so divide by 100 when you write it to the sheet.
 
 Put the rows in a tab called `Members`:
 
@@ -72,7 +72,7 @@ A worked example on example data: 30 members at $10 a month ($300), 8 at $30 a q
 
 ## Cancelled vs. ended vs. failed payment
 
-Status is where homemade MRR numbers drift. Gumroad's subscriber statuses are `alive`, `pending_cancellation`, `pending_failure`, `failed_payment`, `fixed_subscription_period_ended` and `cancelled`. Three rules keep it honest:
+Status is where homemade MRR numbers drift. Gumroad's subscriber statuses are `alive`, `payment_method_update_required`, `pending_cancellation`, `pending_failure`, `failed_payment`, `fixed_subscription_period_ended` and `cancelled` ([Gumroad subscribers API](https://gumroad.com/api#subscribers)). Three rules keep it honest:
 
 - **A membership stops counting on the day access ends,** not the day someone clicks cancel. `pending_cancellation` means the member asked to cancel but still has access, so the formula above keeps it in MRR until the subscription actually ends.
 - **Failed payments are a choice.** `pending_failure` means the latest charge failed and Gumroad is retrying. The money hasn't arrived, so we'd leave it out of the headline number and show it on its own line: `=SUMIFS(Members!D:D, Members!C:C, "pending_failure")` gives the at-risk amount per billing period.
@@ -94,5 +94,5 @@ RevenueSheet is a Google Sheets add-on that does the import for you. You paste a
 
 By default only `active` subscriptions count toward MRR. There's a sidebar toggle to include trialing and past-due subscriptions if you prefer. The full method is on [How we calculate MRR and churn](/docs/mrr-and-churn).
 
-The Free plan covers one source with one-click refresh and full history backfill. Once paid plans open, Pro ($9/mo) adds Polar, Lemon Squeezy and Stripe beside Gumroad, plus CSV import and scheduled refresh (hourly, every 6 hours, daily or weekly). RevenueSheet is pending Google Workspace Marketplace review; [join the launch list](/#launch) to hear when it's live.
+The Free plan covers one source with one-click refresh and full history backfill at launch. Once paid plans open, Pro ($9/mo) adds Polar, Lemon Squeezy and Stripe beside Gumroad (one store per source), plus CSV import and scheduled refresh (hourly, every 6 hours, daily or weekly) at launch. RevenueSheet is pending Google Workspace Marketplace review; [join the launch list](/#launch) to hear when it's live.
 

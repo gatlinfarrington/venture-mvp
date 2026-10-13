@@ -10,7 +10,7 @@ draft: false
 
 If you're about to sell a Lemon Squeezy business, raise a little money, or just write an honest monthly update, someone will ask for your MRR. The number sounds simple. Then you open your subscriptions and find seven different statuses, a mix of monthly and yearly plans, and a handful of customers on a launch discount, and "simple" goes away.
 
-This page gives you a status-by-status rule for what counts, the math for annual and discounted plans, and a Google Sheets formula you can copy. Everything works by hand from a CSV export. If you'd rather skip the export, [RevenueSheet](/?utm_source=blog&utm_medium=seo&utm_campaign=ls-mrr) pulls your Lemon Squeezy subscriptions into a sheet and runs this calculation on every sync. It's free for one source. Once paid plans open, Pro unlocks the rest.
+This page gives you a status-by-status rule for what counts, the math for annual and discounted plans, and a Google Sheets formula you can copy. Everything works by hand from a CSV export. If you'd rather skip the export, [RevenueSheet](/?utm_source=blog&utm_medium=seo&utm_campaign=ls-mrr) pulls your Lemon Squeezy subscriptions into a sheet and runs this calculation on every sync. It's free for one source at launch. Once paid plans open, Pro unlocks the rest.
 
 ## What counts as MRR on Lemon Squeezy
 
@@ -46,7 +46,7 @@ Every subscription has to be turned into a monthly amount before you add anythin
 | Every 6 months | 6 |
 | Yearly | 12 |
 
-**Cents.** Lemon Squeezy's API returns prices in cents. A `recurring_price` of `900` is $9.00. If you pull data from the API rather than the dashboard export, divide by 100 before anything else. This one mistake turns a $3,000 MRR business into a $300,000 one, and it happens more often than you'd think.
+**Cents.** Lemon Squeezy's API returns prices in cents ([order totals](https://docs.lemonsqueezy.com/api/orders/the-order-object) and [price `unit_price`](https://docs.lemonsqueezy.com/api/prices/the-price-object)). A `recurring_price` of `900` is $9.00. If you pull data from the API rather than the dashboard export, divide by 100 before anything else. This one mistake turns a $3,000 MRR business into a $300,000 one, and it happens more often than you'd think.
 
 **Discounts.** If a customer is on a 50% off forever coupon, their MRR is the discounted price, because that's what they'll actually pay next month. If the discount is for the first three months only, the honest number is still what they pay today, and it will step up later on its own. Whatever your export gives you, check a few discounted customers by hand against what they were actually charged on their last invoice. Plan price and charged price are not always the same column.
 
@@ -112,8 +112,8 @@ A quick worked example on example data: 40 active monthly subscribers at $9 ($36
 
 The formulas above are fine for a monthly check. They get tedious when you want the number every morning, or when you also sell on Polar or Gumroad and need one total.
 
-RevenueSheet is a Google Sheets add-on that pulls every Lemon Squeezy subscription, order, customer and refund into named tabs, back to your first sale, and refreshes hourly, every 6 hours, daily or weekly. Prices come in already converted from cents, and yearly and multi-month plans (for example every 3 months) are normalized to monthly using each plan's interval and interval count. The Dashboard tab shows MRR from active subscriptions, with trials and past-due as separate figures. The raw rows stay in the sheet, so you can check any number against the formulas on this page.
+RevenueSheet is a Google Sheets add-on that pulls every Lemon Squeezy subscription, order, customer and refund into named tabs, back to your first sale, and refreshes hourly, every 6 hours, daily or weekly at launch. Prices come in already converted from cents, and yearly and multi-month plans (for example every 3 months) are normalized to monthly using each plan's interval and interval count. The Dashboard tab shows MRR from active subscriptions, with trials and past-due as separate figures. The raw rows stay in the sheet, so you can check any number against the formulas on this page.
 
 Your API key is stored in your Google account, not in a cell, and the add-on can only open the sheet it's installed in. For combining Lemon Squeezy with other platforms, see [How to Track MRR Across Gumroad, Polar and Lemon Squeezy](/blog/mrr-across-gumroad-polar-lemon-squeezy). For getting the data in, see [Lemon Squeezy to Google Sheets](/docs/setup/lemon-squeezy), or start from the [MRR spreadsheet template](/sample).
 
-[Join the launch list](/#launch). Free covers one source with manual refresh. Once paid plans open, Pro adds scheduled sync (hourly, every 6 hours, daily or weekly) across all sources.
+[Join the launch list](/#launch). Free covers one source with manual refresh at launch. Once paid plans open, Pro adds scheduled sync (hourly, every 6 hours, daily or weekly) across all sources (one store per source) at launch.
