@@ -92,7 +92,7 @@ MRR tells you what the base looks like. Net revenue tells you what actually land
 
 RevenueSheet is a Google Sheets add-on that will do the import for you at launch. You paste a Gumroad access token in the sidebar and press Backfill; sales land in an Orders tab with product, email, amount, and refund status, and re-running sync updates refunded rows instead of duplicating them. Memberships count toward MRR, normalized monthly, and one-time sales go to net revenue. The add-on only reads: it calls Gumroad with GET requests only. Your key stays in your Google account.
 
-By default only `active` subscriptions count toward MRR. There's a sidebar toggle to include trialing and past-due subscriptions if you prefer. The full method is on [How we calculate MRR and churn](/docs/mrr-and-churn).
+By default only subscriptions in RevenueSheet's `active` bucket count toward MRR (Gumroad's own running status is `alive`, which maps into that bucket). There's a sidebar toggle to include trialing and past-due subscriptions if you prefer. The full method is on [How we calculate MRR and churn](/docs/mrr-and-churn).
 
 The Free plan covers one source with one-click refresh and full history backfill at launch. Once paid plans open, Pro ($9/mo) adds Polar, Lemon Squeezy and Stripe beside Gumroad (one store per source), plus CSV import and scheduled refresh (hourly, every 6 hours, daily or weekly) at launch. RevenueSheet is pending Google Workspace Marketplace review; [join the launch list](/#launch) to hear when it's live.
 
