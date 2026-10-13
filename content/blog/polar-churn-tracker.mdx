@@ -1,0 +1,121 @@
+---
+title: "Track Polar Subscription Churn in Google Sheets"
+description: "Monthly logo churn and revenue churn for Polar subscriptions, with the Sheets formulas, the data you need, and how it compares to Polar's built-in metrics."
+date: "2026-10-12"
+tags: ["guides", "churn", "polar"]
+draft: false
+---
+
+# Track Polar Subscription Churn in Google Sheets
+
+Polar shows you how many subscribers you have today. What it won't hand you in a form you can play with is the month-by-month story: how many people you started March with, how many left, and whether the ones who left were your $9 customers or your $49 ones.
+
+That story fits in a Google Sheet. This page shows the two churn numbers worth tracking, the columns you need out of Polar, and the formulas. Everything works by hand. If you'd rather not export a CSV every month, [RevenueSheet](/?utm_source=blog&utm_medium=seo&utm_campaign=polar-churn) fills the Subscriptions tab for you, free for one source at launch. Once paid plans open, Pro unlocks the rest.
+
+## Logo churn vs. revenue churn
+
+Two numbers, and they disagree more often than you'd think.
+
+- **Logo churn** is the share of subscribers who left. Customers lost in the month divided by customers active at the start of the month.
+- **Revenue churn** is the share of MRR that left. MRR lost from cancellations divided by MRR at the start of the month.
+
+A worked example (example data, not a real store). You start October with 50 subscribers: 48 on a $9 plan and 2 on a $49 plan. Starting MRR is 48 × 9 + 2 × 49 = $530.
+
+During October, the two $49 customers cancel and nobody else does.
+
+| Metric | Math | Result |
+|---|---|---|
+| Logo churn | 2 / 50 | 4.0% |
+| Revenue churn | 98 / 530 | 18.5% |
+
+A 4% month looks fine on a chart of subscriber counts. Losing almost a fifth of your recurring revenue doesn't. If you only track one, track revenue churn. If your plans are all one price, the two numbers are the same and you can stop reading this section.
+
+## The data you need from Polar
+
+You need one row per subscription, not per payment. The columns that matter:
+
+| Column | What it holds | Why |
+|---|---|---|
+| Subscription ID | Polar's ID | So you can update a row instead of duplicating it |
+| Customer | email or customer ID | Logo churn counts customers |
+| Product | product name | Churn by product later |
+| Amount | price per billing period, in your currency | Revenue churn |
+| Interval | Polar's `recurring_interval` (day, week, month or year) and its count | Yearly plans get divided by 12 |
+| Started | date the subscription began | Active-at-start test |
+| Ended | date access ended, blank if still active | Churned-in-month test |
+| Status | active, canceled, etc. | Sanity check |
+
+Two details trip people up:
+
+1. **Use the date access ended, not the date someone clicked cancel.** A customer who cancels on October 3rd but paid through October 28th is still a subscriber until the 28th. Polar keeps both dates on the subscription. Use the end date.
+2. **Yearly plans.** A $90 yearly plan is $7.50 of MRR. Put a helper column next to Amount: `=IF(E2="year", D2/12, D2)`. Call it Monthly value.
+
+You can get these rows from Polar's dashboard export, or from the API with an organization access token that can read subscriptions. Check the scope names in Polar's docs when you create the token; give it read access only.
+
+## Formulas for active-at-start and churned-in-month
+
+Put your subscription rows in a tab called `Subs` with headers in row 1: A Subscription ID, B Customer, C Product, D Amount, E Interval, F Started, G Ended, H Status, I Monthly value.
+
+Then make a `Churn` tab. Column A is the first day of each month (A2 = 2025-11-01, A3 = 2025-12-01, and so on). Add these columns:
+
+**B: Active at start** (subscriptions that began before the month and hadn't ended by its first day)
+
+```
+=SUMPRODUCT((Subs!$F$2:$F<A2)*((Subs!$G$2:$G="")+(Subs!$G$2:$G>=A2)>0))
+```
+
+**C: Churned in month** (ended on or after the 1st and before the 1st of next month)
+
+```
+=SUMPRODUCT((Subs!$G$2:$G>=A2)*(Subs!$G$2:$G<EDATE(A2,1))*(Subs!$F$2:$F<A2))
+```
+
+The last condition keeps someone who signed up and left inside the same month out of both the numerator and the denominator. Count those separately if you care about them. They're usually a trial or onboarding problem, not a retention problem.
+
+**D: Logo churn**
+
+```
+=IFERROR(C2/B2, "")
+```
+
+**E: MRR at start** and **F: MRR churned** use the same tests, multiplied by the Monthly value column:
+
+```
+=SUMPRODUCT((Subs!$F$2:$F<A2)*((Subs!$G$2:$G="")+(Subs!$G$2:$G>=A2)>0)*Subs!$I$2:$I)
+=SUMPRODUCT((Subs!$G$2:$G>=A2)*(Subs!$G$2:$G<EDATE(A2,1))*(Subs!$F$2:$F<A2)*Subs!$I$2:$I)
+```
+
+**G: Revenue churn**
+
+```
+=IFERROR(F2/E2, "")
+```
+
+Format D and G as percentages, fill down 12 rows, and chart G over A. That chart is the asset this page exists for: a line that tells you whether the business is leaking faster or slower than last quarter.
+
+One caveat: if a customer upgrades from $9 to $49, a single-row-per-subscription export shows them at $49 the whole time. Proper expansion and contraction tracking needs a price history, which is more than this sheet does. For most stores under a few hundred subscribers, the simple version is close enough to make decisions with.
+
+## When Polar's own analytics are enough
+
+Be honest with yourself here. If you sell only on Polar, you don't need custom churn math to make a decision this week, and you don't want to maintain formulas, use Polar's built-in metrics. They're good, and they're maintained by people who know the edge cases in their own data.
+
+A sheet earns its keep when one of these is true:
+
+- You want churn by product, by price, or by signup cohort, and the dashboard doesn't slice it that way.
+- You want the raw rows so you can click a number and see which customers it's made of.
+- You report to someone (a cofounder, an accountant, yourself in a year) and want a file that doesn't change when a dashboard redesign ships.
+- You sell somewhere else too.
+
+## Churn across Polar and other stores
+
+This is where the sheet stops being optional. If you have subscribers on Polar and also on Lemon Squeezy or Gumroad, no single dashboard knows your total churn. Each platform's number is honest about its own slice and silent about the rest.
+
+The fix is the same layout with a Source column. Put every subscription from every store in one `Subs` tab, keep the same columns, and the formulas above work unchanged. Add `*(Subs!$J$2:$J="Polar")` to any formula when you want one store alone.
+
+The hard part is the mapping, because each platform names things differently. The [MRR across Gumroad, Polar and Lemon Squeezy guide](/blog/mrr-across-gumroad-polar-lemon-squeezy) walks through which field means "access ended" on each one. Our [Polar to Google Sheets page](/docs/setup/polar) covers getting the data in.
+
+## Skip the export
+
+RevenueSheet is a Google Sheets add-on that will pull every Polar subscription into a Subscriptions tab at launch, back to your first sale, and keep it updated once paid plans open. It builds the churn and MRR numbers on a Dashboard tab, and you can still write your own formulas next to them. Your Polar token stays in your Google account, and the add-on can only open the sheet it's installed in.
+
+[Join the launch list](/?utm_source=blog&utm_medium=seo&utm_campaign=polar-churn-end#launch). Free covers one store with manual refresh at launch. RevenueSheet is pending Google Workspace Marketplace review.
