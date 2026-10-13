@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LaunchInvite } from "@/components/LaunchInvite";
 import { MdxContent } from "@/components/MdxContent";
+import { blogTagLabel } from "@/lib/blog-tags";
 import { brand } from "@/lib/brand";
 import { getAllBlogPosts, getBlogPost } from "@/lib/content/blog";
 import { siteConfig } from "@/lib/site";
@@ -80,13 +82,17 @@ export default async function BlogPostPage({ params }: Props) {
         {post.tags.map((tag, i) => (
           <span key={tag}>
             {i > 0 ? ", " : null}
-            <Link href={`/blog/tag/${encodeURIComponent(tag)}`}>{tag}</Link>
+            <Link href={`/blog/tag/${encodeURIComponent(tag)}`}>{blogTagLabel(tag)}</Link>
           </span>
         ))}
       </p>
       <div className="prose">
         <MdxContent source={post.body} />
       </div>
+      <aside className="blog-launch-rail">
+        <h2 className="h3">Get the launch email</h2>
+        <LaunchInvite source={`blog-${post.slug}`} />
+      </aside>
     </main>
   );
 }

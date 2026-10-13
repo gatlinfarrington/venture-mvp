@@ -8,6 +8,8 @@ const TAG_LABELS: Record<string, string> = {
   gumroad: "Gumroad",
   stripe: "Stripe",
   mrr: "MRR",
+  guides: "Guides",
+  churn: "Churn",
 };
 
 export function blogTagLabel(slug: string): string {
