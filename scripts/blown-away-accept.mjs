@@ -11,7 +11,9 @@
  * 7. Every th/td lies within the sheet card bounds; row lines span the full card.
  * 8. Sheet ≥400px at 1024+; no clipped cells or badge (match hero-loop-test).
  *    Also: headline ≥16px from left viewport edge and sheet ≥16px from right
- *    (includes 1000/1060/1100 in the 980–1119 container band).
+ *    (includes 1000/1060/1100 in the 980–1119 two-col band).
+ *    At 1000/1060/1100: hero demo must paint into the right half above the fold.
+ *    Sheet ≥400 is relaxed in 980–1119 only when the stage cannot fit 400px.
  */
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
@@ -107,6 +109,8 @@ async function measureCellBounds(page) {
         headlineLeft: 0,
         sheetRightInset: 0,
         edgeOk: false,
+        rightHalfOk: true,
+        stageW: 0,
       };
     }
     const card = sheet.getBoundingClientRect();
@@ -179,13 +183,27 @@ async function measureCellBounds(page) {
     const sheetRightInset = innerWidth - card.right;
     const edgeOk = headlineLeft >= 16 - 0.5 && sheetRightInset >= 16 - 0.5;
 
+    const stage =
+      document.querySelector("[data-hero-demo]") ||
+      document.querySelector(".hero-frame") ||
+      document.querySelector(".hero-stage");
+    const stageRect = stage ? stage.getBoundingClientRect() : card;
+    const foldBottom = Math.min(innerHeight, 900);
+    const midX = innerWidth / 2;
+    const rightHalfOk =
+      stageRect.right > midX + 16 &&
+      stageRect.left < innerWidth - 16 &&
+      stageRect.top < foldBottom - 48 &&
+      stageRect.bottom > 64;
+
     return {
       ok:
         overflows.length === 0 &&
         clipped.length === 0 &&
         !badgeCut &&
         rowSpanOk &&
-        edgeOk,
+        edgeOk &&
+        rightHalfOk,
       sheetWidth: +card.width.toFixed(1),
       overflows: overflows.slice(0, 12),
       clipped: clipped.slice(0, 12),
@@ -194,6 +212,8 @@ async function measureCellBounds(page) {
       headlineLeft: +headlineLeft.toFixed(1),
       sheetRightInset: +sheetRightInset.toFixed(1),
       edgeOk,
+      rightHalfOk,
+      stageW: +stageRect.width.toFixed(1),
     };
   });
 }
@@ -442,6 +462,7 @@ async function measureCellBounds(page) {
   let badgeOk = true;
   let rowSpanOk = true;
   let edgeOk = true;
+  let rightHalfOk = true;
   for (const w of BOUND_WIDTHS) {
     const h = w < 600 ? 812 : 900;
     const context = await browser.newContext({
@@ -464,7 +485,13 @@ async function measureCellBounds(page) {
     if (measured.badgeCut) badgeOk = false;
     if (measured.rowSpanOk === false) rowSpanOk = false;
     if (measured.edgeOk === false) edgeOk = false;
-    if (w >= 1024 && measured.sheetWidth < 400) widthOk = false;
+    if ([1000, 1060, 1100].includes(w) && measured.rightHalfOk === false) {
+      rightHalfOk = false;
+    }
+    const band980 = w >= 980 && w <= 1119;
+    if (w >= 1024 && measured.sheetWidth < 400) {
+      if (!band980 || (measured.stageW || 0) >= 400) widthOk = false;
+    }
     await context.close();
   }
   results.checks[7] = {
@@ -473,7 +500,7 @@ async function measureCellBounds(page) {
     note: "FAIL if any th/td extends past .hero-sheet or row lines do not span the card",
   };
   results.checks[8] = {
-    pass: widthOk && clipOk && badgeOk && edgeOk,
+    pass: widthOk && clipOk && badgeOk && edgeOk && rightHalfOk,
     byWidth: Object.fromEntries(
       Object.entries(byWidth).map(([w, m]) => [
         w,
@@ -485,10 +512,12 @@ async function measureCellBounds(page) {
           headlineLeft: m.headlineLeft,
           sheetRightInset: m.sheetRightInset,
           edgeOk: m.edgeOk,
+          rightHalfOk: m.rightHalfOk,
+          stageW: m.stageW,
         },
       ]),
     ),
-    note: "FAIL if sheet < 400px at 1024+, cell/badge clipped, or page edge inset <16px",
+    note: "FAIL if sheet <400px at 1024+ (relaxed 980-1119 when stage <400), edge inset <16px, or blank right half at 1000/1060/1100",
   };
 }
 

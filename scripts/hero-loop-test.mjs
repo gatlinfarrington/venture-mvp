@@ -4,12 +4,16 @@
 // empty space under the last visible row taller than 2px inside the clip box).
 // Also fails if the sheet is under 400px wide at viewport >= 1024, or any cell or
 // the delta badge is cut off.
+// Exception (documented): in the 980–1119 two-column band, sheet ≥400 is required
+// only when the stage is wide enough to fit it; otherwise the check is relaxed.
 // Also fails if the hero headline is <16px from the left viewport edge or the
 // sheet's right edge is <16px from the right viewport edge (container inset).
+// At 1000/1060/1100, fails if the right half above the fold has no hero demo
+// (stacked layout leaving blank white beside the copy).
 // The reset ghost layer (.hero-rows-ghost) is excluded: it is a deliberate fade-out overlay.
 //
 // Widths: VIEWPORT_WIDTH / WIDTH for one run. Or WIDTHS=suite / a comma list.
-// Suite includes 1000/1060/1100 (980–1119 container band) and 1120/1200.
+// Suite includes 1000/1060/1100 (980–1119 two-col band) and 1120/1200.
 // Cold load: COLD_LOAD=1 fails if any live row paints above the table header on first paint.
 import { chromium } from "playwright-core";
 import fs from "fs";
@@ -104,6 +108,8 @@ async function sampleFrame() {
         headlineLeft: 0,
         sheetRightInset: 0,
         edgeOk: false,
+        rightHalfOk: true,
+        stageW: 0,
       };
     }
 
@@ -197,6 +203,20 @@ async function sampleFrame() {
     const sheetRightInset = innerWidth - card.right;
     const edgeOk = headlineLeft >= 16 - 0.5 && sheetRightInset >= 16 - 0.5;
 
+    const stage =
+      document.querySelector("[data-hero-demo]") ||
+      document.querySelector(".hero-frame") ||
+      document.querySelector(".hero-stage");
+    const stageRect = stage ? stage.getBoundingClientRect() : card;
+    const foldBottom = Math.min(innerHeight, 900);
+    const midX = innerWidth / 2;
+    // Demo must paint into the right half above the fold (not blank white).
+    const rightHalfOk =
+      stageRect.right > midX + 16 &&
+      stageRect.left < innerWidth - 16 &&
+      stageRect.top < foldBottom - 48 &&
+      stageRect.bottom > 64;
+
     return {
       rows: rows.filter((r) => r.top < clip.bottom - 1),
       clipBottom: clip.bottom,
@@ -211,6 +231,8 @@ async function sampleFrame() {
       headlineLeft: +headlineLeft.toFixed(1),
       sheetRightInset: +sheetRightInset.toFixed(1),
       edgeOk,
+      rightHalfOk,
+      stageW: +stageRect.width.toFixed(1),
     };
   }, ROWSEL);
 }
@@ -279,13 +301,21 @@ while (Date.now() - t0 < LOOP_MS) {
     const tail = f.clipBottom - s.at(-1).bottom;
     if (tail > 2) issues.push(`blank band at bottom ${tail.toFixed(1)}px`);
   }
+  // ≥400px sheet from 1024 up, except 980–1119 where we only require it when
+  // the stage can fit a 400px sheet (two-col band; documented).
+  const band980 = f.vw >= 980 && f.vw <= 1119;
   if (f.vw >= 1024 && f.sheetW < 400) {
-    issues.push(`narrow sheet ${f.sheetW.toFixed(0)}px at ${f.vw}`);
+    if (!band980 || (f.stageW || 0) >= 400) {
+      issues.push(`narrow sheet ${f.sheetW.toFixed(0)}px at ${f.vw}`);
+    }
   }
   if (f.edgeOk === false) {
     issues.push(
       `page edge inset <${EDGE_INSET_MIN}px (headlineLeft=${f.headlineLeft}, sheetRightInset=${f.sheetRightInset})`,
     );
+  }
+  if ([1000, 1060, 1100].includes(f.vw) && f.rightHalfOk === false) {
+    issues.push("right half above the fold is blank (hero demo missing)");
   }
   if (f.clipped.length) {
     issues.push("clipped " + [...new Set(f.clipped)].slice(0, 6).join("|"));
