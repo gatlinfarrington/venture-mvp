@@ -35,7 +35,7 @@ Every platform offers some kind of export in its dashboard, and those menus move
 |---|---|---|
 | Lemon Squeezy | `GET https://api.lemonsqueezy.com/v1/subscriptions` | An API key from your Lemon Squeezy settings |
 | Polar | `GET https://api.polar.sh/v1/subscriptions/` | An organization access token with the [`subscriptions:read`](https://polar.sh/docs/api-reference/subscriptions/list) scope (Polar dashboard, organization Settings, Developers, New Token) |
-| Gumroad | `GET https://api.gumroad.com/v2/products/:id/subscribers`, once per membership product | An access token (Settings › Advanced: create an application named RevenueSheet, then Generate access token) |
+| Gumroad | `GET https://api.gumroad.com/v2/products/:id/subscribers`, once per membership product | An access token (in your Gumroad settings / advanced settings: create an application, then Generate access token) |
 
 One detail that trips people up: **all three APIs return money in cents** (Gumroad `price`, Polar `amount` / `price_amount`, Lemon Squeezy totals and `unit_price`). A $9.00 plan comes back as `900`. Divide by 100 when you write it to the sheet.
 
@@ -76,13 +76,13 @@ The platforms name billing intervals differently. Polar and Lemon Squeezy use `m
   H2<>"", "ended",
   OR(D2="on_trial", D2="trialing"), "trial",
   D2="past_due", "past_due",
-  OR(D2="active", D2="cancelled", D2="canceled"), "active",
+  OR(D2="active", D2="alive", D2="cancelled", D2="canceled"), "active",
   TRUE, "ended")
 ```
 
-Why does `cancelled` land in `active`? Because on Lemon Squeezy and Polar, a canceled subscription usually keeps access until the end of the period it paid for. The `Ended` date in column H is what moves it to `ended`. Fill H with the date access actually ends (Lemon Squeezy calls this `ends_at`, Polar `ended_at`), not the date the customer canceled.
+Why does `cancelled` land in `active`? Because on Lemon Squeezy and Polar, a canceled subscription usually keeps access until the end of the period it paid for. The `Ended` date in column H is what moves it to `ended`. On Lemon Squeezy, fill H from `ends_at` (when access ends). On Polar, use `ends_at` while a canceled subscription is still running (scheduled end) and `ended_at` once it has actually ended. Polar billing cadence is `recurring_interval` (`day`, `week`, `month`, or `year`) plus `recurring_interval_count`.
 
-Gumroad uses its own status words for membership subscribers (for example `alive` for a running membership). Look at the values your Gumroad data actually contains and add the running ones to the `active` line.
+Gumroad uses its own status words for membership subscribers (`alive` for a running membership, not `active`). Add `alive` (and any other still-running Gumroad statuses you see) to the `active` line in the formula above.
 
 MRR then sums only the `active` bucket, and you can show trials and past-due as their own numbers with the same SUMIFS pointed at `trial` or `past_due`. If you'd rather count past-due subscriptions in MRR, change that line to return `active`.
 
@@ -159,7 +159,7 @@ Copy these across 12 columns with `M1` moving a month each time, and you have a 
 
 The method above works, and if you only check your numbers once a quarter it may be all you need. The cost is the paste: every refresh means three exports or three scripts, the same cleanup, and the same chance to forget the cents.
 
-RevenueSheet is a Google Sheets add-on that does that part. You paste one key per store, and it pulls the full history from Lemon Squeezy, Polar and Gumroad into Orders, Subscriptions, Customers and Refunds tabs with a layout much like the one above, then builds a Dashboard tab with MRR, churn and revenue by product. Paid plans refresh hourly, every 6 hours, daily or weekly at launch. The tabs come with named ranges (`rs_orders`, `rs_subs`, `rs_mrr_monthly`), so the formulas in this guide can point straight at them.
+RevenueSheet is a Google Sheets add-on that will do that part at launch. You paste one key per store, and it pulls the full history from Lemon Squeezy, Polar and Gumroad into Orders, Subscriptions, Customers and Refunds tabs with a layout much like the one above, then builds a Dashboard tab with MRR, churn and revenue by product. Once paid plans open, they refresh hourly, every 6 hours, daily or weekly. The tabs come with named ranges (`rs_orders`, `rs_subs`, `rs_mrr_monthly`), so the formulas in this guide can point straight at them.
 
 It uses the same defaults as this guide: quarterly, six-month and yearly plans are normalized to monthly, and MRR counts active subscriptions; trials and past-due are shown separately.
 

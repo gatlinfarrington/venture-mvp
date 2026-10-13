@@ -30,7 +30,7 @@ One-time sales (an ebook, a template pack) are revenue, but they aren't recurrin
 
 ## Where the data lives
 
-You need one row per membership, with the customer, product, status, price, and billing period. Gumroad's API returns subscribers per membership product (`GET https://api.gumroad.com/v2/products/:id/subscribers`), so you call it once per product. Each subscriber comes back with a `recurrence` (one of the labels above) and a `status`. You need an access token: in Gumroad, open **Settings › Advanced**, create an application, and click **Generate access token**. Treat the token like a password.
+You need one row per membership, with the customer, product, status, price, and billing period. Gumroad's API returns subscribers per membership product (`GET https://api.gumroad.com/v2/products/:id/subscribers`), so you call it once per product. Each subscriber comes back with a `recurrence` (one of the labels above) and a `status`. You need an access token: in your Gumroad settings (advanced settings), create an application, and click **Generate access token**. Treat the token like a password.
 
 The API returns money in cents ([Gumroad sale `price`](https://gumroad.com/api#sales)). A $9.00 membership comes back as `900`, so divide by 100 when you write it to the sheet.
 
@@ -90,7 +90,7 @@ MRR tells you what the base looks like. Net revenue tells you what actually land
 
 ## Doing it automatically
 
-RevenueSheet is a Google Sheets add-on that does the import for you. You paste a Gumroad access token in the sidebar and press Backfill; sales land in an Orders tab with product, email, amount, and refund status, and re-running sync updates refunded rows instead of duplicating them. Memberships count toward MRR, normalized monthly, and one-time sales go to net revenue. The add-on only reads: it calls Gumroad with GET requests only. Your key stays in your Google account.
+RevenueSheet is a Google Sheets add-on that will do the import for you at launch. You paste a Gumroad access token in the sidebar and press Backfill; sales land in an Orders tab with product, email, amount, and refund status, and re-running sync updates refunded rows instead of duplicating them. Memberships count toward MRR, normalized monthly, and one-time sales go to net revenue. The add-on only reads: it calls Gumroad with GET requests only. Your key stays in your Google account.
 
 By default only `active` subscriptions count toward MRR. There's a sidebar toggle to include trialing and past-due subscriptions if you prefer. The full method is on [How we calculate MRR and churn](/docs/mrr-and-churn).
 

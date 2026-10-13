@@ -46,7 +46,7 @@ Every subscription has to be turned into a monthly amount before you add anythin
 | Every 6 months | 6 |
 | Yearly | 12 |
 
-**Cents.** Lemon Squeezy's API returns prices in cents ([order totals](https://docs.lemonsqueezy.com/api/orders/the-order-object) and [price `unit_price`](https://docs.lemonsqueezy.com/api/prices/the-price-object)). A `recurring_price` of `900` is $9.00. If you pull data from the API rather than the dashboard export, divide by 100 before anything else. This one mistake turns a $3,000 MRR business into a $300,000 one, and it happens more often than you'd think.
+**Cents.** Lemon Squeezy's API returns prices in cents ([order totals](https://docs.lemonsqueezy.com/api/orders/the-order-object) and [price `unit_price`](https://docs.lemonsqueezy.com/api/prices/the-price-object)). A `unit_price` of `900` is $9.00. Billing cadence lives on the same Price object as `renewal_interval_unit` (`day`, `week`, `month`, or `year`) and `renewal_interval_quantity` (for example `month` + `3` for every 3 months). If you pull data from the API rather than the dashboard export, divide by 100 before anything else. This one mistake turns a $3,000 MRR business into a $300,000 one, and it happens more often than you'd think.
 
 **Discounts.** If a customer is on a 50% off forever coupon, their MRR is the discounted price, because that's what they'll actually pay next month. If the discount is for the first three months only, the honest number is still what they pay today, and it will step up later on its own. Whatever your export gives you, check a few discounted customers by hand against what they were actually charged on their last invoice. Plan price and charged price are not always the same column.
 
@@ -72,7 +72,7 @@ Add a helper column H, **Monthly value**, that normalizes the interval:
 =IF(F2="", "", F2 / SWITCH(LOWER(E2), "month", 1, "quarter", 3, "6 months", 6, "year", 12, 1))
 ```
 
-Adjust the interval labels to whatever your export actually uses. Lemon Squeezy's API uses `month` and `year` for the billing interval, with a separate interval count for things like "every 3 months". If you have interval counts, use `F2 / IF(E2="year", 12*count, count)` instead.
+Adjust the interval labels to whatever your export actually uses. Lemon Squeezy's Price object uses `renewal_interval_unit` (`day`, `week`, `month`, `year`) with `renewal_interval_quantity` for multi-period plans (for example every 3 months). If you have a quantity, normalize with something like `F2 / (quantity * SWITCH(unit, "day", 30.4375, "week", 4.345, "month", 1, "year", 12, 1))` (or map day/week to your own convention).
 
 Now the MRR cell, counting only `active`:
 
@@ -112,7 +112,7 @@ A quick worked example on example data: 40 active monthly subscribers at $9 ($36
 
 The formulas above are fine for a monthly check. They get tedious when you want the number every morning, or when you also sell on Polar or Gumroad and need one total.
 
-RevenueSheet is a Google Sheets add-on that pulls every Lemon Squeezy subscription, order, customer and refund into named tabs, back to your first sale, and refreshes hourly, every 6 hours, daily or weekly at launch. Prices come in already converted from cents, and yearly and multi-month plans (for example every 3 months) are normalized to monthly using each plan's interval and interval count. The Dashboard tab shows MRR from active subscriptions, with trials and past-due as separate figures. The raw rows stay in the sheet, so you can check any number against the formulas on this page.
+RevenueSheet is a Google Sheets add-on that will pull every Lemon Squeezy subscription, order, customer and refund into named tabs at launch, back to your first sale. Once paid plans open, it refreshes hourly, every 6 hours, daily or weekly. Prices come in already converted from cents, and yearly and multi-month plans (for example every 3 months) are normalized to monthly using each plan's `renewal_interval_unit` and `renewal_interval_quantity`. The Dashboard tab shows MRR from active subscriptions, with trials and past-due as separate figures. The raw rows stay in the sheet, so you can check any number against the formulas on this page.
 
 Your API key is stored in your Google account, not in a cell, and the add-on can only open the sheet it's installed in. For combining Lemon Squeezy with other platforms, see [How to Track MRR Across Gumroad, Polar and Lemon Squeezy](/blog/mrr-across-gumroad-polar-lemon-squeezy). For getting the data in, see [Lemon Squeezy to Google Sheets](/docs/setup/lemon-squeezy), or start from the [MRR spreadsheet template](/sample).
 
