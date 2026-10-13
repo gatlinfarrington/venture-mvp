@@ -3454,14 +3454,15 @@ a.tag-pill:focus-visible {
 
 /* Long fenced code / tables must scroll inside the prose column, not widen the page.
    Flex column children default to min-width:auto, so long <pre>/tables expand the page
-   unless min-width:0 + max-width:100% are set on the scrollports. */
+   unless min-width:0 + max-width:100% are set on the scrollports.
+   Keep the 68ch measure (min with 100%) so the #89 flex fix does not blow body width. */
 .legal .prose,
 .seo-page .prose,
 .docs-page .prose,
 .docs-main .prose,
 .blog-post .prose {
   min-width: 0;
-  max-width: 100%;
+  max-width: min(68ch, 100%);
 }
 
 .legal .prose > *,
@@ -3517,7 +3518,7 @@ a.tag-pill:focus-visible {
   /* stylelint-disable-next-line color-no-hex -- design-exception: token-color inline code fill */
   background: #f5f5f5;
   padding: var(--space-px) var(--space-1-5);
-  border-radius: 4px; /* design-exception: token-color inline code radius (no 4px token) */
+  border-radius: var(--radius-sm);
 }
 
 .legal .prose a,
@@ -3542,7 +3543,8 @@ a.tag-pill:focus-visible {
   text-decoration-color: var(--c-ink);
 }
 
-/* Scrollport wrapper keeps wide GFM tables inside the column on mobile. */
+/* Scrollport wrapper keeps wide GFM tables inside the column on mobile.
+   Right hairline hints that the table scrolls horizontally. */
 .legal .prose .mdx-table,
 .seo-page .prose .mdx-table,
 .docs-page .prose .mdx-table,
@@ -3553,6 +3555,7 @@ a.tag-pill:focus-visible {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   margin: var(--space-4) 0;
+  box-shadow: inset -1px 0 0 var(--c-hairline);
 }
 
 .legal .prose table,

@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    // Legacy share / crawler path; keep /og.png returning the generated home OG.
+    return [{ source: "/og.png", destination: "/opengraph-image" }];
+  },
 };
 
 export default nextConfig;
