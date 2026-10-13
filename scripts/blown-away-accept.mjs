@@ -14,6 +14,8 @@
  *    (includes 1000/1060/1100 in the 980–1119 two-col band).
  *    At 1000/1060/1100: hero demo must paint into the right half above the fold.
  *    Sheet ≥400 is relaxed in 980–1119 only when the stage cannot fit 400px.
+ *    At any width: launch-invite input/button must not overlap the demo or be
+ *    clipped by the viewport / copy column (when the form is present).
  */
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
@@ -196,6 +198,45 @@ async function measureCellBounds(page) {
       stageRect.top < foldBottom - 48 &&
       stageRect.bottom > 64;
 
+    let formOk = true;
+    let formIssues = [];
+    const form =
+      document.querySelector(".hero .launch-invite") ||
+      document.querySelector(".hero-copy .launch-invite");
+    if (form) {
+      const input = form.querySelector('input[type="email"]');
+      const btn = form.querySelector(".btn, button[type='submit']");
+      const demo =
+        document.querySelector("[data-hero-demo]") ||
+        document.querySelector(".hero-frame") ||
+        document.querySelector(".hero-stage");
+      const copy = document.querySelector(".hero-copy");
+      const demoR = demo ? demo.getBoundingClientRect() : null;
+      const copyR = copy ? copy.getBoundingClientRect() : null;
+      const overlaps = (a, b) =>
+        a.left < b.right - 0.5 &&
+        a.right > b.left + 0.5 &&
+        a.top < b.bottom - 0.5 &&
+        a.bottom > b.top + 0.5;
+      for (const el of [input, btn].filter(Boolean)) {
+        const r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) continue;
+        if (r.left < -0.5 || r.right > innerWidth + 0.5) {
+          formOk = false;
+          formIssues.push("form clipped by viewport");
+        }
+        if (copyR && (r.left < copyR.left - 1 || r.right > copyR.right + 1)) {
+          formOk = false;
+          formIssues.push("form clipped by copy column");
+        }
+        if (demoR && overlaps(r, demoR)) {
+          formOk = false;
+          formIssues.push("form overlaps demo");
+        }
+      }
+      formIssues = [...new Set(formIssues)];
+    }
+
     return {
       ok:
         overflows.length === 0 &&
@@ -203,7 +244,8 @@ async function measureCellBounds(page) {
         !badgeCut &&
         rowSpanOk &&
         edgeOk &&
-        rightHalfOk,
+        rightHalfOk &&
+        formOk,
       sheetWidth: +card.width.toFixed(1),
       overflows: overflows.slice(0, 12),
       clipped: clipped.slice(0, 12),
@@ -214,6 +256,8 @@ async function measureCellBounds(page) {
       edgeOk,
       rightHalfOk,
       stageW: +stageRect.width.toFixed(1),
+      formOk,
+      formIssues,
     };
   });
 }
@@ -454,7 +498,8 @@ async function measureCellBounds(page) {
 // —— Check 7/8 (match hero-loop-test): sheet ≥400px at 1024+, no clipped
 // cells/badge, row lines span the full card ——
 {
-  const BOUND_WIDTHS = [1440, 1280, 1200, 1120, 1100, 1060, 1024, 1000, 768, 375];
+  // Include 980 so the band edge / form / pill checks run at the tightest width.
+  const BOUND_WIDTHS = [1440, 1280, 1200, 1120, 1100, 1060, 1024, 1000, 980, 768, 375];
   const byWidth = {};
   let boundsOk = true;
   let widthOk = true;
@@ -463,6 +508,7 @@ async function measureCellBounds(page) {
   let rowSpanOk = true;
   let edgeOk = true;
   let rightHalfOk = true;
+  let formOk = true;
   for (const w of BOUND_WIDTHS) {
     const h = w < 600 ? 812 : 900;
     const context = await browser.newContext({
@@ -488,6 +534,7 @@ async function measureCellBounds(page) {
     if ([1000, 1060, 1100].includes(w) && measured.rightHalfOk === false) {
       rightHalfOk = false;
     }
+    if (measured.formOk === false) formOk = false;
     const band980 = w >= 980 && w <= 1119;
     if (w >= 1024 && measured.sheetWidth < 400) {
       if (!band980 || (measured.stageW || 0) >= 400) widthOk = false;
@@ -500,7 +547,7 @@ async function measureCellBounds(page) {
     note: "FAIL if any th/td extends past .hero-sheet or row lines do not span the card",
   };
   results.checks[8] = {
-    pass: widthOk && clipOk && badgeOk && edgeOk && rightHalfOk,
+    pass: widthOk && clipOk && badgeOk && edgeOk && rightHalfOk && formOk,
     byWidth: Object.fromEntries(
       Object.entries(byWidth).map(([w, m]) => [
         w,
@@ -514,10 +561,12 @@ async function measureCellBounds(page) {
           edgeOk: m.edgeOk,
           rightHalfOk: m.rightHalfOk,
           stageW: m.stageW,
+          formOk: m.formOk,
+          formIssues: m.formIssues,
         },
       ]),
     ),
-    note: "FAIL if sheet <400px at 1024+ (relaxed 980-1119 when stage <400), edge inset <16px, or blank right half at 1000/1060/1100",
+    note: "FAIL if sheet <400px at 1024+ (relaxed 980-1119 when stage <400), edge inset <16px, blank right half at 1000/1060/1100, or launch-invite overlaps/clips at any width",
   };
 }
 
