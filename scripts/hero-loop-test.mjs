@@ -5,13 +5,21 @@
 // Also fails if the sheet is under 400px wide at viewport >= 1024, or any cell or
 // the delta badge is cut off.
 // The reset ghost layer (.hero-rows-ghost) is excluded: it is a deliberate fade-out overlay.
+//
+// Widths: VIEWPORT_WIDTH / WIDTH for one run. Or WIDTHS=375,768,1024,1120,1200,1280,1440
+// to run a suite (includes the 1120/1200 two-column band).
+// Cold load: COLD_LOAD=1 fails if any live row paints above the table header on first paint.
 import { chromium } from "playwright-core";
 import fs from "fs";
 import { createRequire } from "module";
+import { spawnSync } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const require = createRequire(import.meta.url);
 const pw = require("playwright-core");
 const executablePath = pw.chromium.executablePath();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const URL = process.argv[2] || "https://www.revenuesheet.app/";
 const OUT = process.argv[3] || "/tmp/hero-loop-report";
@@ -22,6 +30,34 @@ const HEIGHT = Number(process.env.VIEWPORT_HEIGHT || (WIDTH < 600 ? 812 : 900));
 const START_WAIT = Number(process.env.START_WAIT || 700);
 const SAVE_ALL = Boolean(process.env.SAVE_ALL);
 const REPLAY_AT = process.env.REPLAY_AT ? Number(process.env.REPLAY_AT) : null;
+const COLD_LOAD = Boolean(process.env.COLD_LOAD);
+/** Default suite widths when WIDTHS is set to "suite" or a comma list. */
+const SUITE_WIDTHS = [375, 768, 1024, 1120, 1200, 1280, 1440];
+
+if (process.env.WIDTHS && !process.env.HERO_LOOP_CHILD) {
+  const list =
+    process.env.WIDTHS === "suite" || process.env.WIDTHS === "1"
+      ? SUITE_WIDTHS
+      : process.env.WIDTHS.split(",").map((s) => Number(s.trim())).filter(Boolean);
+  let failed = 0;
+  for (const w of list) {
+    const outDir = path.join(OUT, String(w));
+    fs.mkdirSync(outDir, { recursive: true });
+    const env = {
+      ...process.env,
+      HERO_LOOP_CHILD: "1",
+      VIEWPORT_WIDTH: String(w),
+      WIDTH: String(w),
+    };
+    delete env.WIDTHS;
+    const r = spawnSync(process.execPath, [path.join(__dirname, "hero-loop-test.mjs"), URL, outDir], {
+      env,
+      stdio: "inherit",
+    });
+    if (r.status !== 0) failed += 1;
+  }
+  process.exit(failed ? 1 : 0);
+}
 
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -36,8 +72,6 @@ await p.waitForSelector(".hero-sheet tbody tr, .hero-sheet .hero-row", {
   timeout: 60_000,
 });
 await p.locator("[data-hero-demo], .hero-stage, .hero-sheet").first().scrollIntoViewIfNeeded();
-// Let the hero entrance (~500ms) finish so it is not counted as a row jump.
-await p.waitForTimeout(START_WAIT);
 
 const ROWSEL = (await p.$(".hero-sheet .hero-row")) ? ".hero-row" : "tbody tr";
 const sha = await p
@@ -49,46 +83,50 @@ const sha = await p
   )
   .catch(() => "?");
 
-const frames = [];
-const fails = [];
-const t0 = Date.now();
-let replayClicked = false;
-
-while (Date.now() - t0 < LOOP_MS) {
-  const t = Date.now() - t0;
-  if (REPLAY_AT != null && !replayClicked && t >= REPLAY_AT) {
-    const replay = p.locator(".hero-replay");
-    if (await replay.isVisible().catch(() => false)) {
-      await replay.click();
-      replayClicked = true;
-    }
-  }
-  const f = await p.evaluate((ROWSEL) => {
+async function sampleFrame() {
+  return p.evaluate((ROWSEL) => {
     const sheet = document.querySelector(".hero-sheet");
     if (!sheet) {
       return {
         rows: [],
         clipBottom: 0,
+        headTop: 0,
         headBottom: 0,
         sheetW: 0,
         vw: innerWidth,
         clipped: [],
         badgeCut: false,
-        rowSpanOk: true,
+        rowSpanOk: false,
+        aboveHeader: [],
       };
     }
 
     const hd = sheet.querySelector("thead, .hero-head, .hero-rows-head");
     const body = sheet.querySelector(".hero-rows");
     const clipEl = body || sheet.closest(".hero-sheet-wrap") || sheet;
-    const head = hd
+    const headRect = hd
       ? hd.getBoundingClientRect()
       : body
-        ? { bottom: body.getBoundingClientRect().top }
+        ? { top: body.getBoundingClientRect().top, bottom: body.getBoundingClientRect().top }
         : sheet.getBoundingClientRect();
     const clip = clipEl.getBoundingClientRect();
-    const rows = [...sheet.querySelectorAll(ROWSEL)]
-      .filter((tr) => !tr.closest(".hero-rows-ghost"))
+    const allRows = [...sheet.querySelectorAll(ROWSEL)].filter(
+      (tr) => !tr.closest(".hero-rows-ghost"),
+    );
+    const aboveHeader = [];
+    for (const tr of allRows) {
+      const o = +getComputedStyle(tr).opacity;
+      if (o <= 0.05) continue;
+      const r = tr.getBoundingClientRect();
+      if (r.height < 1) continue;
+      // Any paint above the thead top (first-paint flash under/into the header).
+      if (r.top < headRect.top - 0.5) {
+        aboveHeader.push(
+          (tr.cells ? tr.cells[0] : tr.firstElementChild)?.innerText.trim() || "?",
+        );
+      }
+    }
+    const rows = allRows
       .map((tr) => {
         const r = tr.getBoundingClientRect();
         const o = +getComputedStyle(tr).opacity;
@@ -100,7 +138,7 @@ while (Date.now() - t0 < LOOP_MS) {
           o,
         };
       })
-      .filter((r) => r.o > 0.05 && r.bottom > head.bottom + 1 && r.top < clip.bottom - 1);
+      .filter((r) => r.o > 0.05 && r.bottom > headRect.bottom + 1 && r.top < clip.bottom - 1);
 
     const card = sheet.getBoundingClientRect();
     const textOver = (el, box) => {
@@ -117,7 +155,7 @@ while (Date.now() - t0 < LOOP_MS) {
       const style = getComputedStyle(c);
       if (style.display === "none" || style.visibility === "hidden") continue;
       const cr = c.getBoundingClientRect();
-      if (cr.width === 0 || cr.bottom < head.top || cr.top > clip.bottom) continue;
+      if (cr.width === 0 || cr.bottom < headRect.top || cr.top > clip.bottom) continue;
       const txt = c.innerText.trim();
       if (!txt) continue;
       if (c.scrollWidth > c.clientWidth + 1 || textOver(c, cr) || textOver(c, card)) {
@@ -134,7 +172,6 @@ while (Date.now() - t0 < LOOP_MS) {
         br.right > card.right + 0.5;
     }
 
-    // Live row lines should span the full card (no blank band from fixed td widths).
     let rowSpanOk = true;
     for (const tr of sheet.querySelectorAll("tbody.hero-rows tr, thead tr")) {
       if (tr.closest(".hero-rows-ghost")) continue;
@@ -150,16 +187,65 @@ while (Date.now() - t0 < LOOP_MS) {
     return {
       rows: rows.filter((r) => r.top < clip.bottom - 1),
       clipBottom: clip.bottom,
-      headBottom: head.bottom,
+      headTop: headRect.top,
+      headBottom: headRect.bottom,
       sheetW: card.width,
       vw: innerWidth,
       clipped,
       badgeCut,
       rowSpanOk,
+      aboveHeader,
     };
   }, ROWSEL);
+}
+
+if (COLD_LOAD) {
+  // First paint only: no entrance wait. Fail if any row sits above the thead.
+  await p.waitForTimeout(50);
+  const f = await sampleFrame();
+  const issues = [];
+  if (f.aboveHeader.length) {
+    issues.push("row above header " + [...new Set(f.aboveHeader)].slice(0, 6).join("|"));
+  }
+  const summary = {
+    url: URL,
+    sha,
+    mode: "cold-load",
+    viewport: { width: WIDTH, height: HEIGHT },
+    frames: 1,
+    failingFrames: issues.length ? 1 : 0,
+    issueCounts: issues.length ? { "row above": 1 } : {},
+    firstFails: issues.length ? [{ t: 0, issues }] : [],
+    aboveHeader: f.aboveHeader,
+  };
+  fs.writeFileSync(`${OUT}/report.json`, JSON.stringify({ summary, frames: [{ t: 0, issues }] }, null, 1));
+  console.log(JSON.stringify(summary, null, 1));
+  console.log(issues.length ? "RESULT: FAIL" : "RESULT: PASS");
+  await b.close();
+  process.exit(issues.length ? 1 : 0);
+}
+
+// Let the hero entrance (~500ms) finish so it is not counted as a row jump.
+await p.waitForTimeout(START_WAIT);
+
+const frames = [];
+const fails = [];
+const t0 = Date.now();
+let replayClicked = false;
+
+while (Date.now() - t0 < LOOP_MS) {
+  const t = Date.now() - t0;
+  if (REPLAY_AT != null && !replayClicked && t >= REPLAY_AT) {
+    const replay = p.locator(".hero-replay");
+    if (await replay.isVisible().catch(() => false)) {
+      await replay.click();
+      replayClicked = true;
+    }
+  }
+  const f = await sampleFrame();
 
   const issues = [];
+  // aboveHeader is cold-load only (enter springs briefly park a row over the thead).
   if (f.rows.length === 0) issues.push("empty table (no visible rows)");
   const ids = f.rows.map((r) => r.id);
   const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
