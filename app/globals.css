@@ -1414,9 +1414,9 @@ tr.reveal.reveal-rise {
   }
 }
 
-/* 980-1119: Design band — equal columns so launch-invite (~435px) fits the
+/* 980-1119: Design band: equal columns so launch-invite (~435px) fits the
    copy column; shrink-wrap the form; 4 store pills that can compress and drop
-   account-name subtitles so the sheet keeps ≥16px from the right edge. */
+   account-name subtitles so the sheet keeps >=16px from the right edge. */
 @media (min-width: 980px) and (max-width: 1119px) {
   .hero-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
