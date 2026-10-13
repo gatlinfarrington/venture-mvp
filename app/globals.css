@@ -1391,9 +1391,9 @@ tr.reveal.reveal-rise {
   }
 }
 
-/* 980-1119: scaled two-column hero (copy left, demo right). Do not override
-   .container width/margin (16px gutters). Stores sit as pills above the sheet
-   inside the stage so the sheet can use the full stage width. */
+/* 980-1119: Design band base (gap + hide facts + 4 max-content store pills)
+   without #79's .container override. Keep two columns so the demo fills the
+   right half above the fold (stacked left MRR near y=895 / blank right half). */
 @media (min-width: 980px) and (max-width: 1119px) {
   .hero-grid {
     grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
@@ -1401,16 +1401,23 @@ tr.reveal.reveal-rise {
     align-items: start;
   }
 
-  .hero-copy {
-    max-width: none;
-    gap: var(--space-4);
-  }
-
-  /* Drop facts so the sheet clears the fold at 900px tall. */
   .hero-facts {
     display: none;
   }
 
+  .hero-stores {
+    display: grid;
+    grid-template-columns: repeat(4, max-content);
+    width: max-content;
+    max-width: 100%;
+    gap: var(--space-2);
+  }
+
+  .hero-store {
+    width: auto;
+  }
+
+  /* Stage: one column so the 4 pills sit above a full-width sheet. */
   .hero-stage {
     height: auto;
     min-height: 0;
@@ -1425,28 +1432,6 @@ tr.reveal.reveal-rise {
   .hero-stores-col {
     width: 100%;
     min-height: 0;
-    flex-direction: column;
-    justify-content: flex-start;
-  }
-
-  .hero-stores {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0;
-    gap: var(--space-2);
-  }
-
-  .hero-store {
-    width: 100%;
-    min-height: 40px;
-    border-radius: var(--radius-pill);
-    padding: var(--space-2) var(--space-3);
-    justify-content: center;
-  }
-
-  .hero-store br,
-  .hero-store small {
-    display: none;
   }
 
   .hero-sheet-wrap {
