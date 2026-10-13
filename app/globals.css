@@ -1388,40 +1388,11 @@ tr.reveal.reveal-rise {
   }
 }
 
-/* 980-1119: left-align pills, tighter gap, hide facts so the demo sits higher. */
+/* 980-1119: tighter gap only. Do not override .container (max-width/margin/width)
+   or the headline and sheet bleed past the 16px page inset (see #79 regression). */
 @media (min-width: 980px) and (max-width: 1119px) {
   .hero-grid {
-    max-width: none;
-    margin-inline: 0;
-    width: 100%;
     gap: var(--space-4);
-  }
-
-  .hero-copy,
-  .hero-stage {
-    max-width: none;
-    margin-inline: 0;
-    width: 100%;
-  }
-
-  .hero-copy {
-    gap: var(--space-4);
-  }
-
-  .hero-facts {
-    display: none;
-  }
-
-  .hero-stores {
-    grid-template-columns: repeat(4, max-content);
-    width: max-content;
-    max-width: 100%;
-    margin-inline: 0;
-    justify-content: flex-start;
-  }
-
-  .hero-store {
-    width: auto;
   }
 }
 

@@ -4,10 +4,12 @@
 // empty space under the last visible row taller than 2px inside the clip box).
 // Also fails if the sheet is under 400px wide at viewport >= 1024, or any cell or
 // the delta badge is cut off.
+// Also fails if the hero headline is <16px from the left viewport edge or the
+// sheet's right edge is <16px from the right viewport edge (container inset).
 // The reset ghost layer (.hero-rows-ghost) is excluded: it is a deliberate fade-out overlay.
 //
-// Widths: VIEWPORT_WIDTH / WIDTH for one run. Or WIDTHS=375,768,1024,1120,1200,1280,1440
-// to run a suite (includes the 1120/1200 two-column band).
+// Widths: VIEWPORT_WIDTH / WIDTH for one run. Or WIDTHS=suite / a comma list.
+// Suite includes 1000/1060/1100 (980–1119 container band) and 1120/1200.
 // Cold load: COLD_LOAD=1 fails if any live row paints above the table header on first paint.
 import { chromium } from "playwright-core";
 import fs from "fs";
@@ -32,7 +34,8 @@ const SAVE_ALL = Boolean(process.env.SAVE_ALL);
 const REPLAY_AT = process.env.REPLAY_AT ? Number(process.env.REPLAY_AT) : null;
 const COLD_LOAD = Boolean(process.env.COLD_LOAD);
 /** Default suite widths when WIDTHS is set to "suite" or a comma list. */
-const SUITE_WIDTHS = [375, 768, 1024, 1120, 1200, 1280, 1440];
+const SUITE_WIDTHS = [375, 768, 1000, 1024, 1060, 1100, 1120, 1200, 1280, 1440];
+const EDGE_INSET_MIN = 16;
 
 if (process.env.WIDTHS && !process.env.HERO_LOOP_CHILD) {
   const list =
@@ -98,6 +101,9 @@ async function sampleFrame() {
         badgeCut: false,
         rowSpanOk: false,
         aboveHeader: [],
+        headlineLeft: 0,
+        sheetRightInset: 0,
+        edgeOk: false,
       };
     }
 
@@ -184,6 +190,13 @@ async function sampleFrame() {
       }
     }
 
+    const headline =
+      document.querySelector(".hero .display, .hero-copy h1, .hero h1") ||
+      document.querySelector(".hero-copy");
+    const headlineLeft = headline ? headline.getBoundingClientRect().left : 0;
+    const sheetRightInset = innerWidth - card.right;
+    const edgeOk = headlineLeft >= 16 - 0.5 && sheetRightInset >= 16 - 0.5;
+
     return {
       rows: rows.filter((r) => r.top < clip.bottom - 1),
       clipBottom: clip.bottom,
@@ -195,6 +208,9 @@ async function sampleFrame() {
       badgeCut,
       rowSpanOk,
       aboveHeader,
+      headlineLeft: +headlineLeft.toFixed(1),
+      sheetRightInset: +sheetRightInset.toFixed(1),
+      edgeOk,
     };
   }, ROWSEL);
 }
@@ -265,6 +281,11 @@ while (Date.now() - t0 < LOOP_MS) {
   }
   if (f.vw >= 1024 && f.sheetW < 400) {
     issues.push(`narrow sheet ${f.sheetW.toFixed(0)}px at ${f.vw}`);
+  }
+  if (f.edgeOk === false) {
+    issues.push(
+      `page edge inset <${EDGE_INSET_MIN}px (headlineLeft=${f.headlineLeft}, sheetRightInset=${f.sheetRightInset})`,
+    );
   }
   if (f.clipped.length) {
     issues.push("clipped " + [...new Set(f.clipped)].slice(0, 6).join("|"));
