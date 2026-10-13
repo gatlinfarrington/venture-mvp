@@ -4,10 +4,10 @@ import path from "node:path";
 import matter from "gray-matter";
 import { EXTRA_SMOKE_ROUTES, SITEMAP_ROUTES_FALLBACK } from "./routes";
 
-/** Docs + privacy may still mention Marketplace; leave them alone. */
+/** /privacy may still mention Marketplace; docs must not. */
 function routesWithoutMarketplaceAllowlist(): string[] {
   const staticRoutes = [...SITEMAP_ROUTES_FALLBACK, ...EXTRA_SMOKE_ROUTES].filter(
-    (r) => r !== "/privacy" && !r.startsWith("/docs"),
+    (r) => r !== "/privacy",
   );
   const blogDir = path.join(process.cwd(), "content/blog");
   const blogRoutes = fs
