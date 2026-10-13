@@ -12,6 +12,11 @@ describe("content pipeline", () => {
       expect(post.draft).toBe(false);
       expect(post.tags.length).toBeGreaterThan(0);
       expect(post.body.length).toBeGreaterThan(0);
+      // Page template already renders <h1>{title}</h1>; body must not repeat it.
+      expect(
+        post.body.trimStart().startsWith("# "),
+        `${post.slug} body starts with a duplicate markdown H1`,
+      ).toBe(false);
     }
   });
 
