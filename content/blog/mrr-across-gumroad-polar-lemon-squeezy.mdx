@@ -56,7 +56,7 @@ Make a tab called `Subs` with these columns. Use the same layout for every platf
 | I | Monthly amount | (formula) |
 | J | Bucket | (formula) |
 
-The platforms name billing intervals differently. Polar and Lemon Squeezy use `month` and `year` (Lemon Squeezy also has an interval count, so "every 3 months" is `month` with a count of 3; turn that into `quarterly` when you paste). Gumroad memberships use `monthly`, `quarterly`, `biannually`, `yearly` and `every_two_years`.
+The platforms name billing intervals differently. Polar uses `recurring_interval` (`day`, `week`, `month` or `year`) with `recurring_interval_count`, and Lemon Squeezy uses `renewal_interval_unit` (`day`, `week`, `month` or `year`) with `renewal_interval_quantity`, so "every 3 months" is `month` with a count of 3; turn that into `quarterly` when you paste. Gumroad memberships use `monthly`, `quarterly`, `biannually`, `yearly` and `every_two_years`.
 
 **Column I, monthly amount.** One formula handles every platform's naming:
 
