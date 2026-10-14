@@ -4473,6 +4473,7 @@ a.tag-pill:focus-visible {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
+  max-width: 100%;
 }
 
 .sample-copy-btn {
@@ -4506,7 +4507,10 @@ a.tag-pill:focus-visible {
   font-size: var(--t-eyebrow-size);
   border-radius: var(--radius-sm);
   padding: var(--space-1-5) var(--space-2);
-  white-space: nowrap;
+  /* Keep tip inside the 375 viewport; wrap instead of nowrap overflow. */
+  white-space: normal;
+  max-width: min(16rem, calc(100vw - 48px));
+  box-sizing: border-box;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-2px);
@@ -4891,12 +4895,24 @@ a.tag-pill:focus-visible {
 
 /* Fixed-layout table: set col width (td min-width is ignored). */
 .sample-dash col.sample-src-col {
-  width: 140px;
+  /* 140 → 127 so status col can fit "Not connected" without ellipsis. */
+  width: 127px;
+}
+
+.sample-dash col.sample-src-state-col {
+  /* design-exception: A8 status col fits "Not connected" at sheet chrome size */
+  width: 110px;
 }
 
 .sample-dash td.sample-src-name {
   font-weight: 600;
   white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.sample-dash td.sample-src-synced,
+.sample-dash td.sample-src-muted {
   overflow: visible;
   text-overflow: clip;
 }

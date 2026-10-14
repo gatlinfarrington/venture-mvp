@@ -83,7 +83,12 @@ function DashboardGrid() {
         <col className="sample-col-rn" />
         <col className="sample-col-a" />
         {letters.slice(1).map((L) => (
-          <col key={L} className={L === "I" ? "sample-src-col" : undefined} />
+          <col
+            key={L}
+            className={
+              L === "I" ? "sample-src-col" : L === "L" ? "sample-src-state-col" : undefined
+            }
+          />
         ))}
       </colgroup>
       <thead>
