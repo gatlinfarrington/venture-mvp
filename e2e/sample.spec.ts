@@ -43,7 +43,7 @@ test.describe("/sample acceptance", () => {
     await expect(page.getByText(DASHBOARD.churn, { exact: true })).toBeVisible();
     await expect(page.getByText(DASHBOARD.mrrDelta)).toBeVisible();
     await expect(page.getByText(DASHBOARD.pastDueLine)).toBeVisible();
-    await expect(page.getByText("30D net · 261 orders across sources")).toBeVisible();
+    await expect(page.getByText("261 orders · 30D")).toBeVisible();
     for (const src of DASHBOARD.sources) {
       if (!src.detail) continue;
       const name = page.locator(".sample-src-name", {

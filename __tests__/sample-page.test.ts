@@ -73,7 +73,7 @@ describe("/sample acceptance data", () => {
     expect(DASHBOARD.mrr).toBe("$4,516");
     expect(DASHBOARD.mrrDelta).toBe("▲ 4.5% MoM");
     expect(DASHBOARD.netRevenue).toBe("$6,658");
-    expect(DASHBOARD.netDelta).toBe("30D net · 261 orders across sources");
+    expect(DASHBOARD.netDelta).toBe("261 orders · 30D");
     expect(DASHBOARD.activeSubs).toBe(String(SAMPLE_HEADLINE.activeSubs));
     expect(DASHBOARD.activeSubs).toBe("233");
     expect(DASHBOARD.churn).toBe("2.2%");

@@ -87,7 +87,7 @@ export default function SupportPage() {
       </div>
 
       <div className="prose" style={{ marginTop: "var(--space-10)" }}>
-        <h2>Install</h2>
+        <h2>Launch</h2>
         <p>
           <InstallCta className="btn btn-primary" source="support">
             Join the launch list
