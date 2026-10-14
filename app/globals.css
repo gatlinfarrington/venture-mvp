@@ -829,14 +829,18 @@ tr.reveal.reveal-rise {
   background: var(--c-signal);
 }
 
-/* Spec: 1px ink ring for ~600ms + dot scale 1 → 1.6 → 1 over 360ms spring. */
-.hero-store.pulse {
-  box-shadow: 0 0 0 1px var(--c-ink);
-  transition: box-shadow 0ms linear;
+/* Spec: expanding ink ring (~600ms, low-opacity spread that fades) + dot scale. */
+@keyframes hero-store-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--c-ink) 40%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 8px transparent;
+  }
 }
 
-.hero-store:not(.pulse) {
-  transition: box-shadow 200ms var(--ease-standard);
+.hero-store.pulse {
+  animation: hero-store-pulse-ring 600ms var(--ease-out) forwards;
 }
 
 .hero-store.pulse .st {
@@ -1516,6 +1520,7 @@ tr.reveal.reveal-rise {
 
   .hero-sheet tbody tr,
   .hero-sheet tr.new td,
+  .hero-store.pulse,
   .hero-store.pulse .st,
   .hero-mrr-num .d-face,
   .hero-bars i.signal,
@@ -1523,6 +1528,10 @@ tr.reveal.reveal-rise {
   .hero-rows-ghost {
     animation: none !important;
     transition: none !important;
+  }
+
+  .hero-store.pulse {
+    box-shadow: none;
   }
 
   .hero-store.pulse .st {
