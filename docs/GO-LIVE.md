@@ -66,7 +66,7 @@ Optional:
 | `STRIPE_ADMIN_TOKEN` or `LICENSE_API_SECRET` | Bearer token for `GET /api/admin/stripe-status` |
 | `NEXT_PUBLIC_MARKETPLACE_URL` | Workspace Marketplace listing URL (preferred). Flips Install CTAs from launch-list capture to the listing. Also shows **Install from Marketplace** on `/success`. |
 | `NEXT_PUBLIC_INSTALL_URL` | Legacy alias for `NEXT_PUBLIC_MARKETPLACE_URL` |
-| `NEXT_PUBLIC_TEMPLATE_COPY_URL` | Google Sheets “Make a copy” template URL (bound script). Shows **Make a copy** on `/success` only when set. |
+| `NEXT_PUBLIC_TEMPLATE_COPY_URL` | Google Sheets “Make a copy” URL (bound script) **or** an `.xlsx` override for `/sample` download. Sheets links show **Make a copy** on `/success` and `/sample`. An `.xlsx` URL overrides the public `/revenuesheet-template.xlsx` download href only. |
 | `NEXT_PUBLIC_SUPPORT_EMAIL` / `SUPPORT_EMAIL` | Optional inbox for `/success` “Email support” mailto (e.g. `support@revenuesheet.app`). Without it, buttons link to `/support`. |
 
 **CTA flips (env only, no code change):**

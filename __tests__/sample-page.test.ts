@@ -158,6 +158,7 @@ describe("/sample acceptance data", () => {
       "app/sample/page.tsx",
       "components/SampleSheet.tsx",
       "components/SampleCopyAction.tsx",
+      "components/SampleTemplateDownload.tsx",
       "lib/sample-data.ts",
     ]) {
       const text = readFileSync(join(root, rel), "utf8");
