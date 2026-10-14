@@ -32,6 +32,8 @@ If you skip the script, the first `/api/checkout` call creates the same catalog 
 - `checkout.session.completed` — issues the license key
 - `customer.subscription.updated` — syncs tier / past_due / active
 - `customer.subscription.deleted` — marks license canceled
+- `invoice.paid` — renewal: keeps / restores the license active
+- `invoice.payment_failed` — dunning: records `past_due` (does not cancel)
 
 **Local:**
 
