@@ -43,12 +43,17 @@ const ROW_SPRING_MS = 360;
 /** Reel + month bar after the row spring settles (~80–120ms). */
 const POST_SETTLE_MS = 100;
 const MRR_AFTER_SETTLE_MS = ROW_SPRING_MS + POST_SETTLE_MS;
-/** Aim first MRR change (~land1 + settle) at this mark from navigation. */
-const TARGET_FIRST_MRR_MS = 2000;
+/**
+ * Aim first MRR change (~land1 + settle) at this mark from navigation.
+ * Kept under ~1850 so real-prod main-thread / network jitter (seen ~+400–450ms
+ * on www) still clears the 2400ms cold gate.
+ */
+const TARGET_FIRST_MRR_MS = 1850;
 /**
  * Self-heal: if MRR is still START and no order timers are pending by this
  * mark (from navigation), re-kick the loop. Catches late hydration / missed
  * IO subscribe races that leave the demo frozen at $4,414 on real prod.
+ * Does not change the happy-path cadence when order timers are already armed.
  */
 const WATCHDOG_MRR_MS = 2200;
 const PULSE_MS = 600;
@@ -501,8 +506,8 @@ export function HeroDemo() {
           healed = true;
           return;
         }
-        // Order timers pending → loop is armed/live; check again shortly.
-        if (hasOrderTimers()) {
+        // Happy path: nav start armed or order timers running — do not steal timing.
+        if (hasOrderTimers() || startTimer != null) {
           armWatchdog();
           return;
         }
@@ -510,10 +515,8 @@ export function HeroDemo() {
           armWatchdog();
           return;
         }
-        // Pending nav startTimer with no order timers: the one-shot may have
-        // fired into a stale empty ref before render synced scheduleLoop.
+        // Stalled: nothing pending and MRR still START (missed arm / empty ref).
         loopLiveRef.current = false;
-        clearPendingStart();
         kickOff("catchUp");
         armWatchdog();
       }, delay);
