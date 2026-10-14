@@ -13,13 +13,13 @@ RevenueSheet is not available to install yet. Nothing here claims the add-on is 
 
 ## Option 1: Export orders as CSV (official)
 
-Lemon Squeezy documents a store-level export on the Orders page: click **Export**, and the CSV is emailed to the store owner ([Exporting Orders](https://docs.lemonsqueezy.com/help/orders/exporting-orders); checked Oct 13, 2026).
+Lemon Squeezy documents a store-level export on the Orders page: click **Export**, and the CSV is emailed to the store owner ([Exporting Orders](https://docs.lemonsqueezy.com/help/orders/exporting-orders); checked Oct 14, 2026).
 
 That CSV is a point-in-time snapshot. Useful for a backup or a one-off spreadsheet. Next month you export again, re-import, and reconcile any formulas or notes you added beside last month's rows.
 
 ### Columns worth mapping carefully
 
-Per Lemon Squeezy's export docs (checked Oct 13, 2026), money fields arrive in **USD cents**. A $10.00 total is `1000`, not `10`. Divide by 100 before you chart revenue.
+Per Lemon Squeezy's export docs (checked Oct 14, 2026), money fields arrive in **USD cents**. A $10.00 total is `1000`, not `10`. Divide by 100 before you chart revenue.
 
 | Column | Notes (from LS docs) |
 |---|---|
@@ -35,12 +35,12 @@ Import with **File → Import → Upload** in Google Sheets and choose "Insert n
 
 ## Option 2: Walk the Orders API (when CSV is not enough)
 
-If you need pagination, filters, or a script that can resume, Lemon Squeezy's Orders API is at `GET https://api.lemonsqueezy.com/v1/orders` ([List all orders](https://docs.lemonsqueezy.com/api/orders/list-all-orders); checked Oct 13, 2026). Do not assume a fixed sort order without checking the current docs (including any `sort` query params). List endpoints use page-based pagination: `page[size]` is 1–100 (default 10), and responses include JSON:API `links.next` when more pages remain ([Requests](https://docs.lemonsqueezy.com/api/getting-started/requests); checked Oct 13, 2026).
+If you need pagination, filters, or a script that can resume, Lemon Squeezy's API lists orders via `GET https://api.lemonsqueezy.com/v1/orders` ([List all orders](https://docs.lemonsqueezy.com/api/orders/list-all-orders); checked Oct 14, 2026). List endpoints use page-based pagination: `page[size]` is 1–100 (default 10), and responses include JSON:API `links.next` when more pages remain ([Requests](https://docs.lemonsqueezy.com/api/getting-started/requests); checked Oct 14, 2026).
 
 That path is powerful and easy to get wrong:
 
 - **Cents again.** Attribute amounts such as `total` and `total_usd` are documented in cents on the same orders endpoint.
-- **Apps Script time limits.** A Google Apps Script execution stops after 6 minutes ([Quotas](https://developers.google.com/apps-script/guides/services/quotas); checked Oct 13, 2026). Large stores need a cursor (save `links.next` or `page[number]`) and a second run.
+- **Apps Script time limits.** A Google Apps Script execution stops after 6 minutes ([Quotas](https://developers.google.com/apps-script/guides/services/quotas); checked Oct 14, 2026). Large stores need a cursor (save `links.next` or `page[number]`) and a second run.
 - **Auth.** API keys are secrets. Do not paste them into a cell.
 
 A minimal mental model: page until `links.next` is absent, write one row per order, convert cents to dollars once, and never overwrite your formula tab.
