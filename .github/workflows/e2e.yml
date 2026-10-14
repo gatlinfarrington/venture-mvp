@@ -266,3 +266,77 @@ jobs:
             lhci-report/
             .lighthouseci/
           retention-days: 14
+
+  # Preview/localhost cold gates miss real CDN + hydration latency. After a
+  # Production deploy (or push to main), wait until www serves this SHA, then
+  # run 10 fresh-context loads at 375 and 1280 against live prod.
+  prod-hero-cold:
+    name: Prod hero cold (www.revenuesheet.app)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'deployment_status' &&
+       github.event.deployment_status.state == 'success' &&
+       (github.event.deployment.environment == 'Production' ||
+        github.event.deployment_status.environment == 'Production' ||
+        github.event.deployment.environment == 'production' ||
+        github.event.deployment_status.environment == 'production'))
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Wait for www.revenuesheet.app to serve this commit
+        env:
+          WANT_SHA: ${{ github.sha }}
+          PROD_URL: https://www.revenuesheet.app
+        run: |
+          set -euo pipefail
+          echo "Waiting for $PROD_URL/api/version to match ${WANT_SHA:0:7}…"
+          for i in $(seq 1 90); do
+            json="$(curl -fsS "$PROD_URL/api/version" || true)"
+            got="$(printf '%s' "$json" | node -e '
+              let j={}; try { j=JSON.parse(require("fs").readFileSync(0,"utf8")); } catch {}
+              process.stdout.write(String(j.sha||j.commit||""));
+            ' || true)"
+            echo "  try $i: got=${got:-none}"
+            if [ -n "$got" ] && [ "$got" != "unknown" ]; then
+              want7="${WANT_SHA:0:7}"
+              got7="${got:0:7}"
+              if [ "$WANT_SHA" = "$got" ] || [ "$want7" = "$got7" ] \
+                || [[ "$WANT_SHA" == "$got"* ]] || [[ "$got" == "$WANT_SHA"* ]]; then
+                echo "SHA match after ${i}×10s ($got)"
+                exit 0
+              fi
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for prod to serve $WANT_SHA" >&2
+          exit 1
+
+      - name: COLD=1 fresh contexts against production
+        run: |
+          set -euo pipefail
+          PROD="https://www.revenuesheet.app/"
+          COLD=1 WIDTH=375 VIEWPORT_HEIGHT=812 node scripts/hero-loop-test.mjs "$PROD" /tmp/hero-prod-375
+          COLD=1 WIDTH=1280 VIEWPORT_HEIGHT=900 node scripts/hero-loop-test.mjs "$PROD" /tmp/hero-prod-1280
+
+      - name: Upload prod cold reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hero-prod-cold-${{ github.run_id }}
+          path: |
+            /tmp/hero-prod-375/
+            /tmp/hero-prod-1280/
+          retention-days: 14

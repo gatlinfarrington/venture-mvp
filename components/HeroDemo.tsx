@@ -45,6 +45,12 @@ const POST_SETTLE_MS = 100;
 const MRR_AFTER_SETTLE_MS = ROW_SPRING_MS + POST_SETTLE_MS;
 /** Aim first MRR change (~land1 + settle) at this mark from navigation. */
 const TARGET_FIRST_MRR_MS = 2000;
+/**
+ * Self-heal: if MRR is still START and no order timers are pending by this
+ * mark (from navigation), re-kick the loop. Catches late hydration / missed
+ * IO subscribe races that leave the demo frozen at $4,414 on real prod.
+ */
+const WATCHDOG_MRR_MS = 2200;
 const PULSE_MS = 600;
 
 function prefersReducedMotion() {
@@ -271,7 +277,8 @@ export function HeroDemo() {
     [finishInstant],
   );
 
-  const scheduleLoopRef = useRef<() => void>(() => {});
+  type LoopMode = "timed" | "catchUp";
+  const scheduleLoopRef = useRef<(mode?: LoopMode) => void>(() => {});
 
   const resetAndRestart = useCallback(
     (thenRun: () => void) => {
@@ -323,38 +330,38 @@ export function HeroDemo() {
     [clearTimers],
   );
 
-  const scheduleLoop = useCallback(() => {
-    clearTimers();
-    for (let i = 0; i < HERO_LANDINGS.length; i++) {
-      // land0 ASAP (after nav-targeted delay); land1 uses FIRST_GAP so the first
-      // MRR tick can land near TARGET_FIRST_MRR_MS; later landings keep GAP_MS.
-      const at =
+  const scheduleLoop = useCallback(
+    (mode: LoopMode = "timed") => {
+      clearTimers();
+      // Late hydrate / watchdog: compress land0→land1 so first MRR still lands soon.
+      const firstGap = mode === "catchUp" ? 280 : FIRST_GAP_MS;
+      for (let i = 0; i < HERO_LANDINGS.length; i++) {
+        // land0 ASAP (after nav-targeted delay); land1 uses firstGap so the first
+        // MRR tick can land near TARGET_FIRST_MRR_MS; later landings keep GAP_MS.
+        const at =
+          START_DELAY_MS +
+          (i === 0 ? 0 : firstGap + (i - 1) * GAP_MS);
+        timers.current.push(
+          window.setTimeout(() => {
+            // Mark live only when the first order timer fires — not when armed.
+            if (i === 0) loopLiveRef.current = true;
+            landOrder(i);
+          }, at),
+        );
+      }
+      const restAt =
         START_DELAY_MS +
-        (i === 0 ? 0 : FIRST_GAP_MS + (i - 1) * GAP_MS);
+        firstGap +
+        Math.max(0, HERO_LANDINGS.length - 1) * GAP_MS +
+        REST_MS;
       timers.current.push(
         window.setTimeout(() => {
-          // Mark live only when the first order timer fires — not when armed.
-          if (i === 0) loopLiveRef.current = true;
-          landOrder(i);
-        }, at),
+          resetAndRestart(() => scheduleLoopRef.current("timed"));
+        }, restAt),
       );
-    }
-    const restAt =
-      START_DELAY_MS +
-      FIRST_GAP_MS +
-      Math.max(0, HERO_LANDINGS.length - 1) * GAP_MS +
-      REST_MS;
-    timers.current.push(
-      window.setTimeout(() => {
-        resetAndRestart(() => scheduleLoopRef.current());
-      }, restAt),
-    );
-  }, [clearTimers, landOrder, resetAndRestart]);
-
-  useEffect(() => {
-    scheduleLoopRef.current = scheduleLoop;
-    clearTimersRef.current = clearTimers;
-  }, [scheduleLoop, clearTimers]);
+    },
+    [clearTimers, landOrder, resetAndRestart],
+  );
 
   const run = useCallback(() => {
     clearTimers();
@@ -394,9 +401,11 @@ export function HeroDemo() {
     });
   }, [clearTimers, resetAndRestart]);
 
-  useEffect(() => {
-    runRef.current = run;
-  }, [run]);
+  // Assign during render so the mount-once layout starter never calls an empty
+  // ref when hydration finishes after the ~740ms nav target (prod stall race).
+  scheduleLoopRef.current = scheduleLoop;
+  clearTimersRef.current = clearTimers;
+  runRef.current = run;
 
   // Mount-once starter. Do NOT depend on scheduleLoop — a dep change was cleaning
   // up and clearTimers()'ing order timers after the nav delay had already fired
@@ -409,6 +418,8 @@ export function HeroDemo() {
 
     let visible = false;
     let startTimer: number | null = null;
+    let watchdogTimer: number | null = null;
+    let healed = false;
 
     const hasOrderTimers = () => timers.current.length > 0;
 
@@ -426,41 +437,88 @@ export function HeroDemo() {
       }
     };
 
-    const kickOff = () => {
+    const targetLand0Ms =
+      TARGET_FIRST_MRR_MS - FIRST_GAP_MS - MRR_AFTER_SETTLE_MS;
+
+    const kickOff = (mode: LoopMode = "timed") => {
       clearPendingStart();
       if (hasOrderTimers()) return;
       if (prefersReducedMotion()) {
         runRef.current();
         return;
       }
-      scheduleLoopRef.current();
+      scheduleLoopRef.current(mode);
     };
 
     /** Arm nav-timed start, or restart immediately if no order timers are pending. */
     const ensureLoop = () => {
       if (!visible) return;
       if (prefersReducedMotion()) {
-        kickOff();
+        kickOff("timed");
         return;
       }
       // Already armed or running — leave it alone.
       if (hasOrderTimers() || startTimer != null) return;
 
-      const targetLand0 =
-        TARGET_FIRST_MRR_MS - FIRST_GAP_MS - MRR_AFTER_SETTLE_MS;
-      const remaining = targetLand0 - performance.now();
+      const remaining = targetLand0Ms - performance.now();
       if (remaining <= 0) {
-        kickOff();
+        // Hydration finished after the nav target — catch up so first MRR
+        // still lands soon (empty-ref race used to no-op here forever).
+        kickOff("catchUp");
         return;
       }
       startTimer = window.setTimeout(() => {
         startTimer = null;
-        kickOff();
+        kickOff("timed");
       }, remaining);
+    };
+
+    /**
+     * Watchdog: if nothing is pending and MRR is still START by ~2.2s from
+     * navigation, force a catch-up restart. Re-arms until the first MRR tick
+     * so a no-op kick cannot leave us frozen forever on real prod latency.
+     * Also peeks at ~1.1s so a missed arm heals before the 2.4s CI gate.
+     */
+    const armWatchdog = () => {
+      if (watchdogTimer != null) {
+        window.clearTimeout(watchdogTimer);
+        watchdogTimer = null;
+      }
+      if (prefersReducedMotion() || healed) return;
+      const now = performance.now();
+      const earlyAt = Math.min(1100, WATCHDOG_MRR_MS);
+      let delay: number;
+      if (now < earlyAt) delay = earlyAt - now;
+      else if (now < WATCHDOG_MRR_MS) delay = WATCHDOG_MRR_MS - now;
+      else delay = 120;
+      watchdogTimer = window.setTimeout(() => {
+        watchdogTimer = null;
+        if (healed || prefersReducedMotion()) return;
+        if (mrrRef.current !== START_MRR) {
+          healed = true;
+          return;
+        }
+        // Order timers pending → loop is armed/live; check again shortly.
+        if (hasOrderTimers()) {
+          armWatchdog();
+          return;
+        }
+        if (!visible) {
+          armWatchdog();
+          return;
+        }
+        // Pending nav startTimer with no order timers: the one-shot may have
+        // fired into a stale empty ref before render synced scheduleLoop.
+        loopLiveRef.current = false;
+        clearPendingStart();
+        kickOff("catchUp");
+        armWatchdog();
+      }, delay);
     };
 
     visible = ratioInView() >= 0.4;
     if (visible) ensureLoop();
+    armWatchdog();
 
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -485,6 +543,7 @@ export function HeroDemo() {
         loopLiveRef.current = false;
         ensureLoop();
       }
+      armWatchdog();
     };
     document.addEventListener("visibilitychange", onVis);
 
@@ -492,6 +551,7 @@ export function HeroDemo() {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
       clearPendingStart();
+      if (watchdogTimer != null) window.clearTimeout(watchdogTimer);
       clearTimersRef.current();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once; live fns via refs
