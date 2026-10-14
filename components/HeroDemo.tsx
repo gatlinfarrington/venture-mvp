@@ -401,11 +401,14 @@ export function HeroDemo() {
     });
   }, [clearTimers, resetAndRestart]);
 
-  // Assign during render so the mount-once layout starter never calls an empty
-  // ref when hydration finishes after the ~740ms nav target (prod stall race).
-  scheduleLoopRef.current = scheduleLoop;
-  clearTimersRef.current = clearTimers;
-  runRef.current = run;
+  // Sync refs in layout (before the mount-once starter below). useEffect is too
+  // late: when hydration finishes after the ~740ms nav target, kickOff would
+  // call the empty initial stub and the loop would never arm.
+  useLayoutEffect(() => {
+    scheduleLoopRef.current = scheduleLoop;
+    clearTimersRef.current = clearTimers;
+    runRef.current = run;
+  }, [scheduleLoop, clearTimers, run]);
 
   // Mount-once starter. Do NOT depend on scheduleLoop — a dep change was cleaning
   // up and clearTimers()'ing order timers after the nav delay had already fired
@@ -554,7 +557,6 @@ export function HeroDemo() {
       if (watchdogTimer != null) window.clearTimeout(watchdogTimer);
       clearTimersRef.current();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once; live fns via refs
   }, []);
 
   const digits = splitMrr(mrr);
