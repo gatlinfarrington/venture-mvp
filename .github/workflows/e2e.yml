@@ -273,10 +273,15 @@ jobs:
   # Preview/localhost cold gates miss real CDN + hydration latency. After a
   # Production deploy (or push to main), wait until www serves this SHA, then
   # run 10 fresh-context loads at 375 and 1280 against live prod.
+  # REPORT-ONLY: live-network flakes must not gate deploys. Timing gates stay in
+  # pre-merge THROTTLED_COLD / COLD=1. On failure, open or annotate a monitor issue.
   prod-hero-cold:
-    name: Prod hero cold (www.revenuesheet.app)
+    name: Prod hero cold (www.revenuesheet.app) [report-only]
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
     if: >
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'deployment_status' &&
@@ -300,6 +305,8 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: Wait for www.revenuesheet.app to serve this commit
+        id: wait-sha
+        continue-on-error: true
         env:
           WANT_SHA: ${{ github.sha }}
           PROD_URL: https://www.revenuesheet.app
@@ -328,6 +335,9 @@ jobs:
           exit 1
 
       - name: COLD=1 fresh contexts against production
+        id: cold
+        continue-on-error: true
+        if: steps.wait-sha.outcome == 'success'
         run: |
           set -euo pipefail
           PROD="https://www.revenuesheet.app/"
@@ -343,3 +353,89 @@ jobs:
             /tmp/hero-prod-375/
             /tmp/hero-prod-1280/
           retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Ensure monitor label
+        if: steps.wait-sha.outcome == 'failure' || steps.cold.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create monitor \
+            --description "Production monitoring failures" \
+            --color "B60205" \
+            --force >/dev/null
+
+      - name: Open or annotate monitor issue on failure
+        if: steps.wait-sha.outcome == 'failure' || steps.cold.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WANT_SHA: ${{ github.sha }}
+          WAIT_OUTCOME: ${{ steps.wait-sha.outcome }}
+          COLD_OUTCOME: ${{ steps.cold.outcome }}
+        run: |
+          set -euo pipefail
+          TITLE='[monitor] Prod hero cold loads failing'
+          BODY_FILE="$(mktemp)"
+          {
+            echo "## Prod hero cold failure (report-only)"
+            echo
+            echo "- Run: ${RUN_URL}"
+            echo "- Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "- SHA: \`${WANT_SHA}\`"
+            echo "- Base: https://www.revenuesheet.app"
+            echo "- Wait for SHA: ${WAIT_OUTCOME}"
+            echo "- COLD=1 @375+1280: ${COLD_OUTCOME}"
+            echo
+            echo "Pre-merge timing gates (THROTTLED_COLD / COLD=1 on PR) remain blocking."
+            echo "This job is advisory so live-network flakes do not block deploys."
+            echo
+            for report in /tmp/hero-prod-375/report.json /tmp/hero-prod-1280/report.json; do
+              if [[ -f "$report" ]]; then
+                echo "### \`$(basename "$(dirname "$report")")\`"
+                echo '```json'
+                cat "$report"
+                echo
+                echo '```'
+                echo
+              fi
+            done
+            echo "_Opened/updated by \`prod-hero-cold\` in \`.github/workflows/e2e.yml\`._"
+          } > "$BODY_FILE"
+
+          EXISTING="$(gh issue list --label monitor --state open --limit 50 --json number,title --jq ".[] | select(.title==\"${TITLE}\") | .number" | head -n1 || true)"
+          if [[ -n "${EXISTING}" ]]; then
+            echo "Annotating issue #${EXISTING}"
+            gh issue comment "${EXISTING}" --body-file "$BODY_FILE"
+          else
+            echo "Creating monitor issue"
+            gh issue create --title "$TITLE" --label monitor --body-file "$BODY_FILE"
+          fi
+
+      - name: Close hero-cold monitor issue on success
+        if: steps.wait-sha.outcome == 'success' && steps.cold.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE='[monitor] Prod hero cold loads failing'
+          ISSUES="$(gh issue list --label monitor --state open --limit 50 --json number,title --jq ".[] | select(.title==\"${TITLE}\") | .number" || true)"
+          if [[ -z "${ISSUES}" ]]; then
+            echo "No open hero-cold monitor issue to close."
+            exit 0
+          fi
+          while IFS= read -r num; do
+            [[ -z "$num" ]] && continue
+            echo "Closing issue #${num}"
+            gh issue comment "${num}" --body "Prod hero cold recovered on [this run](${RUN_URL}). Closing."
+            gh issue close "${num}" --reason completed
+          done <<< "${ISSUES}"
+
+      # Always succeed — report-only; do not gate the workflow / deploys.
+      - name: Report-only summary
+        if: always()
+        run: |
+          echo "wait-sha=${{ steps.wait-sha.outcome }} cold=${{ steps.cold.outcome }}"
+          echo "Prod hero cold is report-only; job exits success."
