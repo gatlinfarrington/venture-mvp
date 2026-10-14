@@ -174,6 +174,8 @@ jobs:
       # COLD_LOAD at 375 runs 5 navigations; worst first-MRR must be <2400ms.
       # COLD=1 / FRESH_COLD: 10 new browser contexts per width; every load must
       # change .hero-mrr-num by 2400ms (stall gate for cold start races).
+      # THROTTLED_COLD: Slow-4G CDP, 5 fresh contexts; fail if first change
+      # >=2500ms from nav or >900ms after JS completes.
       - name: Hero loop at 375 (${{ needs.resolve-url.outputs.base_url }})
         run: |
           set -euo pipefail
@@ -182,6 +184,7 @@ jobs:
           COLD_LOAD=1 WIDTH=375 VIEWPORT_HEIGHT=812 node scripts/hero-loop-test.mjs "$BASE/" /tmp/hero-loop-ci-375-cold
           COLD=1 WIDTH=375 VIEWPORT_HEIGHT=812 node scripts/hero-loop-test.mjs "$BASE/" /tmp/hero-fresh-375
           COLD=1 WIDTH=1280 VIEWPORT_HEIGHT=900 node scripts/hero-loop-test.mjs "$BASE/" /tmp/hero-fresh-1280
+          THROTTLED_COLD=1 WIDTH=375 VIEWPORT_HEIGHT=812 node scripts/hero-loop-test.mjs "$BASE/" /tmp/hero-throttled-375
 
       - name: Stop Next.js server
         if: always() && needs.resolve-url.outputs.mode == 'local'
