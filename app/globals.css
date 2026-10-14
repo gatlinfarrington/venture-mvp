@@ -1589,12 +1589,23 @@ tr.reveal.reveal-rise {
   }
 
   .hero-sheet {
-    /* MRR reel + month bar + ~3 rows ≈ 260px compact card. */
-    max-height: 260px;
+    /* Exactly sheet-top + thead + 3×36px rows (no max-height clip of the 3rd row). */
+    max-height: none;
+    height: auto;
+    overflow: hidden;
   }
 
   .hero-sheet-top {
     padding: var(--space-3) var(--space-4) var(--space-2);
+  }
+
+  .hero-sheet thead tr {
+    height: 36px;
+  }
+
+  .hero-sheet table {
+    /* Header + three rows; tbody already height: calc(3 * 36px). */
+    height: calc(4 * 36px);
   }
 
   .hero-bars {
@@ -4505,6 +4516,11 @@ a.tag-pill:focus-visible {
   text-decoration: underline;
   text-decoration-color: var(--c-border);
   text-underline-offset: 3px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-block: var(--space-2);
+  box-sizing: border-box;
 }
 
 @media (hover: hover) {

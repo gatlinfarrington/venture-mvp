@@ -34,10 +34,13 @@ const GAP_MS = 1100;
 const CHIP_MS = 420;
 /** Rest at full opacity before dissolve so the +$ label reads. */
 const CHIP_HOLD_MS = 720;
-const START_DELAY_MS = 600;
+/** First landing fires ASAP so cold 375 MRR (after spring settle) stays under 2500ms. */
+const START_DELAY_MS = 0;
 const REST_MS = 2400;
 const RESET_MS = 720;
 const ROW_SPRING_MS = 360;
+/** Reel + month bar wait for the row spring to settle, then this beat. */
+const MRR_AFTER_SETTLE_MS = ROW_SPRING_MS + 120;
 const PULSE_MS = 600;
 
 function prefersReducedMotion() {
@@ -190,23 +193,6 @@ export function HeroDemo() {
       setPulseStore(s);
       timers.current.push(window.setTimeout(() => setPulseStore(null), PULSE_MS));
 
-      // Fade/scale chip in place beside MRR (same beat as row + counter — no flight).
-      const spawnChip = chipsAllowed() && pillDelta > 0;
-      if (spawnChip) {
-        const pid = `p-${index}`;
-        setChips([{ id: pid, amount: pillDelta }]);
-        timers.current.push(
-          window.setTimeout(() => {
-            setChips((prev) =>
-              prev.map((p) => (p.id === pid ? { ...p, dissolving: true } : p)),
-            );
-          }, CHIP_MS + CHIP_HOLD_MS),
-        );
-        timers.current.push(
-          window.setTimeout(() => setChips([]), CHIP_MS + CHIP_HOLD_MS + 180),
-        );
-      }
-
       transitioning.current = true;
       const newId = order.id;
       // Mount at prior slots (new at -1, others at 0..8), then spring to 0..9.
@@ -215,19 +201,44 @@ export function HeroDemo() {
       setEnterPhase("from");
       setRows((prev) => applyLanding(trimOutgoing(prev), index));
 
-      if (mrrTick !== 0) {
-        const next = Math.min(FINAL_MRR, Math.round((mrrRef.current + mrrTick) * 100) / 100);
-        mrrRef.current = next;
-        setMrr(next);
-        setDelta(deltaLabel());
-        setDeltaKey((k) => k + 1);
-      }
-      // Last landing: force exact FINAL so the read-out never stalls mid-climb.
-      if (index === HERO_LANDINGS.length - 1) {
-        mrrRef.current = FINAL_MRR;
-        setMrr(FINAL_MRR);
-        setDelta(deltaLabel());
-      }
+      // Cause → effect: reel, month bar, and chip only after the row spring settles (+120ms).
+      timers.current.push(
+        window.setTimeout(() => {
+          if (mrrTick !== 0) {
+            const next = Math.min(
+              FINAL_MRR,
+              Math.round((mrrRef.current + mrrTick) * 100) / 100,
+            );
+            mrrRef.current = next;
+            setMrr(next);
+            setDelta(deltaLabel());
+            setDeltaKey((k) => k + 1);
+          }
+          // Last landing: force exact FINAL so the read-out never stalls mid-climb.
+          if (index === HERO_LANDINGS.length - 1) {
+            mrrRef.current = FINAL_MRR;
+            setMrr(FINAL_MRR);
+            setDelta(deltaLabel());
+          }
+
+          // Fade/scale chip in place beside MRR (same beat as counter — no flight).
+          const spawnChip = chipsAllowed() && pillDelta > 0;
+          if (spawnChip) {
+            const pid = `p-${index}`;
+            setChips([{ id: pid, amount: pillDelta }]);
+            timers.current.push(
+              window.setTimeout(() => {
+                setChips((prev) =>
+                  prev.map((p) => (p.id === pid ? { ...p, dissolving: true } : p)),
+                );
+              }, CHIP_MS + CHIP_HOLD_MS),
+            );
+            timers.current.push(
+              window.setTimeout(() => setChips([]), CHIP_MS + CHIP_HOLD_MS + 180),
+            );
+          }
+        }, MRR_AFTER_SETTLE_MS),
+      );
 
       // Double rAF so the 'from' positions paint with transition:none first.
       requestAnimationFrame(() => {
@@ -242,7 +253,9 @@ export function HeroDemo() {
           setEnteringId(null);
           setRows((prev) => trimOutgoing(prev).map((r) => ({ ...r, fresh: false })));
           transitioning.current = false;
-        }, ROW_SPRING_MS + 40),
+          // Keep data-hero-entering through the post-settle MRR beat so tests can
+          // assert the reel did not move while the row was still sliding.
+        }, MRR_AFTER_SETTLE_MS + 40),
       );
     },
     [finishInstant],
@@ -284,7 +297,18 @@ export function HeroDemo() {
       requestAnimationFrame(() => setInstant(false));
       // Ghost anim 160ms; live after-reset starts at 140ms for 220ms → clear after both.
       timers.current.push(window.setTimeout(() => setGhost(null), 200));
-      timers.current.push(window.setTimeout(thenRun, RESET_MS));
+      // Land the START_MRR paint, then a short settle, before the next loop so
+      // the first row never races a still-flushing reset counter.
+      timers.current.push(
+        window.setTimeout(() => {
+          mrrRef.current = START_MRR;
+          setMrr(START_MRR);
+          setEnteringId(null);
+          timers.current.push(
+            window.setTimeout(() => thenRun(), 160),
+          );
+        }, RESET_MS),
+      );
     },
     [clearTimers],
   );
@@ -367,12 +391,12 @@ export function HeroDemo() {
         return;
       }
       if (startTimer != null) return;
-      // Already on START_MRR + seed; short delay then count up from the first order.
+      // Already on START_MRR + seed; start landings ASAP (MRR waits for row settle).
       startTimer = window.setTimeout(() => {
         started = true;
         startTimer = null;
         scheduleLoopRef.current();
-      }, 400);
+      }, 0);
     };
 
     const stop = () => {
@@ -531,6 +555,7 @@ export function HeroDemo() {
                     <tr
                       key={r.id}
                       data-row-id={r.id}
+                      data-hero-entering={entering ? "true" : undefined}
                       className={[
                         "hero-row",
                         r.fresh ? "new" : "",
