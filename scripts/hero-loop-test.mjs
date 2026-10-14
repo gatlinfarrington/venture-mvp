@@ -11,7 +11,9 @@
 // At 1000/1060/1100, fails if the right half above the fold has no hero demo
 // (stacked layout leaving blank white beside the copy).
 // Fails at any width if the launch-invite input/button overlaps the demo or is
-// clipped by the viewport / copy column.
+// clipped by the viewport. Also fails if clipped by the copy column when
+// .hero-copy generates a box (desktop / two-col). Skipped when .hero-copy is
+// display:contents (≤600px reordered hero: form sits below the sheet card).
 // The reset ghost layer (.hero-rows-ghost) is excluded: it is a deliberate fade-out overlay.
 //
 // Widths: VIEWPORT_WIDTH / WIDTH for one run. Or WIDTHS=suite / a comma list.
@@ -242,6 +244,13 @@ async function sampleFrame() {
       const copy = document.querySelector(".hero-copy");
       const demoR = demo ? demo.getBoundingClientRect() : null;
       const copyR = copy ? copy.getBoundingClientRect() : null;
+      // ≤600px: .hero-copy is display:contents so it has no box (0×0). The form
+      // is intentionally ordered below the sheet — do not treat that as clip.
+      const copyHasBox =
+        !!copyR &&
+        copyR.width > 1 &&
+        copyR.height > 1 &&
+        (!copy || getComputedStyle(copy).display !== "contents");
       const overlaps = (a, b) =>
         a.left < b.right - 0.5 &&
         a.right > b.left + 0.5 &&
@@ -254,7 +263,10 @@ async function sampleFrame() {
           formOk = false;
           formIssues.push("form clipped by viewport");
         }
-        if (copyR && (r.left < copyR.left - 1 || r.right > copyR.right + 1)) {
+        if (
+          copyHasBox &&
+          (r.left < copyR.left - 1 || r.right > copyR.right + 1)
+        ) {
           formOk = false;
           formIssues.push("form clipped by copy column");
         }
