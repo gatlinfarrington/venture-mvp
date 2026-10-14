@@ -450,9 +450,29 @@ tr.reveal.reveal-rise {
   animation: hero-rv var(--dur-reveal) var(--ease-out) forwards;
 }
 
+/* Headline: fully opaque on first paint (Speed Index); keep only the ~8px rise. */
+.motion h1.hero-reveal,
+.motion .display.hero-reveal {
+  opacity: 1;
+
+  --reveal-distance: 8px;
+
+  animation: hero-rv-rise var(--dur-reveal) var(--ease-out) forwards;
+}
+
 @keyframes hero-rv {
   to {
     opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes hero-rv-rise {
+  from {
+    transform: translateY(8px);
+  }
+
+  to {
     transform: none;
   }
 }
@@ -462,7 +482,9 @@ tr.reveal.reveal-rise {
   .motion .reveal:not(.is-visible),
   .motion .reveal.is-visible,
   .hero-reveal,
-  .motion .hero-reveal {
+  .motion .hero-reveal,
+  .motion h1.hero-reveal,
+  .motion .display.hero-reveal {
     opacity: 1;
     transform: none;
     animation: none;
@@ -1503,6 +1525,98 @@ tr.reveal.reveal-rise {
   }
 }
 
+/*
+ * ≤600px first screen (design _wed0500): compact sheet card after headline/lede,
+ * before form / sample CTA / status rows. Placed after base + 979px hero rules
+ * so display/height overrides win the cascade.
+ */
+@media (max-width: 600px) {
+  .hero {
+    padding-block: var(--space-6) var(--space-6);
+  }
+
+  .hero-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: stretch;
+  }
+
+  .hero-copy {
+    display: contents;
+  }
+
+  .hero-copy > .eyebrow {
+    order: 1;
+  }
+
+  .hero-copy > .display {
+    order: 2;
+  }
+
+  .hero-copy > .hero-lede {
+    order: 3;
+  }
+
+  .hero-frame {
+    order: 4;
+    width: 100%;
+  }
+
+  .hero-copy > .hero-ctas {
+    order: 5;
+  }
+
+  .hero-copy > .hero-facts {
+    order: 6;
+  }
+
+  .hero-stage {
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding-bottom: 0;
+  }
+
+  .hero-stores-col {
+    display: none;
+  }
+
+  .hero-sheet-wrap {
+    width: 100%;
+  }
+
+  .hero-sheet {
+    /* MRR reel + month bar + ~3 rows ≈ 260px compact card. */
+    max-height: 260px;
+  }
+
+  .hero-sheet-top {
+    padding: var(--space-3) var(--space-4) var(--space-2);
+  }
+
+  .hero-bars {
+    height: 40px;
+    margin-top: var(--space-2);
+  }
+
+  .hero-mrr-num {
+    --digit-h: 32px;
+  }
+
+  .hero-sheet tbody.hero-rows,
+  .hero-sheet tbody.hero-rows-ghost {
+    height: calc(3 * 36px);
+    min-height: calc(3 * 36px);
+  }
+
+  .hero-demo-foot {
+    margin-top: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .hero-sheet th:nth-child(2),
   .hero-sheet td:nth-child(2) {
@@ -1586,6 +1700,11 @@ tr.reveal.reveal-rise {
   text-decoration: underline;
   text-decoration-color: var(--c-border);
   text-underline-offset: 3px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-block: var(--space-2);
+  box-sizing: border-box;
 }
 
 .step-keys-note a:hover {
@@ -4473,6 +4592,7 @@ a.tag-pill:focus-visible {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
+  max-width: 100%;
 }
 
 .sample-copy-btn {
@@ -4506,7 +4626,10 @@ a.tag-pill:focus-visible {
   font-size: var(--t-eyebrow-size);
   border-radius: var(--radius-sm);
   padding: var(--space-1-5) var(--space-2);
-  white-space: nowrap;
+  /* Keep tip inside the 375 viewport; wrap instead of nowrap overflow. */
+  white-space: normal;
+  max-width: min(16rem, calc(100vw - 48px));
+  box-sizing: border-box;
   opacity: 0;
   pointer-events: none;
   transform: translateY(-2px);
@@ -4891,12 +5014,24 @@ a.tag-pill:focus-visible {
 
 /* Fixed-layout table: set col width (td min-width is ignored). */
 .sample-dash col.sample-src-col {
-  width: 140px;
+  /* 140 → 127 so status col can fit "Not connected" without ellipsis. */
+  width: 127px;
+}
+
+.sample-dash col.sample-src-state-col {
+  /* design-exception: A8 status col fits "Not connected" at sheet chrome size */
+  width: 110px;
 }
 
 .sample-dash td.sample-src-name {
   font-weight: 600;
   white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.sample-dash td.sample-src-synced,
+.sample-dash td.sample-src-muted {
   overflow: visible;
   text-overflow: clip;
 }
