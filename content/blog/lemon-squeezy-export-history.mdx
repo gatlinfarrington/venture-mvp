@@ -9,7 +9,7 @@ ogTitle: "Lemon Squeezy export → Google Sheets"
 
 Lemon Squeezy's Orders page answers "what sold today." Tax season, a buyer diligence request, or a product-by-product year review needs every paid order in a sheet you can query. This guide covers the official CSV export, what those columns mean, when the Orders API is the better path, and how a dedicated importer differs from pasting a snapshot.
 
-RevenueSheet is pending Google Workspace Marketplace review. Nothing here claims the add-on is installable today. [Join the launch list](/#launch) if you want a heads-up when Free (one source, manual refresh) and paid scheduled sync open.
+RevenueSheet is not available to install yet. Nothing here claims the add-on is installable today. [Join the launch list](/#launch) if you want a heads-up when Free (one source, manual refresh) and paid scheduled sync open.
 
 ## Option 1: Export orders as CSV (official)
 
@@ -35,7 +35,7 @@ Import with **File → Import → Upload** in Google Sheets and choose "Insert n
 
 ## Option 2: Walk the Orders API (when CSV is not enough)
 
-If you need pagination, filters, or a script that can resume, Lemon Squeezy's API lists orders newest-first via `GET https://api.lemonsqueezy.com/v1/orders` ([List all orders](https://docs.lemonsqueezy.com/api/orders/list-all-orders); checked Oct 13, 2026). List endpoints use page-based pagination: `page[size]` is 1–100 (default 10), and responses include JSON:API `links.next` when more pages remain ([Requests](https://docs.lemonsqueezy.com/api/getting-started/requests); checked Oct 13, 2026).
+If you need pagination, filters, or a script that can resume, Lemon Squeezy's Orders API is at `GET https://api.lemonsqueezy.com/v1/orders` ([List all orders](https://docs.lemonsqueezy.com/api/orders/list-all-orders); checked Oct 13, 2026). Do not assume a fixed sort order without checking the current docs (including any `sort` query params). List endpoints use page-based pagination: `page[size]` is 1–100 (default 10), and responses include JSON:API `links.next` when more pages remain ([Requests](https://docs.lemonsqueezy.com/api/getting-started/requests); checked Oct 13, 2026).
 
 That path is powerful and easy to get wrong:
 
@@ -53,7 +53,7 @@ A minimal mental model: page until `links.next` is absent, write one row per ord
 
 ## How RevenueSheet plans to differ at launch
 
-At launch, RevenueSheet is designed as a Google Sheets add-on that walks source history APIs once, writes named tabs you own, and builds an MRR dashboard from those rows. Free is planned for one source with manual refresh and full history backfill; once paid plans open, Pro adds scheduled refresh across Lemon Squeezy, Polar, Gumroad, and Stripe (one store per source). That is the product plan — not a claim that install works today. Marketplace review is still pending.
+At launch, RevenueSheet is designed as a Google Sheets add-on that walks source history APIs once, writes named tabs you own, and builds an MRR dashboard from those rows. Free is planned for one source with manual refresh and full history backfill; once paid plans open, Pro adds scheduled refresh across Lemon Squeezy, Polar, Gumroad, and Stripe (one store per source). That is the product plan — not a claim that install works today. It is not available to install yet.
 
 Setup notes will live under [Docs → Lemon Squeezy](/docs/setup/lemon-squeezy). Until then, the official CSV export and the Orders API above are the supported ways to get history into a sheet.
 
