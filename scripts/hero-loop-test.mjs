@@ -82,7 +82,10 @@ await p.goto(URL, { waitUntil: "domcontentloaded" });
 await p.waitForSelector(".hero-sheet tbody tr, .hero-sheet .hero-row", {
   timeout: 60_000,
 });
-await p.locator("[data-hero-demo], .hero-stage, .hero-sheet").first().scrollIntoViewIfNeeded();
+// Cold-load above-fold checks must not scroll the demo into view first.
+if (!COLD_LOAD) {
+  await p.locator("[data-hero-demo], .hero-stage, .hero-sheet").first().scrollIntoViewIfNeeded();
+}
 
 const ROWSEL = (await p.$(".hero-sheet .hero-row")) ? ".hero-row" : "tbody tr";
 const sha = await p
@@ -293,6 +296,41 @@ if (COLD_LOAD) {
   if (f.aboveHeader.length) {
     issues.push("row above header " + [...new Set(f.aboveHeader)].slice(0, 6).join("|"));
   }
+
+  // 375×812: MRR reel must sit in the first viewport; MRR text must move before 2.5s.
+  let mrrInView = null;
+  let mrrChangedBefore2500 = null;
+  if (WIDTH === 375 && HEIGHT === 812) {
+    mrrInView = await p.evaluate(() => {
+      const el = document.querySelector(".hero-mrr-num");
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return r.bottom <= window.innerHeight + 0.5 && r.top >= 0;
+    });
+    if (!mrrInView) {
+      issues.push(".hero-mrr-num bottom not inside viewport at 375x812 cold load");
+    }
+
+    const startText = await p.evaluate(
+      () => document.querySelector(".hero-mrr-num .sr-only")?.textContent ?? "",
+    );
+    const deadline = Date.now() + 2500;
+    mrrChangedBefore2500 = false;
+    while (Date.now() < deadline) {
+      await p.waitForTimeout(50);
+      const now = await p.evaluate(
+        () => document.querySelector(".hero-mrr-num .sr-only")?.textContent ?? "",
+      );
+      if (now && now !== startText) {
+        mrrChangedBefore2500 = true;
+        break;
+      }
+    }
+    if (!mrrChangedBefore2500) {
+      issues.push("MRR text did not change before 2500ms at 375x812 cold load");
+    }
+  }
+
   const summary = {
     url: URL,
     sha,
@@ -300,9 +338,11 @@ if (COLD_LOAD) {
     viewport: { width: WIDTH, height: HEIGHT },
     frames: 1,
     failingFrames: issues.length ? 1 : 0,
-    issueCounts: issues.length ? { "row above": 1 } : {},
+    issueCounts: issues.length ? { cold: issues.length } : {},
     firstFails: issues.length ? [{ t: 0, issues }] : [],
     aboveHeader: f.aboveHeader,
+    mrrInView,
+    mrrChangedBefore2500,
   };
   fs.writeFileSync(`${OUT}/report.json`, JSON.stringify({ summary, frames: [{ t: 0, issues }] }, null, 1));
   console.log(JSON.stringify(summary, null, 1));

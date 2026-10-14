@@ -353,7 +353,8 @@ export function HeroDemo() {
 
     setReduced(prefersReducedMotion());
 
-    let visible = true;
+    // Wait for the card to enter view before starting (do not assume visible).
+    let visible = false;
     let pageVisible = document.visibilityState === "visible";
     let started = false;
     let startTimer: number | null = null;
@@ -366,7 +367,7 @@ export function HeroDemo() {
         return;
       }
       if (startTimer != null) return;
-      // Already on START_MRR + seed; short delay then count up (no drop).
+      // Already on START_MRR + seed; short delay then count up from the first order.
       startTimer = window.setTimeout(() => {
         started = true;
         startTimer = null;
@@ -393,18 +394,17 @@ export function HeroDemo() {
         if (visible && pageVisible) scheduleStart();
         else stop();
       },
-      // threshold 0: phone layouts often never reach 0.2 while the hero is on screen.
-      { threshold: 0, rootMargin: "0px 0px -8% 0px" },
+      // Start from the first order once ~40% of the card is on screen.
+      { threshold: 0.4 },
     );
     io.observe(stage);
 
     const onVis = () => {
       pageVisible = document.visibilityState === "visible";
-      if (pageVisible) scheduleStart();
+      if (pageVisible && visible) scheduleStart();
       else stop();
     };
     document.addEventListener("visibilitychange", onVis);
-    scheduleStart();
 
     return () => {
       io.disconnect();
