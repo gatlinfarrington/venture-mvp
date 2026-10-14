@@ -835,6 +835,7 @@ tr.reveal.reveal-rise {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--c-ink) 40%, transparent);
   }
   100% {
+    /* design-exception: A1 hard ring (blur 0, spread fade), not a soft glow */
     box-shadow: 0 0 0 8px transparent;
   }
 }
