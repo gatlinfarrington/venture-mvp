@@ -80,6 +80,7 @@ const b = await chromium.launch({
 });
 const p = await b.newPage({ viewport: { width: WIDTH, height: HEIGHT } });
 await p.emulateMedia({ reducedMotion: "no-preference" });
+const navStart = Date.now();
 await p.goto(URL, { waitUntil: "domcontentloaded" });
 await p.waitForSelector(".hero-sheet tbody tr, .hero-sheet .hero-row", {
   timeout: 60_000,
@@ -278,6 +279,25 @@ async function sampleFrame() {
       formIssues = [...new Set(formIssues)];
     }
 
+    const mrrText =
+      document.querySelector(".hero-mrr-num .sr-only")?.textContent?.trim() ?? "";
+    const entering = document.querySelector('[data-hero-entering="true"]');
+    let enteringSliding = false;
+    let enteringId = null;
+    if (entering) {
+      enteringId =
+        entering.getAttribute("data-row-id") ||
+        entering.querySelector("td")?.innerText?.trim() ||
+        null;
+      const er = entering.getBoundingClientRect();
+      // Top row settled slot is flush under thead; still sliding while above it.
+      enteringSliding = er.top < headRect.bottom - 1.5;
+    }
+
+    // Month bar signal height tracks MRR; expose for settle ordering checks.
+    const signal = document.querySelector(".hero-bars i.signal");
+    const barH = signal ? signal.getBoundingClientRect().height : null;
+
     return {
       rows: rows.filter((r) => r.top < clip.bottom - 1),
       clipBottom: clip.bottom,
@@ -296,6 +316,10 @@ async function sampleFrame() {
       stageW: +stageRect.width.toFixed(1),
       formOk,
       formIssues,
+      mrrText,
+      enteringSliding,
+      enteringId,
+      barH,
     };
   }, ROWSEL);
 }
@@ -309,9 +333,10 @@ if (COLD_LOAD) {
     issues.push("row above header " + [...new Set(f.aboveHeader)].slice(0, 6).join("|"));
   }
 
-  // 375×812: MRR reel must sit in the first viewport; MRR text must move before 2.5s.
+  // 375×812: MRR reel in first viewport; first MRR change under 2500ms from navigation.
   let mrrInView = null;
   let mrrChangedBefore2500 = null;
+  let firstMrrChangeMs = null;
   if (WIDTH === 375 && HEIGHT === 812) {
     mrrInView = await p.evaluate(() => {
       const el = document.querySelector(".hero-mrr-num");
@@ -326,20 +351,24 @@ if (COLD_LOAD) {
     const startText = await p.evaluate(
       () => document.querySelector(".hero-mrr-num .sr-only")?.textContent ?? "",
     );
-    const deadline = Date.now() + 2500;
+    const deadline = navStart + 2500;
     mrrChangedBefore2500 = false;
     while (Date.now() < deadline) {
-      await p.waitForTimeout(50);
+      await p.waitForTimeout(40);
       const now = await p.evaluate(
         () => document.querySelector(".hero-mrr-num .sr-only")?.textContent ?? "",
       );
       if (now && now !== startText) {
-        mrrChangedBefore2500 = true;
+        firstMrrChangeMs = Date.now() - navStart;
+        mrrChangedBefore2500 = firstMrrChangeMs < 2500;
         break;
       }
     }
     if (!mrrChangedBefore2500) {
-      issues.push("MRR text did not change before 2500ms at 375x812 cold load");
+      issues.push(
+        `first MRR change not under 2500ms from navigation at 375x812 cold load` +
+          (firstMrrChangeMs != null ? ` (got ${firstMrrChangeMs}ms)` : " (no change)"),
+      );
     }
   }
 
@@ -355,6 +384,7 @@ if (COLD_LOAD) {
     aboveHeader: f.aboveHeader,
     mrrInView,
     mrrChangedBefore2500,
+    firstMrrChangeMs,
   };
   fs.writeFileSync(`${OUT}/report.json`, JSON.stringify({ summary, frames: [{ t: 0, issues }] }, null, 1));
   console.log(JSON.stringify(summary, null, 1));
@@ -370,6 +400,10 @@ const frames = [];
 const fails = [];
 const t0 = Date.now();
 let replayClicked = false;
+/** MRR text from the frame before the current entering row appeared. */
+let mrrBeforeEnter = null;
+let trackedEnterId = null;
+let barHBeforeEnter = null;
 
 while (Date.now() - t0 < LOOP_MS) {
   const t = Date.now() - t0;
@@ -385,6 +419,43 @@ while (Date.now() - t0 < LOOP_MS) {
   const issues = [];
   // aboveHeader is cold-load only (enter springs briefly park a row over the thead).
   if (f.rows.length === 0) issues.push("empty table (no visible rows)");
+
+  // Cause → effect at every width: MRR (and month bar) must not advance while
+  // the entering row is still sliding. Skip during reset ghost. Only flag
+  // increases (the inverted beat); reset rolls downward and is unrelated.
+  const parseMrr = (s) => {
+    const n = Number(String(s || "").replace(/[^0-9.]/g, ""));
+    return Number.isFinite(n) ? n : null;
+  };
+  const resetting = await p.evaluate(() => !!document.querySelector(".hero-rows-ghost"));
+  if (!resetting && f.enteringId) {
+    if (trackedEnterId !== f.enteringId) {
+      trackedEnterId = f.enteringId;
+      const prev = frames.at(-1);
+      mrrBeforeEnter = prev?.mrrText ?? f.mrrText;
+      barHBeforeEnter = prev?.barH ?? f.barH;
+    }
+    if (f.enteringSliding) {
+      const before = parseMrr(mrrBeforeEnter);
+      const now = parseMrr(f.mrrText);
+      if (before != null && now != null && now > before + 0.01) {
+        issues.push(
+          `MRR changed before row settled (${trackedEnterId}: ${mrrBeforeEnter}→${f.mrrText})`,
+        );
+      }
+      if (
+        barHBeforeEnter != null &&
+        f.barH != null &&
+        f.barH > barHBeforeEnter + 1.5
+      ) {
+        issues.push(`month bar moved before row settled (${trackedEnterId})`);
+      }
+    }
+  } else if (!f.enteringId) {
+    trackedEnterId = null;
+    mrrBeforeEnter = null;
+    barHBeforeEnter = null;
+  }
   const ids = f.rows.map((r) => r.id);
   const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
   if (dup.length) issues.push("duplicate " + [...new Set(dup)].join(","));
@@ -444,6 +515,8 @@ while (Date.now() - t0 < LOOP_MS) {
     t,
     ids,
     issues,
+    mrrText: f.mrrText,
+    barH: f.barH,
     pos: Object.fromEntries(f.rows.map((r) => [r.id, r.top])),
   });
   if (SAVE_ALL) {
