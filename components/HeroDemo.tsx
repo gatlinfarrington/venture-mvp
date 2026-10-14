@@ -124,9 +124,13 @@ function DemoFoot({ onReplay, hidden }: { onReplay: () => void; hidden?: boolean
 export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
+  /** True only after landOrder(0)'s timer has fired — not when the nav delay arms. */
+  const loopLiveRef = useRef(false);
   const mrrRef = useRef(START_MRR);
   const transitioning = useRef(false);
   const rowsRef = useRef<HeroRow[]>(buildSeedRows());
+  const clearTimersRef = useRef<() => void>(() => {});
+  const runRef = useRef<() => void>(() => {});
   // First paint is START_MRR + seed so the first motion is counting up, not a drop.
   const [mrr, setMrr] = useState(START_MRR);
   const [delta, setDelta] = useState<string | null>(null);
@@ -167,6 +171,8 @@ export function HeroDemo() {
   const clearTimers = useCallback(() => {
     timers.current.forEach((id) => window.clearTimeout(id));
     timers.current = [];
+    // Reset so a later ensureLoop / visibility handler can re-arm the loop.
+    loopLiveRef.current = false;
   }, []);
 
   const finishInstant = useCallback(() => {
@@ -325,7 +331,13 @@ export function HeroDemo() {
       const at =
         START_DELAY_MS +
         (i === 0 ? 0 : FIRST_GAP_MS + (i - 1) * GAP_MS);
-      timers.current.push(window.setTimeout(() => landOrder(i), at));
+      timers.current.push(
+        window.setTimeout(() => {
+          // Mark live only when the first order timer fires — not when armed.
+          if (i === 0) loopLiveRef.current = true;
+          landOrder(i);
+        }, at),
+      );
     }
     const restAt =
       START_DELAY_MS +
@@ -341,7 +353,8 @@ export function HeroDemo() {
 
   useEffect(() => {
     scheduleLoopRef.current = scheduleLoop;
-  }, [scheduleLoop]);
+    clearTimersRef.current = clearTimers;
+  }, [scheduleLoop, clearTimers]);
 
   const run = useCallback(() => {
     clearTimers();
@@ -381,7 +394,13 @@ export function HeroDemo() {
     });
   }, [clearTimers, resetAndRestart]);
 
-  // Schedule from navigation (performance.now), not "ASAP after first paint".
+  useEffect(() => {
+    runRef.current = run;
+  }, [run]);
+
+  // Mount-once starter. Do NOT depend on scheduleLoop — a dep change was cleaning
+  // up and clearTimers()'ing order timers after the nav delay had already fired
+  // (started=true → loop never re-armed). Elapsed nav targets kick immediately.
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -389,9 +408,9 @@ export function HeroDemo() {
     setReduced(prefersReducedMotion());
 
     let visible = false;
-    let pageVisible = document.visibilityState === "visible";
-    let started = false;
     let startTimer: number | null = null;
+
+    const hasOrderTimers = () => timers.current.length > 0;
 
     const ratioInView = () => {
       const r = stage.getBoundingClientRect();
@@ -400,64 +419,83 @@ export function HeroDemo() {
       return r.height > 0 ? Math.max(0, visibleH) / r.height : 0;
     };
 
-    const scheduleStart = () => {
-      if (started || !visible || !pageVisible) return;
-      if (prefersReducedMotion()) {
-        started = true;
-        run();
-        return;
-      }
-      if (startTimer != null) return;
-      // land0 → FIRST_GAP → land1 → settle ≈ first MRR. Aim that at ~2000ms from nav.
-      const targetLand0 =
-        TARGET_FIRST_MRR_MS - FIRST_GAP_MS - MRR_AFTER_SETTLE_MS;
-      const delay = Math.max(0, targetLand0 - performance.now());
-      startTimer = window.setTimeout(() => {
-        started = true;
-        startTimer = null;
-        scheduleLoopRef.current();
-      }, delay);
-    };
-
-    const stop = () => {
-      if (started) {
-        if (!pageVisible) clearTimers();
-        return;
-      }
+    const clearPendingStart = () => {
       if (startTimer != null) {
         window.clearTimeout(startTimer);
         startTimer = null;
       }
-      clearTimers();
     };
 
-    // Sync check so we do not wait an extra IO callback after hydrate.
+    const kickOff = () => {
+      clearPendingStart();
+      if (hasOrderTimers()) return;
+      if (prefersReducedMotion()) {
+        runRef.current();
+        return;
+      }
+      scheduleLoopRef.current();
+    };
+
+    /** Arm nav-timed start, or restart immediately if no order timers are pending. */
+    const ensureLoop = () => {
+      if (!visible) return;
+      if (prefersReducedMotion()) {
+        kickOff();
+        return;
+      }
+      // Already armed or running — leave it alone.
+      if (hasOrderTimers() || startTimer != null) return;
+
+      const targetLand0 =
+        TARGET_FIRST_MRR_MS - FIRST_GAP_MS - MRR_AFTER_SETTLE_MS;
+      const remaining = targetLand0 - performance.now();
+      if (remaining <= 0) {
+        kickOff();
+        return;
+      }
+      startTimer = window.setTimeout(() => {
+        startTimer = null;
+        kickOff();
+      }, remaining);
+    };
+
     visible = ratioInView() >= 0.4;
-    if (visible && pageVisible) scheduleStart();
+    if (visible) ensureLoop();
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        visible = Boolean(entry?.isIntersecting);
-        if (visible && pageVisible) scheduleStart();
-        else stop();
+        visible = Boolean(entry?.isIntersecting) || ratioInView() >= 0.4;
+        if (visible) ensureLoop();
+        else if (!hasOrderTimers()) clearPendingStart();
       },
       { threshold: 0.4 },
     );
     io.observe(stage);
 
+    // If order timers were cleared (pause / cleanup race), restart when visible.
+    // loopLiveRef is "started": set only when land0 fires, reset in clearTimers.
     const onVis = () => {
-      pageVisible = document.visibilityState === "visible";
-      if (pageVisible && visible) scheduleStart();
-      else stop();
+      if (document.visibilityState === "hidden") {
+        clearPendingStart();
+        clearTimersRef.current();
+        return;
+      }
+      // Restart whenever no order timers are pending (design-review stall fix).
+      if (visible && !hasOrderTimers()) {
+        loopLiveRef.current = false;
+        ensureLoop();
+      }
     };
     document.addEventListener("visibilitychange", onVis);
 
     return () => {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
-      stop();
+      clearPendingStart();
+      clearTimersRef.current();
     };
-  }, [clearTimers, resetAndRestart, run]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once; live fns via refs
+  }, []);
 
   const digits = splitMrr(mrr);
   const lastBar = barPct(mrr);
