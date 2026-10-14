@@ -41,10 +41,11 @@ export default function AboutPage() {
 
         <h2>Why a sheet you own</h2>
         <p>
-          {brand.name} is a Google Sheets add-on. You connect a source with an API key, run a
-          backfill, and get named tabs (orders, subscriptions, customers, refunds) plus a dashboard
-          tab for MRR, churn, and revenue by product. Free covers one source with manual refresh;
-          Pro schedules sync across connected storefronts.
+          {brand.name} is a Google Sheets add-on in testing and not yet available to install. The
+          plan: you connect a source with an API key, run a backfill, and get named tabs (orders,
+          subscriptions, customers, refunds) plus a dashboard tab for MRR, churn, and revenue by
+          product. Free covers one source with manual refresh; Pro schedules sync across connected
+          storefronts once paid plans open.
         </p>
         <p>
           You keep QUERY, FILTER, and the models you already trust. You share the file with an

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const quickstart = [
   {
     n: "01",
-    title: "Install",
+    title: "Launch",
     body: "Join the launch list and we'll email you once RevenueSheet is available to install.",
     href: "/#launch",
   },

@@ -158,7 +158,8 @@ export const DASHBOARD = {
   mrr: fmtMoney(h.mrr),
   mrrDelta: `▲ ${h.mrrMoMPct}% MoM`,
   netRevenue: fmtMoney(h.net30d),
-  netDelta: `30D net · ${h.orders30d} orders across sources`,
+  // Keep short so Dashboard E6 (netDelta) does not ellipsis inside the fixed sheet width.
+  netDelta: `${h.orders30d} orders · 30D`,
   activeSubs: String(h.activeSubs),
   activeDelta: `${h.trialingSubs} trialing`,
   churn: `${h.churn30dPct}%`,

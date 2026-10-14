@@ -27,8 +27,8 @@ export default function SamplePage() {
         <h1 className="sample-h1">The sheet you get, filled in.</h1>
         <p className="sample-lede muted">
           This is the RevenueSheet template with example data: the Dashboard tab, plus every order
-          and subscription in rows you can sort, filter and query. Same tabs and headers as the copy
-          you install.
+          and subscription in rows you can sort, filter and query. Same tabs and headers the add-on
+          will write when it is available to install.
         </p>
         <div className="sample-actions">
           <SampleCopyAction source="sample-page" />
