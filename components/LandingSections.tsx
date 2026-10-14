@@ -16,7 +16,7 @@ export function Hero() {
       <div className="container hero-grid">
         <div className="hero-copy">
           <p className="eyebrow hero-reveal" style={{ animationDelay: "0ms" }}>
-            Google Sheets add-on · Launching soon.
+            Google Sheets add-on · Launching soon
           </p>
           <h1 className="display hero-reveal" style={{ animationDelay: "60ms" }}>
             All your stores,
