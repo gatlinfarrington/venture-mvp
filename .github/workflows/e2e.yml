@@ -172,12 +172,15 @@ jobs:
       # hero reorder made the copy-column clip check false-positive at 375 —
       # run it here against the same target (PR localhost / preview / prod).
       # COLD_LOAD at 375 runs 5 navigations; worst first-MRR must be <2400ms.
+      # FRESH_COLD: 10 new browser contexts per width; every load must change MRR <3000ms.
       - name: Hero loop at 375 (${{ needs.resolve-url.outputs.base_url }})
         run: |
           set -euo pipefail
           BASE="${{ needs.resolve-url.outputs.base_url }}"
           WIDTH=375 VIEWPORT_HEIGHT=812 node scripts/hero-loop-test.mjs "$BASE/" /tmp/hero-loop-ci-375
           COLD_LOAD=1 WIDTH=375 VIEWPORT_HEIGHT=812 node scripts/hero-loop-test.mjs "$BASE/" /tmp/hero-loop-ci-375-cold
+          FRESH_COLD=1 WIDTH=375 VIEWPORT_HEIGHT=812 node scripts/hero-loop-test.mjs "$BASE/" /tmp/hero-fresh-375
+          FRESH_COLD=1 WIDTH=1280 VIEWPORT_HEIGHT=900 node scripts/hero-loop-test.mjs "$BASE/" /tmp/hero-fresh-1280
 
       - name: Stop Next.js server
         if: always() && needs.resolve-url.outputs.mode == 'local'

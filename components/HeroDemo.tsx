@@ -381,7 +381,9 @@ export function HeroDemo() {
     });
   }, [clearTimers, resetAndRestart]);
 
-  // Schedule from navigation (performance.now), not "ASAP after first paint".
+  // Schedule from navigation (performance.now). Do not gate the first start on
+  // document.visibilityState — headless/background loads often report "hidden"
+  // and would stall forever at START_MRR. Elapsed targets fire immediately.
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -389,9 +391,10 @@ export function HeroDemo() {
     setReduced(prefersReducedMotion());
 
     let visible = false;
-    let pageVisible = document.visibilityState === "visible";
     let started = false;
     let startTimer: number | null = null;
+    // Keep a live pointer so an ASAP kick never calls the empty initial ref.
+    scheduleLoopRef.current = scheduleLoop;
 
     const ratioInView = () => {
       const r = stage.getBoundingClientRect();
@@ -400,64 +403,86 @@ export function HeroDemo() {
       return r.height > 0 ? Math.max(0, visibleH) / r.height : 0;
     };
 
-    const scheduleStart = () => {
-      if (started || !visible || !pageVisible) return;
+    const kickOff = () => {
+      if (started) return;
+      started = true;
+      if (startTimer != null) {
+        window.clearTimeout(startTimer);
+        startTimer = null;
+      }
       if (prefersReducedMotion()) {
-        started = true;
         run();
+        return;
+      }
+      scheduleLoop();
+    };
+
+    const scheduleStart = () => {
+      if (started || !visible) return;
+      if (prefersReducedMotion()) {
+        kickOff();
         return;
       }
       if (startTimer != null) return;
       // land0 → FIRST_GAP → land1 → settle ≈ first MRR. Aim that at ~2000ms from nav.
       const targetLand0 =
         TARGET_FIRST_MRR_MS - FIRST_GAP_MS - MRR_AFTER_SETTLE_MS;
-      const delay = Math.max(0, targetLand0 - performance.now());
-      startTimer = window.setTimeout(() => {
-        started = true;
-        startTimer = null;
-        scheduleLoopRef.current();
-      }, delay);
-    };
-
-    const stop = () => {
-      if (started) {
-        if (!pageVisible) clearTimers();
+      const remaining = targetLand0 - performance.now();
+      if (remaining <= 0) {
+        // Target already elapsed: start now (do not rely on a 0ms timer).
+        kickOff();
         return;
       }
+      startTimer = window.setTimeout(() => {
+        startTimer = null;
+        kickOff();
+      }, remaining);
+    };
+
+    const clearPendingStart = () => {
+      if (started) return;
       if (startTimer != null) {
         window.clearTimeout(startTimer);
         startTimer = null;
       }
-      clearTimers();
     };
 
     // Sync check so we do not wait an extra IO callback after hydrate.
     visible = ratioInView() >= 0.4;
-    if (visible && pageVisible) scheduleStart();
+    if (visible) scheduleStart();
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        visible = Boolean(entry?.isIntersecting);
-        if (visible && pageVisible) scheduleStart();
-        else stop();
+        const next = Boolean(entry?.isIntersecting) || ratioInView() >= 0.4;
+        visible = next;
+        if (visible) scheduleStart();
+        else clearPendingStart();
       },
       { threshold: 0.4 },
     );
     io.observe(stage);
 
+    // Visibility only pauses/resumes an already-running loop — never blocks first start.
     const onVis = () => {
-      pageVisible = document.visibilityState === "visible";
-      if (pageVisible && visible) scheduleStart();
-      else stop();
+      if (!started) {
+        if (visible) scheduleStart();
+        return;
+      }
+      if (document.visibilityState === "hidden") {
+        clearTimers();
+      } else {
+        scheduleLoop();
+      }
     };
     document.addEventListener("visibilitychange", onVis);
 
     return () => {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
-      stop();
+      clearPendingStart();
+      if (started) clearTimers();
     };
-  }, [clearTimers, resetAndRestart, run]);
+  }, [clearTimers, resetAndRestart, run, scheduleLoop]);
 
   const digits = splitMrr(mrr);
   const lastBar = barPct(mrr);
