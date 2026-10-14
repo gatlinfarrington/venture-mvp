@@ -124,9 +124,13 @@ function DemoFoot({ onReplay, hidden }: { onReplay: () => void; hidden?: boolean
 export function HeroDemo() {
   const stageRef = useRef<HTMLDivElement>(null);
   const timers = useRef<number[]>([]);
+  /** True only after landOrder(0)'s timer has fired — not when the nav delay arms. */
+  const loopLiveRef = useRef(false);
   const mrrRef = useRef(START_MRR);
   const transitioning = useRef(false);
   const rowsRef = useRef<HeroRow[]>(buildSeedRows());
+  const clearTimersRef = useRef<() => void>(() => {});
+  const runRef = useRef<() => void>(() => {});
   // First paint is START_MRR + seed so the first motion is counting up, not a drop.
   const [mrr, setMrr] = useState(START_MRR);
   const [delta, setDelta] = useState<string | null>(null);
@@ -167,6 +171,8 @@ export function HeroDemo() {
   const clearTimers = useCallback(() => {
     timers.current.forEach((id) => window.clearTimeout(id));
     timers.current = [];
+    // Reset so a later ensureLoop / visibility handler can re-arm the loop.
+    loopLiveRef.current = false;
   }, []);
 
   const finishInstant = useCallback(() => {
@@ -325,7 +331,13 @@ export function HeroDemo() {
       const at =
         START_DELAY_MS +
         (i === 0 ? 0 : FIRST_GAP_MS + (i - 1) * GAP_MS);
-      timers.current.push(window.setTimeout(() => landOrder(i), at));
+      timers.current.push(
+        window.setTimeout(() => {
+          // Mark live only when the first order timer fires — not when armed.
+          if (i === 0) loopLiveRef.current = true;
+          landOrder(i);
+        }, at),
+      );
     }
     const restAt =
       START_DELAY_MS +
@@ -341,7 +353,8 @@ export function HeroDemo() {
 
   useEffect(() => {
     scheduleLoopRef.current = scheduleLoop;
-  }, [scheduleLoop]);
+    clearTimersRef.current = clearTimers;
+  }, [scheduleLoop, clearTimers]);
 
   const run = useCallback(() => {
     clearTimers();
@@ -381,9 +394,13 @@ export function HeroDemo() {
     });
   }, [clearTimers, resetAndRestart]);
 
-  // Schedule from navigation (performance.now). Do not gate the first start on
-  // document.visibilityState — headless/background loads often report "hidden"
-  // and would stall forever at START_MRR. Elapsed targets fire immediately.
+  useEffect(() => {
+    runRef.current = run;
+  }, [run]);
+
+  // Mount-once starter. Do NOT depend on scheduleLoop — a dep change was cleaning
+  // up and clearTimers()'ing order timers after the nav delay had already fired
+  // (started=true → loop never re-armed). Elapsed nav targets kick immediately.
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -391,10 +408,9 @@ export function HeroDemo() {
     setReduced(prefersReducedMotion());
 
     let visible = false;
-    let started = false;
     let startTimer: number | null = null;
-    // Keep a live pointer so an ASAP kick never calls the empty initial ref.
-    scheduleLoopRef.current = scheduleLoop;
+
+    const hasOrderTimers = () => timers.current.length > 0;
 
     const ratioInView = () => {
       const r = stage.getBoundingClientRect();
@@ -403,33 +419,37 @@ export function HeroDemo() {
       return r.height > 0 ? Math.max(0, visibleH) / r.height : 0;
     };
 
-    const kickOff = () => {
-      if (started) return;
-      started = true;
+    const clearPendingStart = () => {
       if (startTimer != null) {
         window.clearTimeout(startTimer);
         startTimer = null;
       }
-      if (prefersReducedMotion()) {
-        run();
-        return;
-      }
-      scheduleLoop();
     };
 
-    const scheduleStart = () => {
-      if (started || !visible) return;
+    const kickOff = () => {
+      clearPendingStart();
+      if (hasOrderTimers()) return;
+      if (prefersReducedMotion()) {
+        runRef.current();
+        return;
+      }
+      scheduleLoopRef.current();
+    };
+
+    /** Arm nav-timed start, or restart immediately if no order timers are pending. */
+    const ensureLoop = () => {
+      if (!visible) return;
       if (prefersReducedMotion()) {
         kickOff();
         return;
       }
-      if (startTimer != null) return;
-      // land0 → FIRST_GAP → land1 → settle ≈ first MRR. Aim that at ~2000ms from nav.
+      // Already armed or running — leave it alone.
+      if (hasOrderTimers() || startTimer != null) return;
+
       const targetLand0 =
         TARGET_FIRST_MRR_MS - FIRST_GAP_MS - MRR_AFTER_SETTLE_MS;
       const remaining = targetLand0 - performance.now();
       if (remaining <= 0) {
-        // Target already elapsed: start now (do not rely on a 0ms timer).
         kickOff();
         return;
       }
@@ -439,39 +459,31 @@ export function HeroDemo() {
       }, remaining);
     };
 
-    const clearPendingStart = () => {
-      if (started) return;
-      if (startTimer != null) {
-        window.clearTimeout(startTimer);
-        startTimer = null;
-      }
-    };
-
-    // Sync check so we do not wait an extra IO callback after hydrate.
     visible = ratioInView() >= 0.4;
-    if (visible) scheduleStart();
+    if (visible) ensureLoop();
 
     const io = new IntersectionObserver(
       ([entry]) => {
-        const next = Boolean(entry?.isIntersecting) || ratioInView() >= 0.4;
-        visible = next;
-        if (visible) scheduleStart();
-        else clearPendingStart();
+        visible = Boolean(entry?.isIntersecting) || ratioInView() >= 0.4;
+        if (visible) ensureLoop();
+        else if (!hasOrderTimers()) clearPendingStart();
       },
       { threshold: 0.4 },
     );
     io.observe(stage);
 
-    // Visibility only pauses/resumes an already-running loop — never blocks first start.
+    // If order timers were cleared (pause / cleanup race), restart when visible.
+    // loopLiveRef is "started": set only when land0 fires, reset in clearTimers.
     const onVis = () => {
-      if (!started) {
-        if (visible) scheduleStart();
+      if (document.visibilityState === "hidden") {
+        clearPendingStart();
+        clearTimersRef.current();
         return;
       }
-      if (document.visibilityState === "hidden") {
-        clearTimers();
-      } else {
-        scheduleLoop();
+      // Restart whenever no order timers are pending (design-review stall fix).
+      if (visible && !hasOrderTimers()) {
+        loopLiveRef.current = false;
+        ensureLoop();
       }
     };
     document.addEventListener("visibilitychange", onVis);
@@ -480,9 +492,10 @@ export function HeroDemo() {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
       clearPendingStart();
-      if (started) clearTimers();
+      clearTimersRef.current();
     };
-  }, [clearTimers, resetAndRestart, run, scheduleLoop]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once; live fns via refs
+  }, []);
 
   const digits = splitMrr(mrr);
   const lastBar = barPct(mrr);

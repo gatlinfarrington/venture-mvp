@@ -20,8 +20,8 @@
 // Suite includes 1000/1060/1100 (980–1119 two-col band) and 1120/1200.
 // Cold load: COLD_LOAD=1 fails if any live row paints above the table header on first paint.
 // At 375, COLD_LOAD runs 5 cold navigations; worst first-MRR-change must be <2400ms.
-// FRESH_COLD=1: N fresh browser contexts (default 10) at WIDTH; every load must
-// change MRR within 3000ms (catches visibility/IO start stalls hero-loop can miss).
+// FRESH_COLD=1 (or COLD=1): N fresh browser contexts (default 10) at WIDTH;
+// every load must change MRR within 2400ms (catches start stalls hero-loop can miss).
 import { chromium } from "playwright-core";
 import fs from "fs";
 import { createRequire } from "module";
@@ -51,9 +51,12 @@ const SUITE_WIDTHS = [375, 768, 1000, 1024, 1060, 1100, 1120, 1200, 1280, 1440];
 const EDGE_INSET_MIN = 16;
 const COLD_RUNS = Number(process.env.COLD_RUNS || 5);
 const COLD_WORST_MAX_MS = 2400;
-const FRESH_COLD = Boolean(process.env.FRESH_COLD);
+// COLD=1 alone (without COLD_LOAD) is the fresh-context cold gate.
+const FRESH_COLD =
+  Boolean(process.env.FRESH_COLD) ||
+  (process.env.COLD === "1" && !COLD_LOAD);
 const FRESH_COLD_RUNS = Number(process.env.FRESH_COLD_RUNS || 10);
-const FRESH_COLD_LIMIT_MS = Number(process.env.FRESH_COLD_LIMIT_MS || 3000);
+const FRESH_COLD_LIMIT_MS = Number(process.env.FRESH_COLD_LIMIT_MS || 2400);
 
 if (process.env.WIDTHS && !process.env.HERO_LOOP_CHILD) {
   const list =
@@ -81,7 +84,7 @@ if (process.env.WIDTHS && !process.env.HERO_LOOP_CHILD) {
 }
 
 // Fresh-context cold loads: new browser per run, no scroll/click. Every load must
-// change MRR within FRESH_COLD_LIMIT_MS (default 3000).
+// change MRR within FRESH_COLD_LIMIT_MS (default 2400).
 if (FRESH_COLD && !process.env.HERO_LOOP_CHILD && !process.env.WIDTHS) {
   const timings = [];
   let failed = 0;
