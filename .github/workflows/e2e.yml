@@ -171,6 +171,7 @@ jobs:
       # Playwright snapshots never ran hero-loop-test. ≤600px display:contents
       # hero reorder made the copy-column clip check false-positive at 375 —
       # run it here against the same target (PR localhost / preview / prod).
+      # COLD_LOAD at 375 runs 5 navigations; worst first-MRR must be <2400ms.
       - name: Hero loop at 375 (${{ needs.resolve-url.outputs.base_url }})
         run: |
           set -euo pipefail

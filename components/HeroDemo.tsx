@@ -30,17 +30,21 @@ const PRIOR_BARS = [18, 20, 21, 22, 24, 26, 27, 29, 31, 33, 36];
 const BAR_START = 40;
 const BAR_END = 92;
 const GAP_MS = 1100;
+/** Gap from land0 → land1 (first MRR tick). Shorter than GAP so cold 375 hits ~2000ms. */
+const FIRST_GAP_MS = 800;
 /** In-place chip fade/scale (no flight path). */
 const CHIP_MS = 420;
 /** Rest at full opacity before dissolve so the +$ label reads. */
 const CHIP_HOLD_MS = 720;
-/** First landing fires ASAP so cold 375 MRR (after spring settle) stays under 2500ms. */
 const START_DELAY_MS = 0;
 const REST_MS = 2400;
 const RESET_MS = 720;
 const ROW_SPRING_MS = 360;
-/** Reel + month bar wait for the row spring to settle, then this beat. */
-const MRR_AFTER_SETTLE_MS = ROW_SPRING_MS + 120;
+/** Reel + month bar after the row spring settles (~80–120ms). */
+const POST_SETTLE_MS = 100;
+const MRR_AFTER_SETTLE_MS = ROW_SPRING_MS + POST_SETTLE_MS;
+/** Aim first MRR change (~land1 + settle) at this mark from navigation. */
+const TARGET_FIRST_MRR_MS = 2000;
 const PULSE_MS = 600;
 
 function prefersReducedMotion() {
@@ -316,11 +320,18 @@ export function HeroDemo() {
   const scheduleLoop = useCallback(() => {
     clearTimers();
     for (let i = 0; i < HERO_LANDINGS.length; i++) {
-      timers.current.push(
-        window.setTimeout(() => landOrder(i), START_DELAY_MS + i * GAP_MS),
-      );
+      // land0 ASAP (after nav-targeted delay); land1 uses FIRST_GAP so the first
+      // MRR tick can land near TARGET_FIRST_MRR_MS; later landings keep GAP_MS.
+      const at =
+        START_DELAY_MS +
+        (i === 0 ? 0 : FIRST_GAP_MS + (i - 1) * GAP_MS);
+      timers.current.push(window.setTimeout(() => landOrder(i), at));
     }
-    const restAt = START_DELAY_MS + HERO_LANDINGS.length * GAP_MS + REST_MS;
+    const restAt =
+      START_DELAY_MS +
+      FIRST_GAP_MS +
+      Math.max(0, HERO_LANDINGS.length - 1) * GAP_MS +
+      REST_MS;
     timers.current.push(
       window.setTimeout(() => {
         resetAndRestart(() => scheduleLoopRef.current());
@@ -370,18 +381,24 @@ export function HeroDemo() {
     });
   }, [clearTimers, resetAndRestart]);
 
-  // First paint: seed (or final under reduced motion), then start.
-  useEffect(() => {
+  // Schedule from navigation (performance.now), not "ASAP after first paint".
+  useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
 
     setReduced(prefersReducedMotion());
 
-    // Wait for the card to enter view before starting (do not assume visible).
     let visible = false;
     let pageVisible = document.visibilityState === "visible";
     let started = false;
     let startTimer: number | null = null;
+
+    const ratioInView = () => {
+      const r = stage.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      const visibleH = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      return r.height > 0 ? Math.max(0, visibleH) / r.height : 0;
+    };
 
     const scheduleStart = () => {
       if (started || !visible || !pageVisible) return;
@@ -391,16 +408,18 @@ export function HeroDemo() {
         return;
       }
       if (startTimer != null) return;
-      // Already on START_MRR + seed; start landings ASAP (MRR waits for row settle).
+      // land0 → FIRST_GAP → land1 → settle ≈ first MRR. Aim that at ~2000ms from nav.
+      const targetLand0 =
+        TARGET_FIRST_MRR_MS - FIRST_GAP_MS - MRR_AFTER_SETTLE_MS;
+      const delay = Math.max(0, targetLand0 - performance.now());
       startTimer = window.setTimeout(() => {
         started = true;
         startTimer = null;
         scheduleLoopRef.current();
-      }, 0);
+      }, delay);
     };
 
     const stop = () => {
-      // Once the loop has started, keep it running (pause only via visibility).
       if (started) {
         if (!pageVisible) clearTimers();
         return;
@@ -412,13 +431,16 @@ export function HeroDemo() {
       clearTimers();
     };
 
+    // Sync check so we do not wait an extra IO callback after hydrate.
+    visible = ratioInView() >= 0.4;
+    if (visible && pageVisible) scheduleStart();
+
     const io = new IntersectionObserver(
       ([entry]) => {
         visible = Boolean(entry?.isIntersecting);
         if (visible && pageVisible) scheduleStart();
         else stop();
       },
-      // Start from the first order once ~40% of the card is on screen.
       { threshold: 0.4 },
     );
     io.observe(stage);
