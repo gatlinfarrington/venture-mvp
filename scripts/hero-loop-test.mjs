@@ -19,6 +19,7 @@
 // Widths: VIEWPORT_WIDTH / WIDTH for one run. Or WIDTHS=suite / a comma list.
 // Suite includes 1000/1060/1100 (980–1119 two-col band) and 1120/1200.
 // Cold load: COLD_LOAD=1 fails if any live row paints above the table header on first paint.
+// At 375, COLD_LOAD runs 5 cold navigations; worst first-MRR-change must be <2400ms.
 import { chromium } from "playwright-core";
 import fs from "fs";
 import { createRequire } from "module";
@@ -46,6 +47,8 @@ const COLD = process.env.COLD === "1" || COLD_LOAD;
 /** Default suite widths when WIDTHS is set to "suite" or a comma list. */
 const SUITE_WIDTHS = [375, 768, 1000, 1024, 1060, 1100, 1120, 1200, 1280, 1440];
 const EDGE_INSET_MIN = 16;
+const COLD_RUNS = Number(process.env.COLD_RUNS || 5);
+const COLD_WORST_MAX_MS = 2400;
 
 if (process.env.WIDTHS && !process.env.HERO_LOOP_CHILD) {
   const list =
@@ -70,6 +73,72 @@ if (process.env.WIDTHS && !process.env.HERO_LOOP_CHILD) {
     if (r.status !== 0) failed += 1;
   }
   process.exit(failed ? 1 : 0);
+}
+
+// 375 COLD parent: 5 independent navigations; require worst first-MRR < 2400ms.
+if (
+  COLD_LOAD &&
+  WIDTH === 375 &&
+  HEIGHT === 812 &&
+  !process.env.HERO_LOOP_CHILD &&
+  !process.env.WIDTHS
+) {
+  const timings = [];
+  let childFailed = 0;
+  for (let i = 0; i < COLD_RUNS; i++) {
+    const outDir = path.join(OUT, `cold-${i + 1}`);
+    fs.mkdirSync(outDir, { recursive: true });
+    const r = spawnSync(
+      process.execPath,
+      [path.join(__dirname, "hero-loop-test.mjs"), URL, outDir],
+      {
+        env: {
+          ...process.env,
+          HERO_LOOP_CHILD: "1",
+          COLD_LOAD: "1",
+          WIDTH: "375",
+          VIEWPORT_WIDTH: "375",
+          VIEWPORT_HEIGHT: "812",
+        },
+        stdio: "inherit",
+      },
+    );
+    if (r.status !== 0) childFailed += 1;
+    try {
+      const report = JSON.parse(fs.readFileSync(path.join(outDir, "report.json"), "utf8"));
+      timings.push(report.summary?.firstMrrChangeMs ?? null);
+    } catch {
+      timings.push(null);
+    }
+  }
+  const valid = timings.filter((t) => typeof t === "number");
+  const worst = valid.length ? Math.max(...valid) : null;
+  const summary = {
+    url: URL,
+    mode: "cold-load-5",
+    viewport: { width: 375, height: 812 },
+    runs: COLD_RUNS,
+    timings,
+    worst,
+    limitMs: COLD_WORST_MAX_MS,
+    childFailed,
+  };
+  fs.mkdirSync(OUT, { recursive: true });
+  fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify({ summary }, null, 1));
+  console.log(JSON.stringify(summary, null, 1));
+  const ok =
+    childFailed === 0 &&
+    valid.length === COLD_RUNS &&
+    worst != null &&
+    worst < COLD_WORST_MAX_MS;
+  if (!ok) {
+    console.log(
+      `RESULT: FAIL (worst first-MRR ${worst ?? "n/a"}ms, need <${COLD_WORST_MAX_MS}ms across ${COLD_RUNS} runs)`,
+    );
+    process.exit(1);
+  }
+  console.log("RESULT: PASS");
+  process.exit(0);
 }
 
 fs.mkdirSync(OUT, { recursive: true });
@@ -333,9 +402,9 @@ if (COLD_LOAD) {
     issues.push("row above header " + [...new Set(f.aboveHeader)].slice(0, 6).join("|"));
   }
 
-  // 375×812: MRR reel in first viewport; first MRR change under 2500ms from navigation.
+  // 375×812: MRR reel in first viewport; first MRR change under 2400ms from navigation.
   let mrrInView = null;
-  let mrrChangedBefore2500 = null;
+  let mrrChangedBefore2400 = null;
   let firstMrrChangeMs = null;
   if (WIDTH === 375 && HEIGHT === 812) {
     mrrInView = await p.evaluate(() => {
@@ -351,22 +420,22 @@ if (COLD_LOAD) {
     const startText = await p.evaluate(
       () => document.querySelector(".hero-mrr-num .sr-only")?.textContent ?? "",
     );
-    const deadline = navStart + 2500;
-    mrrChangedBefore2500 = false;
+    const deadline = navStart + COLD_WORST_MAX_MS;
+    mrrChangedBefore2400 = false;
     while (Date.now() < deadline) {
-      await p.waitForTimeout(40);
+      await p.waitForTimeout(30);
       const now = await p.evaluate(
         () => document.querySelector(".hero-mrr-num .sr-only")?.textContent ?? "",
       );
       if (now && now !== startText) {
         firstMrrChangeMs = Date.now() - navStart;
-        mrrChangedBefore2500 = firstMrrChangeMs < 2500;
+        mrrChangedBefore2400 = firstMrrChangeMs < COLD_WORST_MAX_MS;
         break;
       }
     }
-    if (!mrrChangedBefore2500) {
+    if (!mrrChangedBefore2400) {
       issues.push(
-        `first MRR change not under 2500ms from navigation at 375x812 cold load` +
+        `first MRR change not under ${COLD_WORST_MAX_MS}ms from navigation at 375x812 cold load` +
           (firstMrrChangeMs != null ? ` (got ${firstMrrChangeMs}ms)` : " (no change)"),
       );
     }
@@ -383,7 +452,7 @@ if (COLD_LOAD) {
     firstFails: issues.length ? [{ t: 0, issues }] : [],
     aboveHeader: f.aboveHeader,
     mrrInView,
-    mrrChangedBefore2500,
+    mrrChangedBefore2400,
     firstMrrChangeMs,
   };
   fs.writeFileSync(`${OUT}/report.json`, JSON.stringify({ summary, frames: [{ t: 0, issues }] }, null, 1));
