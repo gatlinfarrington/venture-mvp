@@ -13,10 +13,16 @@
  *
  * Explicit exceptions: same-line or previous-line comment containing
  *   design-exception: <rule-id> <reason>
+ *
+ * A1 glow-shadow exception is narrow: only a box-shadow with blur radius 0 and
+ * an ink/neutral color, and only on .hero-store (or @keyframes hero-store-*).
+ * Blur > 0, green/accent shadows, or any other selector still fail even with
+ * an A1 exception comment.
  */
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const ROOT = process.cwd();
 const TOKENS_PATH = path.join(ROOT, "design/tokens.css");
@@ -32,8 +38,18 @@ const EXCEPTION_RE = /design-exception:\s*([A-Za-z0-9_-]+)/i;
 const EM_DASH_RE = /\u2014/g;
 const GRADIENT_RE =
   /\b(linear-gradient|radial-gradient|conic-gradient|repeating-linear-gradient|repeating-radial-gradient)\s*\(/gi;
+/** Soft glow / large-blur shadows. Hard rings (blur 0, any spread) can false-positive; see A1 hero-store exception. */
 const GLOW_SHADOW_RE =
   /(?:text-shadow|box-shadow)\s*:[^;]*(?:0\s+0\s+(?:[8-9]|\d{2,})px|[0-9]+px\s+[0-9]+px\s+(?:[2-9]\d|\d{3,})px)/gi;
+/** Ink / neutral tokens allowed on the narrow .hero-store hard-ring exception. */
+const HERO_STORE_RING_COLOR_VARS = new Set([
+  "--c-ink",
+  "--c-ink-muted",
+  "--c-ink-hover",
+  "--c-border",
+  "--c-hairline",
+]);
+const HERO_STORE_RING_ACCENT_RE = /--c-signal|--c-danger/i;
 const HEX_RE = /#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g;
 const RGB_HSL_RE = /\b(?:rgb|rgba|hsl|hsla)\s*\(/gi;
 const FONT_SIZE_PX_RE = /font-size\s*:\s*[0-9.]+px/gi;
@@ -126,8 +142,200 @@ function lineHasException(lines, index, ruleId) {
   return hit(cur) || hit(prev);
 }
 
+/**
+ * Split a CSS list on top-level commas (depth-aware for var()/color-mix()).
+ * @param {string} value
+ * @returns {string[]}
+ */
+function splitCssList(value) {
+  const parts = [];
+  let depth = 0;
+  let buf = "";
+  for (const ch of value) {
+    if (ch === "(") depth += 1;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    if (ch === "," && depth === 0) {
+      parts.push(buf.trim());
+      buf = "";
+      continue;
+    }
+    buf += ch;
+  }
+  if (buf.trim()) parts.push(buf.trim());
+  return parts;
+}
+
+/**
+ * Strip nested function calls once so lengths can be read from a shadow layer.
+ * @param {string} s
+ */
+function stripCssFunctions(s) {
+  let out = s;
+  let prev;
+  do {
+    prev = out;
+    out = out.replace(
+      /\b(?:color-mix|var|rgb|rgba|hsl|hsla|calc)\((?:[^()]|\([^()]*\))*\)/gi,
+      " ",
+    );
+  } while (out !== prev);
+  return out;
+}
+
+/**
+ * Blur radius in px for one box-shadow layer (0 when omitted / not a length).
+ * @param {string} layer
+ */
+function blurRadiusOfShadowLayer(layer) {
+  let s = layer.replace(/^\s*inset\s+/i, "");
+  s = stripCssFunctions(s);
+  s = s.replace(/\b(?:transparent|currentcolor|none)\b/gi, " ");
+  const lengths = [...s.matchAll(/([+-]?(?:\d+\.?\d*|\.\d+)(?:px|em|rem|%)?|\b0\b)/g)].map(
+    (m) => m[0],
+  );
+  if (lengths.length < 3) return 0;
+  const n = Number.parseFloat(lengths[2]);
+  return Number.isFinite(n) ? Math.abs(n) : 0;
+}
+
+/**
+ * True when every color reference in the layer is transparent or ink/neutral.
+ * Accent tokens (--c-signal / --c-danger) always fail.
+ * @param {string} layer
+ */
+function isInkOrNeutralShadowColor(layer) {
+  if (HERO_STORE_RING_ACCENT_RE.test(layer)) return false;
+  let colorPart = layer.replace(/^\s*inset\s+/i, "");
+  colorPart = colorPart
+    .replace(/(?:[+-]?(?:\d+\.?\d*|\.\d+)(?:px|em|rem|%)?|\b0\b)(?=\s|$)/g, " ")
+    .trim();
+  if (!colorPart || /^transparent$/i.test(colorPart)) return true;
+  const vars = [...colorPart.matchAll(/var\(\s*(--[a-z0-9-]+)/gi)].map((m) => m[1]);
+  if (vars.length === 0) return false;
+  return vars.every((v) => HERO_STORE_RING_COLOR_VARS.has(v));
+}
+
+/**
+ * Narrow A1 exception: box-shadow hard ring (blur 0) in ink/neutral, only for .hero-store
+ * (or @keyframes hero-store-*). text-shadow never qualifies.
+ * @param {{ line: string, selectorCtx?: string, keyframesName?: string }} opts
+ */
+function isAllowedHeroStoreHardRing({ line, selectorCtx = "", keyframesName = "" }) {
+  if (!/box-shadow\s*:/i.test(line)) return false;
+  if (/text-shadow\s*:/i.test(line)) return false;
+
+  const inHeroStoreSelector = /\.hero-store\b/.test(selectorCtx);
+  const inHeroStoreKeyframes = /^hero-store([\w-]*)$/i.test(keyframesName);
+  if (!inHeroStoreSelector && !inHeroStoreKeyframes) return false;
+
+  const value = line.replace(/^[\s\S]*?box-shadow\s*:\s*/i, "").replace(/;?\s*$/, "");
+  if (!value || /^none$/i.test(value)) return false;
+
+  for (const layer of splitCssList(value)) {
+    if (blurRadiusOfShadowLayer(layer) > 0) return false;
+    if (!isInkOrNeutralShadowColor(layer)) return false;
+  }
+  return true;
+}
+
+/**
+ * Whether a glow-like shadow line is permitted under the scoped A1 exception.
+ * A bare `design-exception: A1` is not enough — blur must be 0, color ink/neutral,
+ * and the rule must target .hero-store (or hero-store-* keyframes).
+ * @param {{ line: string, hasA1Exception: boolean, selectorCtx?: string, keyframesName?: string }} opts
+ * @returns {{ allowed: boolean, reason?: string }}
+ */
+function evaluateA1GlowShadow({
+  line,
+  hasA1Exception,
+  selectorCtx = "",
+  keyframesName = "",
+}) {
+  GLOW_SHADOW_RE.lastIndex = 0;
+  if (!GLOW_SHADOW_RE.test(line)) return { allowed: true };
+
+  if (
+    hasA1Exception &&
+    isAllowedHeroStoreHardRing({ line, selectorCtx, keyframesName })
+  ) {
+    return { allowed: true };
+  }
+
+  if (!hasA1Exception) {
+    return { allowed: false, reason: "glow-like shadow disallowed" };
+  }
+
+  // Exception claimed but criteria not met — spell out which gate failed.
+  if (!/box-shadow\s*:/i.test(line) || /text-shadow\s*:/i.test(line)) {
+    return {
+      allowed: false,
+      reason: "A1 exception allows box-shadow hard rings only (not text-shadow)",
+    };
+  }
+  if (
+    !/\.hero-store\b/.test(selectorCtx) &&
+    !/^hero-store([\w-]*)$/i.test(keyframesName)
+  ) {
+    return {
+      allowed: false,
+      reason: "A1 hard-ring exception is limited to .hero-store",
+    };
+  }
+  const value = line.replace(/^[\s\S]*?box-shadow\s*:\s*/i, "").replace(/;?\s*$/, "");
+  for (const layer of splitCssList(value)) {
+    if (blurRadiusOfShadowLayer(layer) > 0) {
+      return {
+        allowed: false,
+        reason: "A1 hard-ring exception requires blur radius 0",
+      };
+    }
+    if (!isInkOrNeutralShadowColor(layer)) {
+      return {
+        allowed: false,
+        reason: "A1 hard-ring exception allows ink/neutral colors only",
+      };
+    }
+  }
+  return { allowed: false, reason: "glow-like shadow disallowed" };
+}
+
 function report(file, line, rule, message) {
   errors.push(`${rel(file)}:${line}: [${rule}] ${message}`);
+}
+
+/**
+ * Walk CSS lines tracking selector + open @keyframes name (stack-aware).
+ * @param {string[]} lines
+ * @param {(ctx: { line: string, index: number, selectorCtx: string, keyframesName: string }) => void} visit
+ */
+function walkCssWithSelectorContext(lines, visit) {
+  /** @type {string[]} */
+  const stack = [];
+  let keyframesName = "";
+
+  lines.forEach((line, i) => {
+    const opens = (line.match(/\{/g) || []).length;
+    const closes = (line.match(/\}/g) || []).length;
+
+    if (opens) {
+      const sel = (line.split("{")[0] ?? "").trim();
+      const kf = sel.match(/^@keyframes\s+([A-Za-z0-9_-]+)/i);
+      if (kf) keyframesName = kf[1];
+      if (sel) stack.push(sel);
+    }
+
+    visit({
+      line,
+      index: i,
+      selectorCtx: stack.join(" "),
+      keyframesName,
+    });
+
+    for (let c = 0; c < closes; c += 1) {
+      const popped = stack.pop();
+      if (popped && /^@keyframes\b/i.test(popped)) keyframesName = "";
+    }
+  });
 }
 
 function scanFile(file) {
@@ -145,10 +353,6 @@ function scanFile(file) {
       GRADIENT_RE.lastIndex = 0;
       if (GRADIENT_RE.test(line) && !lineHasException(lines, i, "A1")) {
         report(file, n, "A1", "gradient function disallowed");
-      }
-      GLOW_SHADOW_RE.lastIndex = 0;
-      if (GLOW_SHADOW_RE.test(line) && !lineHasException(lines, i, "A1")) {
-        report(file, n, "A1", "glow-like shadow disallowed");
       }
       HEX_RE.lastIndex = 0;
       if (HEX_RE.test(line) && !lineHasException(lines, i, "token-color")) {
@@ -198,6 +402,22 @@ function scanFile(file) {
   });
 
   if (isCss) {
+    // A1 glow shadows: bare design-exception: A1 is insufficient unless the
+    // shadow is a blur-0 ink/neutral hard ring on .hero-store (or hero-store-* keyframes).
+    walkCssWithSelectorContext(lines, ({ line, index, selectorCtx, keyframesName }) => {
+      GLOW_SHADOW_RE.lastIndex = 0;
+      if (!GLOW_SHADOW_RE.test(line)) return;
+      const result = evaluateA1GlowShadow({
+        line,
+        hasA1Exception: lineHasException(lines, index, "A1"),
+        selectorCtx,
+        keyframesName,
+      });
+      if (!result.allowed) {
+        report(file, index + 1, "A1", result.reason ?? "glow-like shadow disallowed");
+      }
+    });
+
     DARK_PAGE_RE.lastIndex = 0;
     let m;
     while ((m = DARK_PAGE_RE.exec(text))) {
@@ -310,9 +530,26 @@ function main() {
     console.error(
       "\nAdd a same-line or previous-line comment: /* design-exception: <rule> <reason> */",
     );
+    console.error(
+      "A1 glow shadows: exception only covers blur-0 ink/neutral box-shadow on .hero-store.",
+    );
     process.exit(1);
   }
   console.log("design-check passed (A1–A19 gates + WCAG AA token pairs)");
 }
 
-main();
+const isDirectRun =
+  Boolean(process.argv[1]) &&
+  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+
+if (isDirectRun) {
+  main();
+}
+
+export {
+  blurRadiusOfShadowLayer,
+  evaluateA1GlowShadow,
+  isAllowedHeroStoreHardRing,
+  isInkOrNeutralShadowColor,
+  splitCssList,
+};
