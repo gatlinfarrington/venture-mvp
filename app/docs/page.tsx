@@ -19,7 +19,7 @@ const quickstart = [
   {
     n: "01",
     title: "Install",
-    body: "Join the launch list until listing day, then add RevenueSheet to Google Sheets once it's available.",
+    body: "Join the launch list and we'll email you once RevenueSheet is available to install.",
     href: "/#launch",
   },
   {
