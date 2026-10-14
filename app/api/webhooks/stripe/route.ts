@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       }
       case "invoice.paid": {
         // Renewal (or recovery after past_due): keep / restore active. Does not mint
-        // a new key — checkout.session.completed issues the license.
+        // a new key; checkout.session.completed issues the license.
         const invoice = event.data.object as Stripe.Invoice;
         const subscriptionId = subscriptionIdFromInvoice(invoice);
         if (!subscriptionId) break;
@@ -124,9 +124,9 @@ export async function POST(request: Request) {
         break;
       }
       case "invoice.payment_failed": {
-        // Dunning: record past_due only. No separate grace window exists — do not
-        // cancel/revoke here; access continues to follow whatever verify already
-        // does for past_due (same as customer.subscription.updated → past_due).
+        // Dunning: record past_due only. No separate grace window exists; do not
+        // cancel/revoke here. Access continues to follow whatever verify already
+        // does for past_due (same as customer.subscription.updated -> past_due).
         const invoice = event.data.object as Stripe.Invoice;
         const subscriptionId = subscriptionIdFromInvoice(invoice);
         if (!subscriptionId) break;

@@ -4,13 +4,13 @@ const constructEvent = vi.fn();
 const issueLicenseFromCheckoutSession = vi.fn();
 const getLicenseBySubscription = vi.fn();
 const updateLicenseStatus = vi.fn();
-const tierFromPriceId = vi.fn(async () => "pro" as const);
+const tierFromPriceId = vi.fn(async (_priceId?: string) => "pro" as const);
 
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({
     webhooks: { constructEvent },
   }),
-  tierFromPriceId: (...args: unknown[]) => tierFromPriceId(...args),
+  tierFromPriceId: (priceId: string) => tierFromPriceId(priceId),
 }));
 
 vi.mock("@/lib/issue-license", () => ({
