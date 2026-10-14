@@ -19,7 +19,36 @@ export const runtime = "nodejs";
  * - checkout.session.completed
  * - customer.subscription.updated
  * - customer.subscription.deleted
+ * - invoice.paid
+ * - invoice.payment_failed
  */
+
+/** Subscription id on Invoice (API 2025-03-31.basil+ uses parent.subscription_details). */
+export function subscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
+  const fromParent = invoice.parent?.subscription_details?.subscription;
+  if (typeof fromParent === "string" && fromParent) return fromParent;
+  if (fromParent && typeof fromParent === "object" && "id" in fromParent) {
+    return (fromParent as Stripe.Subscription).id;
+  }
+  // Older payloads / fixtures may still carry top-level subscription.
+  const legacy = (invoice as { subscription?: string | Stripe.Subscription | null })
+    .subscription;
+  if (typeof legacy === "string" && legacy) return legacy;
+  if (legacy && typeof legacy === "object" && legacy.id) return legacy.id;
+  return null;
+}
+
+function priceIdFromInvoice(invoice: Stripe.Invoice): string {
+  for (const line of invoice.lines?.data ?? []) {
+    const price = line.pricing?.price_details?.price;
+    if (typeof price === "string" && price) return price;
+    if (price && typeof price === "object" && "id" in price) {
+      return (price as Stripe.Price).id;
+    }
+  }
+  return "";
+}
+
 export async function POST(request: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret || secret.includes("REPLACE_ME")) {
@@ -77,6 +106,33 @@ export async function POST(request: Request) {
         if (license) {
           await updateLicenseStatus(license.key, "canceled");
         }
+        break;
+      }
+      case "invoice.paid": {
+        // Renewal (or recovery after past_due): keep / restore active. Does not mint
+        // a new key — checkout.session.completed issues the license.
+        const invoice = event.data.object as Stripe.Invoice;
+        const subscriptionId = subscriptionIdFromInvoice(invoice);
+        if (!subscriptionId) break;
+        const license = await getLicenseBySubscription(subscriptionId);
+        if (!license) break;
+        const priceId = priceIdFromInvoice(invoice);
+        const tier = priceId
+          ? ((await tierFromPriceId(priceId)) ?? license.tier)
+          : license.tier;
+        await updateLicenseStatus(license.key, "active", tier);
+        break;
+      }
+      case "invoice.payment_failed": {
+        // Dunning: record past_due only. No separate grace window exists — do not
+        // cancel/revoke here; access continues to follow whatever verify already
+        // does for past_due (same as customer.subscription.updated → past_due).
+        const invoice = event.data.object as Stripe.Invoice;
+        const subscriptionId = subscriptionIdFromInvoice(invoice);
+        if (!subscriptionId) break;
+        const license = await getLicenseBySubscription(subscriptionId);
+        if (!license) break;
+        await updateLicenseStatus(license.key, "past_due");
         break;
       }
       default:
