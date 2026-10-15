@@ -163,7 +163,7 @@ export const DASHBOARD = {
   activeSubs: String(h.activeSubs),
   activeDelta: `${h.trialingSubs} trialing`,
   churn: `${h.churn30dPct}%`,
-  churnDelta: "30D cancelled ÷ active at start",
+  churnDelta: "30D canceled ÷ active at start",
   pastDueLine: `Past due ${h.pastDueCount} · $${h.pastDueMrr} · MRR counts active subscriptions only`,
   statusLine: "● SYNCED · LAST RUN 10:02 · NEXT 11:02 · EXAMPLE DATA",
   sources: [
