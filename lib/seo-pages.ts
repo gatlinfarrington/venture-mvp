@@ -36,7 +36,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "Compared to CSV exports and Zapier",
         paragraphs: [
-          "CSV exports go stale the day after you paste. Zapier can append new sales but rarely rebuilds history cleanly. At launch, an importer built for Sheets will walk Gumroad’s API once, then keep the sheet current on Free (manual) or Pro (scheduled).",
+          "CSV exports go stale the day after you paste. Zapier can append new sales but rarely rebuilds history cleanly. At launch, an importer built for Sheets will walk Gumroad’s API once, then will keep the sheet current on Free (manual) or Pro (scheduled).",
         ],
       },
       {
@@ -63,9 +63,9 @@ export const seoPages: SeoPage[] = [
     ogTitle: "Stripe to Google Sheets",
     sections: [
       {
-        h2: "What syncs from Stripe",
+        h2: "What will sync from Stripe",
         paragraphs: [
-          "At launch, you'll connect a restricted read-only Stripe API key. The add-on will backfill charges (as orders), subscriptions with MRR contribution, customers, and refunds into stable column headers, then scheduled sync keeps the sheet current on Pro and Business once paid plans open.",
+          "At launch, you'll connect a restricted read-only Stripe API key. The add-on will backfill charges (as orders), subscriptions with MRR contribution, customers, and refunds into stable column headers, then scheduled sync will keep the sheet current on Pro and Business once paid plans open.",
         ],
         bullets: [
           "Charges to Orders tab (amount, email, status, country)",
@@ -103,7 +103,7 @@ export const seoPages: SeoPage[] = [
     ogTitle: "Polar analytics in Google Sheets",
     sections: [
       {
-        h2: "What syncs from Polar",
+        h2: "What will sync from Polar",
         paragraphs: [
           "At launch, orders, subscriptions, customers, and refunds will map into stable column headers. Amounts will keep Polar’s currency; the Dashboard will roll MRR in your reporting currency from Settings.",
         ],
