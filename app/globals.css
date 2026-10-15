@@ -3659,11 +3659,11 @@ a.tag-pill:focus-visible {
   border-radius: var(--radius-sm);
 }
 
-.legal .prose a,
-.seo-page .prose a,
-.docs-page .prose a,
-.docs-main .prose a,
-.blog-post .prose a {
+.legal .prose a:not(.btn),
+.seo-page .prose a:not(.btn),
+.docs-page .prose a:not(.btn),
+.docs-main .prose a:not(.btn),
+.blog-post .prose a:not(.btn) {
   color: var(--c-ink);
   text-decoration: underline;
   text-decoration-color: var(--c-border);
@@ -3672,13 +3672,23 @@ a.tag-pill:focus-visible {
   transition: color var(--dur-fast) var(--ease-standard);
 }
 
-.legal .prose a:hover,
-.seo-page .prose a:hover,
-.docs-page .prose a:hover,
-.docs-main .prose a:hover,
-.blog-post .prose a:hover {
+.legal .prose a:not(.btn):hover,
+.seo-page .prose a:not(.btn):hover,
+.docs-page .prose a:not(.btn):hover,
+.docs-main .prose a:not(.btn):hover,
+.blog-post .prose a:not(.btn):hover {
   color: var(--c-ink);
   text-decoration-color: var(--c-ink);
+}
+
+/* Keep CTAs inside prose from inheriting link underline + ink color. */
+.prose .btn {
+  text-decoration: none;
+  margin-top: var(--space-6);
+}
+
+.prose .btn-primary {
+  color: var(--c-ink-inverse);
 }
 
 /* Scrollport wrapper keeps wide GFM tables inside the column on mobile.
@@ -4616,7 +4626,7 @@ a.tag-pill:focus-visible {
   border-radius: var(--radius-pill);
   border: 1px solid var(--c-hairline);
   background: var(--c-surface-2);
-  color: var(--c-border);
+  color: var(--c-ink-muted);
   font-size: var(--t-body-size);
   font-weight: 500;
   cursor: not-allowed;
