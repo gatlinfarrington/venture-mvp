@@ -33,8 +33,8 @@ export default function PolarSetupPage() {
           <li>Grant read access to orders, subscriptions, customers, and refunds.</li>
         </ol>
         <p>
-          The add-on only reads; it never creates, edits, or refunds. It calls Polar with GET
-          requests only.
+          At launch, the add-on will only read; it will never create, edit, or refund. It will call
+          Polar with GET requests only.
         </p>
         <h2>Connect in {brand.name}</h2>
         <p>
@@ -48,9 +48,9 @@ export default function PolarSetupPage() {
         </p>
         <h2>Backfill and schedule</h2>
         <p>
-          Press Backfill once. On Pro or Business, enable scheduled refresh so Polar tabs stay
-          current without opening the sheet. Free remains manual refresh for one source. Multiple
-          Polar orgs need separate tokens and a Business plan (up to 20 stores).
+          At launch, press Backfill once. On Pro or Business, enable scheduled refresh so Polar tabs
+          stay current without opening the sheet. Free will remain manual refresh for one source.
+          Multiple Polar orgs will need separate tokens and a Business plan (up to 20 stores).
         </p>
         <p>
           Guide: <Link href="/polar-analytics">Polar analytics</Link>.

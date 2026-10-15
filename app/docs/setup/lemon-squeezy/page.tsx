@@ -40,8 +40,8 @@ export default function LemonSetupPage() {
           <li>Copy the key once: Lemon Squeezy will not show it again.</li>
         </ol>
         <p>
-          The add-on only reads; it never creates, edits, or refunds. It calls Lemon Squeezy with
-          GET requests only.
+          At launch, the add-on will only read; it will never create, edit, or refund. It will call
+          Lemon Squeezy with GET requests only.
         </p>
         <h2>Paste it in the add-on</h2>
         <p>
@@ -56,15 +56,15 @@ export default function LemonSetupPage() {
         </p>
         <h2>Run Backfill</h2>
         <p>
-          Press Backfill once. The importer walks historical orders into the Orders tab, then fills
-          subscriptions, customers, and refunds. Large stores may take several minutes; leave the
-          sheet open until the status line shows synced.
+          At launch, press Backfill once. The importer will walk historical orders into the Orders
+          tab, then fill subscriptions, customers, and refunds. Large stores may take several
+          minutes; leave the sheet open until the status line shows synced.
         </p>
         <h2>Confirm the Dashboard</h2>
         <p>
-          Open the Dashboard tab. MRR should reflect active Lemon Squeezy subscriptions; one-time
-          sales appear in net revenue. Free plans refresh manually; Pro and Business can schedule
-          hourly, every 6 hours, daily, or weekly sync.
+          At launch, open the Dashboard tab. MRR should reflect active Lemon Squeezy subscriptions;
+          one-time sales will appear in net revenue. Free plans will refresh manually; Pro and
+          Business can schedule hourly, every 6 hours, daily, or weekly sync.
         </p>
         <p>
           More context: <Link href="/lemon-squeezy-analytics">Lemon Squeezy analytics</Link>.

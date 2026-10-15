@@ -43,14 +43,14 @@ export default function GumroadSetupPage() {
           ))}
         </ol>
         <p>
-          The add-on only reads; it never creates, edits, or refunds. It calls Gumroad with GET
-          requests only.
+          At launch, the add-on will only read; it will never create, edit, or refund. It will call
+          Gumroad with GET requests only.
         </p>
         <h2>Connect and backfill</h2>
         <p>
-          Open the {brand.name} sidebar, choose Gumroad, paste the token, then press Backfill. Sales
-          land in Orders with product, email, amount, and refund status. Re-running sync updates
-          refunded rows instead of duplicating.
+          At launch, open the {brand.name} sidebar, choose Gumroad, paste the token, then press
+          Backfill. Sales will land in Orders with product, email, amount, and refund status.
+          Re-running sync will update refunded rows instead of duplicating.
         </p>
         <p className="mono muted">
           Keys stay in your Google account. We never receive them. Rotate anytime.{" "}
