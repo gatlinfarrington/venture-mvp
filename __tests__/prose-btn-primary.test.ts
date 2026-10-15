@@ -4,6 +4,15 @@ import { describe, expect, it } from "vitest";
 
 const css = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
 
+function ruleBody(selector: string): string {
+  const re = new RegExp(
+    `${selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{([^}]*)\\}`,
+  );
+  const m = css.match(re);
+  expect(m, `missing rule for ${selector}`).toBeTruthy();
+  return m![1]!;
+}
+
 describe("prose link rules leave .btn alone", () => {
   it("scopes prose anchors with :not(.btn)", () => {
     expect(css).toMatch(/\.seo-page\s+\.prose\s+a:not\(\.btn\)/);
@@ -14,15 +23,13 @@ describe("prose link rules leave .btn alone", () => {
   });
 
   it("restores btn-primary inverse ink inside prose", () => {
-    expect(css).toMatch(/\.prose\s+\.btn\s*\{[^}]*text-decoration:\s*none/s);
-    expect(css).toMatch(
-      /\.prose\s+\.btn-primary\s*\{[^}]*color:\s*var\(--c-ink-inverse\)/s,
+    expect(ruleBody(".prose .btn")).toMatch(/text-decoration:\s*none/);
+    expect(ruleBody(".prose .btn-primary")).toMatch(
+      /color:\s*var\(--c-ink-inverse\)/,
     );
   });
 
   it("uses muted ink on the disabled sample copy pill", () => {
-    expect(css).toMatch(
-      /\.sample-copy-btn\s*\{[^}]*color:\s*var\(--c-ink-muted\)/s,
-    );
+    expect(ruleBody(".sample-copy-btn")).toMatch(/color:\s*var\(--c-ink-muted\)/);
   });
 });
