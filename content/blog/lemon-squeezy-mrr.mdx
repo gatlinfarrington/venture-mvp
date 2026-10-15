@@ -20,10 +20,10 @@ MRR is the monthly revenue you can expect from subscriptions that are paying rig
 | `past_due` | A renewal payment failed; Lemon Squeezy is retrying | **No** (track separately) | Some recover, some don't. Show the amount next to MRR so nobody's surprised |
 | `paused` | The customer paused billing | **No** | No money is coming in this month |
 | `unpaid` | Retries failed and the subscription is suspended | **No** | Effectively churned unless they come back |
-| `cancelled` | Cancelled, but still has access until the end of the paid period | **Your call** | See below |
+| `cancelled` | Canceled, but still has access until the end of the paid period | **Your call** | See below |
 | `expired` | Ended | **No** | Gone |
 
-The one real decision is `cancelled`. On Lemon Squeezy, a cancelled subscription usually still has access until its period ends, and it may even be resumed before then. Two defensible choices:
+The one real decision is `cancelled`. On Lemon Squeezy, a canceled subscription usually still has access until its period ends, and it may even be resumed before then. Two defensible choices:
 
 - **Count it until it expires.** Your MRR drops on the day access ends, which matches the "a subscription stops counting when access ends" rule used in most SaaS reporting.
 - **Drop it the day they cancel.** More conservative. Your MRR reflects intent rather than the calendar.
@@ -91,13 +91,13 @@ If you decided to count `cancelled` until it expires, add it in, but only for ro
  + SUMIFS(Subs!H:H, Subs!D:D, "cancelled", Subs!I:I, ">"&TODAY(), Subs!G:G, "USD")
 ```
 
-A quick worked example on example data: 40 active monthly subscribers at $9 ($360), 6 active yearly at $90 ($45 of MRR), 5 on trial, 2 past due at $9, and 3 cancelled with access until next week. Conservative MRR is **$405**. Trials are shown as 5 subscribers, past-due as **$18**, and the cancelled three add $27 only if you chose to count them until expiry.
+A quick worked example on example data: 40 active monthly subscribers at $9 ($360), 6 active yearly at $90 ($45 of MRR), 5 on trial, 2 past due at $9, and 3 canceled with access until next week. Conservative MRR is **$405**. Trials are shown as 5 subscribers, past-due as **$18**, and the canceled three add $27 only if you chose to count them until expiry.
 
 ## Common mistakes
 
 **Counting trials.** A store with a generous trial can show a big MRR jump on launch week that disappears two weeks later. If someone is buying your business, they'll find this in the first hour of due diligence. Keep trials separate.
 
-**Counting cancelled subscriptions as churned too early, or too late.** If you count by status alone and also record churn on the cancel date, the same customer can vanish from MRR before their access ends while your churn chart says they left two weeks later. Use one date for both: either the cancel date or the end date, consistently.
+**Counting canceled subscriptions as churned too early, or too late.** If you count by status alone and also record churn on the cancel date, the same customer can vanish from MRR before their access ends while your churn chart says they left two weeks later. Use one date for both: either the cancel date or the end date, consistently.
 
 **Forgetting the cents.** Covered above, worth repeating. Check that your largest subscription has a believable price.
 
