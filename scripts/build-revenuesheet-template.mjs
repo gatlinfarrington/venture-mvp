@@ -131,7 +131,9 @@ function cellRef(ref, style, formula) {
 /** Dashboard sheet — blank template KPIs with Excel-safe bounded ranges. */
 function dashboardSheet() {
   const mrr = `SUMIF(Subscriptions!H2:H${ROW},"active",Subscriptions!G2:G${ROW})`;
-  const net = `SUMIF(Orders!H2:H${ROW},"paid",Orders!G2:G${ROW})-SUMIF(Refunds!G2:G${ROW},"succeeded",Refunds!F2:F${ROW})-SUMIF(Refunds!G2:G${ROW},"paid",Refunds!F2:F${ROW})`;
+  // NET REVENUE · 30D: paid orders in the trailing window minus succeeded refunds
+  // in the same window. Refund status "paid" is not used by any importer (order-only).
+  const net = `SUMIFS(Orders!G2:G${ROW},Orders!H2:H${ROW},"paid",Orders!B2:B${ROW},">="&TODAY()-30)-SUMIFS(Refunds!F2:F${ROW},Refunds!G2:G${ROW},"succeeded",Refunds!B2:B${ROW},">="&TODAY()-30)`;
   const active = `COUNTIF(Subscriptions!H2:H${ROW},"active")`;
   // 30d logo churn via Canceled date column I (non-blank in trailing window).
   const churn = `IFERROR(COUNTIFS(Subscriptions!I2:I${ROW},">="&TODAY()-30,Subscriptions!I2:I${ROW},"<>")/(COUNTIF(Subscriptions!H2:H${ROW},"active")+COUNTIFS(Subscriptions!I2:I${ROW},">="&TODAY()-30,Subscriptions!I2:I${ROW},"<>")),0)`;

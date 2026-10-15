@@ -78,11 +78,22 @@ describe("public revenuesheet-template.xlsx", () => {
     expect(dash).toContain("CHURN · 30D");
     const formulas = formulaBodies(dash);
     expect(formulas.some((f) => f.startsWith("SUMIF(Subscriptions!"))).toBe(true);
-    expect(formulas.some((f) => f.includes('Orders!H2:H10000,"paid"'))).toBe(true);
+    const net = formulas.find((f) => f.startsWith("SUMIFS(Orders!G2:G10000"));
+    expect(net).toBeTruthy();
+    expect(net).toMatch(/Orders!B2:B10000,">="&TODAY\(\)-30/);
+    expect(net).toMatch(/Refunds!B2:B10000,">="&TODAY\(\)-30/);
+    expect(net).toMatch(/Refunds!G2:G10000,"succeeded"/);
+    expect(net).not.toMatch(/Refunds![^,]+,"paid"/);
     expect(formulas.some((f) => f.startsWith("COUNTIF(Subscriptions!") && f.includes('"active"'))).toBe(
       true,
     );
     expect(formulas.some((f) => f.includes("COUNTIFS(Subscriptions!I2:I10000"))).toBe(true);
+  });
+
+  it("F5 NET REVENUE · 30D excludes a 40-day-old paid order (openpyxl seed)", () => {
+    const r = spawnSync("python3", [CHECK_PY], { encoding: "utf8" });
+    expect(r.status, r.stderr || r.stdout).toBe(0);
+    expect(r.stdout).toMatch(/excludes 40-day-old paid order/);
   });
 
   it("XML-escapes < and > inside every formula and inline string", () => {
