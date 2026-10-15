@@ -152,7 +152,7 @@ function dashboardSheet() {
 <row r="9">${cellRef("B9", 5, countOrders)}${cellRef("F9", 5, countCustomers)}${cellRef("J9", 5, countRefunds)}</row>
 <row r="10"><c r="B10" s="2" t="inlineStr"><is><t>row count</t></is></c><c r="F10" s="2" t="inlineStr"><is><t>row count</t></is></c><c r="J10" s="2" t="inlineStr"><is><t>row count</t></is></c></row>
 <row r="12"><c r="B12" s="3" t="inlineStr"><is><t>How to use</t></is></c></row>
-<row r="13"><c r="B13" s="2" t="inlineStr"><is><t>${escapeXml("Keep these tab names and header rows. The add-on writes into the same columns.")}</t></is></c></row>
+<row r="13"><c r="B13" s="2" t="inlineStr"><is><t>${escapeXml("Keep these tab names and header rows. The add-on will write into the same columns.")}</t></is></c></row>
 <row r="14"><c r="B14" s="2" t="inlineStr"><is><t>${escapeXml("This file is a blank layout preview — not an installable add-on.")}</t></is></c></row>
 </sheetData><pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5" /></worksheet>`;
 }

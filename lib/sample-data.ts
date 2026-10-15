@@ -8,6 +8,7 @@ export const ORDER_HEADERS = [
   "Order ID",
   "Created",
   "Source",
+  "Account",
   "Product",
   "Customer email",
   "Amount (USD)",
@@ -19,6 +20,7 @@ export const SUB_HEADERS = [
   "Subscription ID",
   "Created",
   "Source",
+  "Account",
   "Product",
   "Customer email",
   "MRR (USD)",
@@ -32,6 +34,7 @@ export type SampleOrder = {
   id: string;
   created: string;
   source: string;
+  account: string;
   product: string;
   email: string;
   amount: number;
@@ -45,6 +48,7 @@ export type SampleSub = {
   id: string;
   created: string;
   source: string;
+  account: string;
   product: string;
   email: string;
   mrr: number;
@@ -61,11 +65,17 @@ const data = raw as Dataset;
 
 const EXCERPT_N = 24;
 
+function accountFor(source: string): string {
+  const stores = data.stores as Record<string, string>;
+  return stores[source] ?? source;
+}
+
 /** Full 30-day order continuum (newest first). */
 export const ORDERS: SampleOrder[] = data.orders.map((o) => ({
   id: o.id,
   created: o.created,
   source: o.source,
+  account: accountFor(o.source),
   product: o.product,
   email: o.email,
   amount: o.amount,
@@ -108,6 +118,7 @@ export const SAMPLE_SUBS: SampleSub[] = data.subscriptions.slice(0, EXCERPT_N).m
   id: s.id,
   created: s.created,
   source: s.source,
+  account: accountFor(s.source),
   product: s.product,
   email: s.email,
   mrr: s.mrr,
@@ -122,6 +133,7 @@ export const ALL_SAMPLE_SUBS: SampleSub[] = data.subscriptions.map((s) => ({
   id: s.id,
   created: s.created,
   source: s.source,
+  account: accountFor(s.source),
   product: s.product,
   email: s.email,
   mrr: s.mrr,
@@ -163,7 +175,7 @@ export const DASHBOARD = {
   activeSubs: String(h.activeSubs),
   activeDelta: `${h.trialingSubs} trialing`,
   churn: `${h.churn30dPct}%`,
-  churnDelta: "30D canceled ÷ active at start",
+  churnDelta: "30D canceled ÷ (active + canceled in window)",
   pastDueLine: `Past due ${h.pastDueCount} · $${h.pastDueMrr} · MRR counts active subscriptions only`,
   statusLine: "● SYNCED · LAST RUN 10:02 · NEXT 11:02 · EXAMPLE DATA",
   sources: [
