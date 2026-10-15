@@ -32,7 +32,7 @@ export default function SamplePage() {
         </p>
         <div className="sample-actions">
           <SampleCopyAction source="sample-page" />
-          <Link className="sample-how-link" href="/#how-it-works">
+          <Link className="sample-how-link text-link" href="/#how-it-works">
             How sync works
           </Link>
         </div>

@@ -127,7 +127,9 @@ export default function PricingPage() {
           </div>
           <p className="compare-more muted">
             Already on Polar?{" "}
-            <Link href="/vs/polar-dashboard">See RevenueSheet vs Polar’s dashboard →</Link>
+            <Link className="text-link" href="/vs/polar-dashboard">
+              See RevenueSheet vs Polar’s dashboard →
+            </Link>
           </p>
 
           <h2 className="h2 pricing-extras-h2">Billing FAQ</h2>
