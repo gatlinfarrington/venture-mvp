@@ -70,7 +70,7 @@ const setup = [
   {
     href: "/docs/mrr-and-churn",
     title: "How we calculate MRR and churn",
-    body: "How yearly plans become monthly MRR, and how we count cancelled subscriptions over 30 days.",
+    body: "How yearly plans become monthly MRR, and how we count canceled subscriptions over 30 days.",
   },
 ] as const;
 

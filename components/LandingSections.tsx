@@ -96,7 +96,7 @@ export function HowItWorks() {
     {
       n: "02",
       title: "Backfill",
-      body: "We pull full order history into named tabs, not just new rows from today. Then scheduled sync keeps the sheet current.",
+      body: "We'll pull full order history into named tabs, not just new rows from today. Then scheduled sync will keep the sheet current.",
       src: "/design/how-backfill-2x.png",
       w: 600,
       h: 600,
@@ -105,7 +105,7 @@ export function HowItWorks() {
     {
       n: "03",
       title: "Dashboard",
-      body: "MRR, churn, and revenue by product land on a Dashboard tab built from your data (formulas you can audit and extend).",
+      body: "At launch, MRR, churn, and revenue by product will land on a Dashboard tab built from your data (formulas you can audit and extend).",
       src: "/design/how-dashboard-2x.png",
       w: 600,
       h: 600,

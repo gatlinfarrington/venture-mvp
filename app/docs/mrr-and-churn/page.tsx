@@ -98,7 +98,7 @@ export default function MrrAndChurnDocsPage() {
         </p>
         <p>
           A subscription counts as active at the window start if it was created before the window
-          and had not cancelled before that start. Cancellations inside the window increment the
+          and had not canceled before that start. Cancellations inside the window increment the
           numerator. The same math on the previous window produces the percentage-point change shown
           on the dashboard.
         </p>
