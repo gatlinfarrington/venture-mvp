@@ -45,7 +45,7 @@ describe("/sample acceptance data", () => {
       "Customer email",
       "MRR (USD)",
       "Status",
-      "Cancelled",
+      "Canceled",
       "Interval",
       "Country",
     ]);

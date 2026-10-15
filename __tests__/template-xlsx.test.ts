@@ -56,6 +56,36 @@ describe("public revenuesheet-template.xlsx", () => {
     const dash = readZipEntry(readFileSync(XLSX), "xl/worksheets/sheet1.xml");
     expect(dash).toContain("SUMIF(Subscriptions!");
     expect(dash).toContain("COUNTA(Orders!");
+    expect(dash).toContain("COUNTIFS(Subscriptions!I2:I10000");
+    expect(dash).toContain("CHURN · 30D");
+  });
+
+  it("Subscriptions date column is Canceled (US spelling, matches status)", () => {
+    const subs = readZipEntry(readFileSync(XLSX), "xl/worksheets/sheet3.xml");
+    expect(subs).toContain(">Canceled</t>");
+    expect(subs).not.toContain(">Cancelled</t>");
+  });
+
+  it("rejects Google-Sheets-only open-ended ranges in every formula", () => {
+    const buf = readFileSync(XLSX);
+    const formulas: string[] = [];
+    for (const sheet of [
+      "xl/worksheets/sheet1.xml",
+      "xl/worksheets/sheet2.xml",
+      "xl/worksheets/sheet3.xml",
+      "xl/worksheets/sheet4.xml",
+      "xl/worksheets/sheet5.xml",
+    ]) {
+      const xml = readZipEntry(buf, sheet);
+      for (const m of xml.matchAll(/<f[^>]*>([^<]*)<\/f>/g)) {
+        formulas.push(m[1]!.replace(/&amp;/g, "&"));
+      }
+    }
+    expect(formulas.length).toBeGreaterThan(0);
+    // Sheets allows A2:A; Excel requires A2:A10000 (or whole-column A:A).
+    const openEnded = /(?:^|[^A-Z])(?:[A-Za-z0-9_]+!)?[A-Z]{1,3}\d+:[A-Z]{1,3}(?!\d)/;
+    const bad = formulas.filter((f) => openEnded.test(f));
+    expect(bad, `open-ended ranges:\n${bad.join("\n")}`).toEqual([]);
   });
 });
 

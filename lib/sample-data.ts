@@ -23,7 +23,7 @@ export const SUB_HEADERS = [
   "Customer email",
   "MRR (USD)",
   "Status",
-  "Cancelled",
+  "Canceled",
   "Interval",
   "Country",
 ] as const;
