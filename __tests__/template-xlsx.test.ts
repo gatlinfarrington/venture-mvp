@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { inflateRawSync } from "node:zlib";
@@ -5,6 +6,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { templateCopyUrl, templateXlsxUrl } from "@/lib/brand";
 
 const XLSX = join(process.cwd(), "public/revenuesheet-template.xlsx");
+const CHECK_PY = join(process.cwd(), "scripts/check-template-xlsx.py");
+const LIBRE_JS = join(process.cwd(), "scripts/check-template-xlsx-libreoffice.mjs");
 
 /** Minimal ZIP local-file extractor for committed .xlsx fixtures (no extra deps). */
 function readZipEntry(buf: Buffer, path: string): string {
@@ -25,6 +28,21 @@ function readZipEntry(buf: Buffer, path: string): string {
     throw new Error(`Unsupported ZIP method ${method} for ${path}`);
   }
   throw new Error(`ZIP entry not found: ${path}`);
+}
+
+/** Formula text from <f>…</f>, decoding XML entities. */
+function formulaBodies(xml: string): string[] {
+  const out: string[] = [];
+  for (const m of xml.matchAll(/<f(?:\s[^>]*)?>([\s\S]*?)<\/f>/g)) {
+    out.push(
+      m[1]!
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"'),
+    );
+  }
+  return out;
 }
 
 describe("public revenuesheet-template.xlsx", () => {
@@ -58,6 +76,32 @@ describe("public revenuesheet-template.xlsx", () => {
     expect(dash).toContain("COUNTA(Orders!");
     expect(dash).toContain("COUNTIFS(Subscriptions!I2:I10000");
     expect(dash).toContain("CHURN · 30D");
+    const formulas = formulaBodies(dash);
+    expect(formulas.some((f) => f.startsWith("SUMIF(Subscriptions!"))).toBe(true);
+    expect(formulas.some((f) => f.includes('Orders!H2:H10000,"paid"'))).toBe(true);
+    expect(formulas.some((f) => f.startsWith("COUNTIF(Subscriptions!") && f.includes('"active"'))).toBe(
+      true,
+    );
+    expect(formulas.some((f) => f.includes("COUNTIFS(Subscriptions!I2:I10000"))).toBe(true);
+  });
+
+  it("XML-escapes < and > inside every formula and inline string", () => {
+    const buf = readFileSync(XLSX);
+    for (const sheet of [
+      "xl/worksheets/sheet1.xml",
+      "xl/worksheets/sheet2.xml",
+      "xl/worksheets/sheet3.xml",
+      "xl/worksheets/sheet4.xml",
+      "xl/worksheets/sheet5.xml",
+    ]) {
+      const xml = readZipEntry(buf, sheet);
+      for (const m of xml.matchAll(/<(f|t)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/g)) {
+        expect(m[2], `${sheet} <${m[1]}> has raw < or >`).not.toMatch(/[<>]/);
+      }
+    }
+    const dash = readZipEntry(buf, "xl/worksheets/sheet1.xml");
+    expect(dash).toContain('"&lt;&gt;"');
+    expect(dash).toContain('"&gt;="');
   });
 
   it("Subscriptions date column is Canceled (US spelling, matches status)", () => {
@@ -76,16 +120,25 @@ describe("public revenuesheet-template.xlsx", () => {
       "xl/worksheets/sheet4.xml",
       "xl/worksheets/sheet5.xml",
     ]) {
-      const xml = readZipEntry(buf, sheet);
-      for (const m of xml.matchAll(/<f[^>]*>([^<]*)<\/f>/g)) {
-        formulas.push(m[1]!.replace(/&amp;/g, "&"));
-      }
+      formulas.push(...formulaBodies(readZipEntry(buf, sheet)));
     }
     expect(formulas.length).toBeGreaterThan(0);
     // Sheets allows A2:A; Excel requires A2:A10000 (or whole-column A:A).
     const openEnded = /(?:^|[^A-Z])(?:[A-Za-z0-9_]+!)?[A-Z]{1,3}\d+:[A-Z]{1,3}(?!\d)/;
     const bad = formulas.filter((f) => openEnded.test(f));
     expect(bad, `open-ended ranges:\n${bad.join("\n")}`).toEqual([]);
+  });
+
+  it("strict-parses every sheet XML and loads via openpyxl with KPI formulas", () => {
+    const r = spawnSync("python3", [CHECK_PY], { encoding: "utf8" });
+    expect(r.status, r.stderr || r.stdout).toBe(0);
+    expect(r.stdout).toMatch(/MRR/);
+    expect(r.stdout).toMatch(/CHURN/);
+  });
+
+  it("LibreOffice headless recalc has no Err values when soffice is available", () => {
+    const r = spawnSync("node", [LIBRE_JS], { encoding: "utf8" });
+    expect(r.status, r.stderr || r.stdout).toBe(0);
   });
 });
 
