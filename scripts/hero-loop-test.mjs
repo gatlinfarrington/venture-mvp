@@ -22,6 +22,8 @@
 // At 375, COLD_LOAD runs 5 cold navigations; worst first-MRR-change must be <2400ms.
 // FRESH_COLD=1 (or COLD=1): N fresh browser contexts (default 10) at WIDTH;
 // every load must change MRR within 2400ms (catches start stalls hero-loop can miss).
+// THROTTLED_COLD=1: 5 fresh contexts with CDP network throttling; fails if first
+// MRR change is >=2500ms from nav OR >900ms after JS completes.
 import { chromium } from "playwright-core";
 import fs from "fs";
 import { createRequire } from "module";
@@ -51,10 +53,15 @@ const SUITE_WIDTHS = [375, 768, 1000, 1024, 1060, 1100, 1120, 1200, 1280, 1440];
 const EDGE_INSET_MIN = 16;
 const COLD_RUNS = Number(process.env.COLD_RUNS || 5);
 const COLD_WORST_MAX_MS = 2400;
-// COLD=1 alone (without COLD_LOAD) is the fresh-context cold gate.
+const THROTTLED_COLD = Boolean(process.env.THROTTLED_COLD);
+const THROTTLED_COLD_RUNS = Number(process.env.THROTTLED_COLD_RUNS || 5);
+const THROTTLED_NAV_LIMIT_MS = Number(process.env.THROTTLED_NAV_LIMIT_MS || 2500);
+const THROTTLED_AFTER_JS_MS = Number(process.env.THROTTLED_AFTER_JS_MS || 900);
+// COLD=1 alone (without COLD_LOAD / THROTTLED_COLD) is the fresh-context cold gate.
 const FRESH_COLD =
-  Boolean(process.env.FRESH_COLD) ||
-  (process.env.COLD === "1" && !COLD_LOAD);
+  !THROTTLED_COLD &&
+  (Boolean(process.env.FRESH_COLD) ||
+    (process.env.COLD === "1" && !COLD_LOAD));
 const FRESH_COLD_RUNS = Number(process.env.FRESH_COLD_RUNS || 10);
 const FRESH_COLD_LIMIT_MS = Number(process.env.FRESH_COLD_LIMIT_MS || 2400);
 
@@ -80,6 +87,109 @@ if (process.env.WIDTHS && !process.env.HERO_LOOP_CHILD) {
     });
     if (r.status !== 0) failed += 1;
   }
+  process.exit(failed ? 1 : 0);
+}
+
+// Throttled cold loads: Slow-4G CDP + 5 fresh contexts. First MRR must be
+// <2500ms from navigation AND ≤900ms after JS completes (last script / load).
+if (THROTTLED_COLD && !process.env.HERO_LOOP_CHILD && !process.env.WIDTHS) {
+  const timings = [];
+  let failed = 0;
+  for (let i = 0; i < THROTTLED_COLD_RUNS; i++) {
+    const browser = await chromium.launch({
+      executablePath,
+      args: ["--no-sandbox"],
+    });
+    try {
+      const context = await browser.newContext({
+        viewport: { width: WIDTH, height: HEIGHT },
+      });
+      const page = await context.newPage();
+      await page.emulateMedia({ reducedMotion: "no-preference" });
+      const cdp = await context.newCDPSession(page);
+      // Approx. Slow 4G — enough latency that hydrate lags the nav clock.
+      await cdp.send("Network.emulateNetworkConditions", {
+        offline: false,
+        latency: 150,
+        downloadThroughput: ((1.6 * 1024 * 1024) / 8) | 0,
+        uploadThroughput: ((750 * 1024) / 8) | 0,
+        connectionType: "cellular4g",
+      });
+      const navStart = Date.now();
+      await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 90_000 });
+      await page.waitForSelector(".hero-mrr-num .sr-only", { timeout: 60_000 });
+      // Prefer full load so loadEventEnd / last script reflect "JS completes".
+      await page.waitForLoadState("load", { timeout: 60_000 }).catch(() => {});
+      const startText = await page.evaluate(
+        () => document.querySelector(".hero-mrr-num .sr-only")?.textContent ?? "",
+      );
+      const jsCompleteMs = await page.evaluate(() => {
+        const nav = performance.getEntriesByType("navigation")[0];
+        const loadEnd = nav && "loadEventEnd" in nav ? Number(nav.loadEventEnd) || 0 : 0;
+        const dcl =
+          nav && "domContentLoadedEventEnd" in nav
+            ? Number(nav.domContentLoadedEventEnd) || 0
+            : 0;
+        let lastScript = 0;
+        for (const r of performance.getEntriesByType("resource")) {
+          if (r.initiatorType === "script") {
+            lastScript = Math.max(lastScript, r.responseEnd || 0);
+          }
+        }
+        return Math.max(loadEnd, dcl, lastScript, 0);
+      });
+      let changedAt = null;
+      // Poll from navigation start (may already have changed during load wait).
+      const deadline = navStart + Math.max(THROTTLED_NAV_LIMIT_MS, 4000);
+      while (Date.now() < deadline) {
+        const now = await page.evaluate(
+          () => document.querySelector(".hero-mrr-num .sr-only")?.textContent ?? "",
+        );
+        if (now && now !== startText) {
+          changedAt = Date.now() - navStart;
+          break;
+        }
+        await page.waitForTimeout(40);
+      }
+      const afterJs =
+        changedAt == null || jsCompleteMs <= 0 ? null : changedAt - jsCompleteMs;
+      const navFail =
+        changedAt == null || changedAt >= THROTTLED_NAV_LIMIT_MS;
+      const jsFail = afterJs == null || afterJs > THROTTLED_AFTER_JS_MS;
+      if (navFail || jsFail) failed += 1;
+      timings.push({
+        changedAt,
+        jsCompleteMs,
+        afterJs,
+        navFail,
+        jsFail,
+      });
+      console.log(
+        `throttled-cold ${WIDTH} #${i + 1}: ${
+          changedAt == null ? "STALL" : `${changedAt}ms`
+        } (jsComplete=${Math.round(jsCompleteMs)}ms, afterJs=${
+          afterJs == null ? "n/a" : `${Math.round(afterJs)}ms`
+        })${navFail || jsFail ? " FAIL" : ""}`,
+      );
+      await context.close();
+    } finally {
+      await browser.close();
+    }
+  }
+  const summary = {
+    url: URL,
+    mode: "throttled-cold",
+    viewport: { width: WIDTH, height: HEIGHT },
+    runs: THROTTLED_COLD_RUNS,
+    timings,
+    failed,
+    navLimitMs: THROTTLED_NAV_LIMIT_MS,
+    afterJsLimitMs: THROTTLED_AFTER_JS_MS,
+  };
+  fs.mkdirSync(OUT, { recursive: true });
+  fs.writeFileSync(path.join(OUT, "report.json"), JSON.stringify({ summary }, null, 1));
+  console.log(JSON.stringify(summary, null, 1));
+  console.log(failed ? "RESULT: FAIL" : "RESULT: PASS");
   process.exit(failed ? 1 : 0);
 }
 

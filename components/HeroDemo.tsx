@@ -43,8 +43,19 @@ const ROW_SPRING_MS = 360;
 /** Reel + month bar after the row spring settles (~80–120ms). */
 const POST_SETTLE_MS = 100;
 const MRR_AFTER_SETTLE_MS = ROW_SPRING_MS + POST_SETTLE_MS;
-/** Aim first MRR change (~land1 + settle) at this mark from navigation. */
-const TARGET_FIRST_MRR_MS = 2000;
+/**
+ * Nav clock for the first order (design review). Delay from hydrate:
+ * Math.max(MIN_ENTRANCE_MS, TARGET_FIRST_ORDER_MS - performance.now()).
+ * If hydrate is already past this mark, skip the entrance rise and fire
+ * on the next frame (instant path to first MRR).
+ */
+const TARGET_FIRST_ORDER_MS = 2000;
+/** Minimum post-hydrate delay so the entrance still reads when JS arrives early. */
+const MIN_ENTRANCE_MS = 350;
+/** Compressed land0→land1 gap when firing the nav-timed / late-hydrate path. */
+const INSTANT_FIRST_GAP_MS = 80;
+/** Faster first MRR settle on instant path (skip full entrance rise budget). */
+const INSTANT_MRR_SETTLE_MS = 200;
 const PULSE_MS = 600;
 
 function prefersReducedMotion() {
@@ -126,6 +137,8 @@ export function HeroDemo() {
   const timers = useRef<number[]>([]);
   /** True only after landOrder(0)'s timer has fired — not when the nav delay arms. */
   const loopLiveRef = useRef(false);
+  /** When set, landOrder uses a shorter post-settle MRR delay (skip entrance rise). */
+  const instantMrrRef = useRef(false);
   const mrrRef = useRef(START_MRR);
   const transitioning = useRef(false);
   const rowsRef = useRef<HeroRow[]>(buildSeedRows());
@@ -173,6 +186,7 @@ export function HeroDemo() {
     timers.current = [];
     // Reset so a later ensureLoop / visibility handler can re-arm the loop.
     loopLiveRef.current = false;
+    instantMrrRef.current = false;
   }, []);
 
   const finishInstant = useCallback(() => {
@@ -211,7 +225,12 @@ export function HeroDemo() {
       setEnterPhase("from");
       setRows((prev) => applyLanding(trimOutgoing(prev), index));
 
-      // Cause → effect: reel, month bar, and chip only after the row spring settles (+120ms).
+      // Cause → effect: reel, month bar, and chip after the row spring settles.
+      // Instant path (late hydrate / nav-timed first order) uses a shorter settle
+      // so first MRR is not glued to JS arrival + full entrance budget.
+      const mrrDelay = instantMrrRef.current
+        ? INSTANT_MRR_SETTLE_MS
+        : MRR_AFTER_SETTLE_MS;
       timers.current.push(
         window.setTimeout(() => {
           if (mrrTick !== 0) {
@@ -247,16 +266,21 @@ export function HeroDemo() {
               window.setTimeout(() => setChips([]), CHIP_MS + CHIP_HOLD_MS + 180),
             );
           }
-        }, MRR_AFTER_SETTLE_MS),
+        }, mrrDelay),
       );
 
       // Double rAF so the 'from' positions paint with transition:none first.
-      requestAnimationFrame(() => {
+      // Instant path: keep transition:none (skip entrance rise).
+      if (instantMrrRef.current) {
+        setEnterPhase("to");
+      } else {
         requestAnimationFrame(() => {
-          setInstant(false);
-          setEnterPhase("to");
+          requestAnimationFrame(() => {
+            setInstant(false);
+            setEnterPhase("to");
+          });
         });
-      });
+      }
 
       timers.current.push(
         window.setTimeout(() => {
@@ -265,13 +289,15 @@ export function HeroDemo() {
           transitioning.current = false;
           // Keep data-hero-entering through the post-settle MRR beat so tests can
           // assert the reel did not move while the row was still sliding.
-        }, MRR_AFTER_SETTLE_MS + 40),
+        }, mrrDelay + 40),
       );
     },
     [finishInstant],
   );
 
-  const scheduleLoopRef = useRef<() => void>(() => {});
+  /** timed = steady loop cadence; instant = nav-timed / late-hydrate first order. */
+  type LoopMode = "timed" | "instant";
+  const scheduleLoopRef = useRef<(mode?: LoopMode) => void>(() => {});
 
   const resetAndRestart = useCallback(
     (thenRun: () => void) => {
@@ -323,38 +349,42 @@ export function HeroDemo() {
     [clearTimers],
   );
 
-  const scheduleLoop = useCallback(() => {
-    clearTimers();
-    for (let i = 0; i < HERO_LANDINGS.length; i++) {
-      // land0 ASAP (after nav-targeted delay); land1 uses FIRST_GAP so the first
-      // MRR tick can land near TARGET_FIRST_MRR_MS; later landings keep GAP_MS.
-      const at =
+  const scheduleLoop = useCallback(
+    (mode: LoopMode = "timed") => {
+      clearTimers();
+      const instant = mode === "instant";
+      instantMrrRef.current = instant;
+      // Nav-timed first order / late hydrate: compress land0→land1 so first MRR
+      // stays under the 2500ms cold gate (land0 aims at ~2000 from navigation).
+      const firstGap = instant ? INSTANT_FIRST_GAP_MS : FIRST_GAP_MS;
+      for (let i = 0; i < HERO_LANDINGS.length; i++) {
+        const at =
+          START_DELAY_MS +
+          (i === 0 ? 0 : firstGap + (i - 1) * GAP_MS);
+        timers.current.push(
+          window.setTimeout(() => {
+            // Mark live only when the first order timer fires — not when armed.
+            if (i === 0) loopLiveRef.current = true;
+            // Keep instant settle through land1 (first MRR tick); restore after.
+            if (instant && i > 1) instantMrrRef.current = false;
+            landOrder(i);
+          }, at),
+        );
+      }
+      const restAt =
         START_DELAY_MS +
-        (i === 0 ? 0 : FIRST_GAP_MS + (i - 1) * GAP_MS);
+        firstGap +
+        Math.max(0, HERO_LANDINGS.length - 1) * GAP_MS +
+        REST_MS;
       timers.current.push(
         window.setTimeout(() => {
-          // Mark live only when the first order timer fires — not when armed.
-          if (i === 0) loopLiveRef.current = true;
-          landOrder(i);
-        }, at),
+          instantMrrRef.current = false;
+          resetAndRestart(() => scheduleLoopRef.current("timed"));
+        }, restAt),
       );
-    }
-    const restAt =
-      START_DELAY_MS +
-      FIRST_GAP_MS +
-      Math.max(0, HERO_LANDINGS.length - 1) * GAP_MS +
-      REST_MS;
-    timers.current.push(
-      window.setTimeout(() => {
-        resetAndRestart(() => scheduleLoopRef.current());
-      }, restAt),
-    );
-  }, [clearTimers, landOrder, resetAndRestart]);
-
-  useEffect(() => {
-    scheduleLoopRef.current = scheduleLoop;
-    clearTimersRef.current = clearTimers;
-  }, [scheduleLoop, clearTimers]);
+    },
+    [clearTimers, landOrder, resetAndRestart],
+  );
 
   const run = useCallback(() => {
     clearTimers();
@@ -394,9 +424,14 @@ export function HeroDemo() {
     });
   }, [clearTimers, resetAndRestart]);
 
-  useEffect(() => {
+  // Sync refs in layout (before the mount-once starter below). useEffect is too
+  // late: when hydration finishes after the ~740ms nav target, kickOff would
+  // call the empty initial stub and the loop would never arm.
+  useLayoutEffect(() => {
+    scheduleLoopRef.current = scheduleLoop;
+    clearTimersRef.current = clearTimers;
     runRef.current = run;
-  }, [run]);
+  }, [scheduleLoop, clearTimers, run]);
 
   // Mount-once starter. Do NOT depend on scheduleLoop — a dep change was cleaning
   // up and clearTimers()'ing order timers after the nav delay had already fired
@@ -409,6 +444,8 @@ export function HeroDemo() {
 
     let visible = false;
     let startTimer: number | null = null;
+    let watchdogTimer: number | null = null;
+    let healed = false;
 
     const hasOrderTimers = () => timers.current.length > 0;
 
@@ -426,41 +463,96 @@ export function HeroDemo() {
       }
     };
 
-    const kickOff = () => {
+    /** Absolute nav time when the first order should fire (for watchdog). */
+    let firstOrderDueAt = 0;
+
+    const kickOff = (mode: LoopMode = "instant") => {
       clearPendingStart();
       if (hasOrderTimers()) return;
       if (prefersReducedMotion()) {
         runRef.current();
         return;
       }
-      scheduleLoopRef.current();
+      scheduleLoopRef.current(mode);
     };
 
-    /** Arm nav-timed start, or restart immediately if no order timers are pending. */
+    /**
+     * Design review: first order at Math.max(~350, 2000 - performance.now()).
+     * If hydration is already past 2000ms, skip the entrance rise and fire on
+     * the next frame. Watchdog must not push the first change past this plan.
+     */
     const ensureLoop = () => {
       if (!visible) return;
       if (prefersReducedMotion()) {
-        kickOff();
+        kickOff("instant");
         return;
       }
       // Already armed or running — leave it alone.
       if (hasOrderTimers() || startTimer != null) return;
 
-      const targetLand0 =
-        TARGET_FIRST_MRR_MS - FIRST_GAP_MS - MRR_AFTER_SETTLE_MS;
-      const remaining = targetLand0 - performance.now();
-      if (remaining <= 0) {
-        kickOff();
+      const now = performance.now();
+      if (now >= TARGET_FIRST_ORDER_MS) {
+        firstOrderDueAt = now;
+        // Skip entrance rise; fire on the next frame.
+        requestAnimationFrame(() => {
+          if (!hasOrderTimers()) kickOff("instant");
+        });
         return;
       }
+
+      // Design review: Math.max(~350, 2000 - performance.now()).
+      const delay = Math.max(MIN_ENTRANCE_MS, TARGET_FIRST_ORDER_MS - now);
+      firstOrderDueAt = now + delay;
       startTimer = window.setTimeout(() => {
         startTimer = null;
-        kickOff();
-      }, remaining);
+        kickOff("instant");
+      }, delay);
+    };
+
+    /**
+     * Watchdog: if nothing is pending and MRR is still START after the
+     * scheduled first-order due time, force an instant restart. Does not
+     * wait past the nav plan (no extra 2.2s delay on top of the first order).
+     */
+    const armWatchdog = () => {
+      if (watchdogTimer != null) {
+        window.clearTimeout(watchdogTimer);
+        watchdogTimer = null;
+      }
+      if (prefersReducedMotion() || healed) return;
+      const now = performance.now();
+      const due =
+        firstOrderDueAt > 0
+          ? firstOrderDueAt
+          : Math.max(now + MIN_ENTRANCE_MS, TARGET_FIRST_ORDER_MS);
+      // Fire shortly after the scheduled first order should have landed.
+      const delay = Math.max(40, due + 120 - now);
+      watchdogTimer = window.setTimeout(() => {
+        watchdogTimer = null;
+        if (healed || prefersReducedMotion()) return;
+        if (mrrRef.current !== START_MRR) {
+          healed = true;
+          return;
+        }
+        // Happy path: nav start armed or order timers running — do not steal timing.
+        if (hasOrderTimers() || startTimer != null) {
+          armWatchdog();
+          return;
+        }
+        if (!visible) {
+          armWatchdog();
+          return;
+        }
+        // Stalled past due: instant kick (must not delay first change further).
+        loopLiveRef.current = false;
+        kickOff("instant");
+        armWatchdog();
+      }, delay);
     };
 
     visible = ratioInView() >= 0.4;
     if (visible) ensureLoop();
+    armWatchdog();
 
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -485,6 +577,7 @@ export function HeroDemo() {
         loopLiveRef.current = false;
         ensureLoop();
       }
+      armWatchdog();
     };
     document.addEventListener("visibilitychange", onVis);
 
@@ -492,9 +585,9 @@ export function HeroDemo() {
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
       clearPendingStart();
+      if (watchdogTimer != null) window.clearTimeout(watchdogTimer);
       clearTimersRef.current();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once; live fns via refs
   }, []);
 
   const digits = splitMrr(mrr);
