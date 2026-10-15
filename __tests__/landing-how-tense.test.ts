@@ -8,8 +8,10 @@ describe("homepage How it works tense", () => {
   it("uses future tense for backfill and scheduled sync", () => {
     expect(src).not.toMatch(/\bWe pull full order history\b/);
     expect(src).not.toMatch(/\bscheduled sync keeps the sheet current\b/);
-    expect(src).toMatch(/At launch, we'll pull full order history/);
-    expect(src).toMatch(/scheduled sync will keep the sheet current/);
+    expect(src).toMatch(
+      /We'll pull full order history into named tabs, not just new rows from today\. Then scheduled sync will keep the sheet current\./,
+    );
+    expect(src).not.toMatch(/At launch, we'll pull/);
   });
 
   it("uses future tense for Dashboard step landing copy", () => {
@@ -17,3 +19,4 @@ describe("homepage How it works tense", () => {
     expect(src).not.toMatch(/revenue by product land on a Dashboard tab/);
   });
 });
+

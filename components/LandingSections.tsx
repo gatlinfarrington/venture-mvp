@@ -96,7 +96,7 @@ export function HowItWorks() {
     {
       n: "02",
       title: "Backfill",
-      body: "At launch, we'll pull full order history into named tabs, not just new rows from today. Then scheduled sync will keep the sheet current.",
+      body: "We'll pull full order history into named tabs, not just new rows from today. Then scheduled sync will keep the sheet current.",
       src: "/design/how-backfill-2x.png",
       w: 600,
       h: 600,
