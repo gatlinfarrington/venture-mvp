@@ -1692,6 +1692,17 @@ tr.reveal.reveal-rise {
   border-top: 1px solid var(--c-hairline);
 }
 
+/* Avoid orphan single words on How-it-works step bodies at desktop widths. */
+#how-it-works .step > p {
+  text-wrap: pretty;
+}
+
+@media (min-width: 900px) {
+  #how-it-works .step > p.muted {
+    max-width: 34ch;
+  }
+}
+
 .step-num {
   font-family: var(--font-mono);
   font-size: var(--t-mono-size);
