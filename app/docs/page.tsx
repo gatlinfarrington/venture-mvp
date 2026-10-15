@@ -116,7 +116,9 @@ export default function DocsIndexPage() {
           <div className="docs-mrr-card">
             <h2 className="docs-card-title">How we calculate MRR</h2>
             <p>Yearly plans count as amount ÷ 12. Only active subscriptions count by default.</p>
-            <Link href="/docs/mrr-and-churn">Read the method →</Link>
+            <Link className="text-link" href="/docs/mrr-and-churn">
+              Read the method →
+            </Link>
           </div>
           <h2 className="docs-group-label mono">Setup</h2>
           <ul className="docs-card-list">
@@ -149,7 +151,11 @@ export default function DocsIndexPage() {
       </div>
 
       <p className="docs-support-row">
-        Can&apos;t find it? See <Link href="/support">Support</Link>.
+        Can&apos;t find it? See{" "}
+        <Link className="text-link" href="/support">
+          Support
+        </Link>
+        .
       </p>
     </main>
   );

@@ -5199,6 +5199,24 @@ a.tag-pill:focus-visible {
 
 }
 
+/* Touch: 44px min hit area for inline text links + sample sheet tabs. */
+@media (pointer: coarse) {
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .sample-tabs {
+    height: auto;
+    min-height: 44px;
+  }
+
+  .sample-tab {
+    min-height: 44px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sample-panel,
   .sample-copy-tip,
