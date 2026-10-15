@@ -25,18 +25,18 @@ export const seoPages: SeoPage[] = [
       {
         h2: "What “analytics” means here",
         paragraphs: [
-          "Not another hosted chart product. You get an Orders tab with product, purchaser email, amount, and refund status, plus Dashboard tiles that roll Gumroad net revenue alongside Polar or Lemon Squeezy when those sources are connected. Memberships count toward MRR, normalized monthly; one-time sales go to net revenue.",
+          "Not another hosted chart product. At launch, you'll get an Orders tab with product, purchaser email, amount, and refund status, plus Dashboard tiles that will roll Gumroad net revenue alongside Polar or Lemon Squeezy when those sources are connected. Memberships will count toward MRR, normalized monthly; one-time sales will go to net revenue.",
         ],
         bullets: [
-          "Full sales history backfill on first connect",
-          "Refunds update the original sale row instead of duplicating",
-          "Example marketing data is labeled: your sheet uses your store",
+          "Full sales history backfill on first connect at launch",
+          "Refunds will update the original sale row instead of duplicating",
+          "Example marketing data is labeled: your sheet will use your store",
         ],
       },
       {
         h2: "Compared to CSV exports and Zapier",
         paragraphs: [
-          "CSV exports go stale the day after you paste. Zapier can append new sales but rarely rebuilds history cleanly. An importer built for Sheets walks Gumroad’s API once, then keeps the sheet current on Free (manual) or Pro (scheduled).",
+          "CSV exports go stale the day after you paste. Zapier can append new sales but rarely rebuilds history cleanly. At launch, an importer built for Sheets will walk Gumroad’s API once, then keep the sheet current on Free (manual) or Pro (scheduled).",
         ],
       },
       {
@@ -65,7 +65,7 @@ export const seoPages: SeoPage[] = [
       {
         h2: "What syncs from Stripe",
         paragraphs: [
-          "Connect a restricted read-only Stripe API key. The add-on backfills charges (as orders), subscriptions with MRR contribution, customers, and refunds into stable column headers, then scheduled sync keeps the sheet current on Pro and Business.",
+          "At launch, you'll connect a restricted read-only Stripe API key. The add-on will backfill charges (as orders), subscriptions with MRR contribution, customers, and refunds into stable column headers, then scheduled sync keeps the sheet current on Pro and Business once paid plans open.",
         ],
         bullets: [
           "Charges to Orders tab (amount, email, status, country)",
@@ -105,18 +105,18 @@ export const seoPages: SeoPage[] = [
       {
         h2: "What syncs from Polar",
         paragraphs: [
-          "Orders, subscriptions, customers, and refunds map into stable column headers. Amounts keep Polar’s currency; the Dashboard rolls MRR in your reporting currency from Settings.",
+          "At launch, orders, subscriptions, customers, and refunds will map into stable column headers. Amounts will keep Polar’s currency; the Dashboard will roll MRR in your reporting currency from Settings.",
         ],
         bullets: [
           "Orders: product, email, amount, status, and date",
           "Subscriptions: status, renewals, and monthly MRR contribution",
-          "Refunds stay linked to the original order",
+          "Refunds will stay linked to the original order",
         ],
       },
       {
         h2: "Why not the Polar dashboard alone?",
         paragraphs: [
-          "Polar is excellent for one organization. When you also sell on Lemon Squeezy or Gumroad, or you want QUERY against every invoice, a sheet with scheduled refresh beats copying numbers out by hand before every board update.",
+          "Polar is excellent for one organization. When you also sell on Lemon Squeezy or Gumroad, or you want QUERY against every invoice, a sheet with scheduled refresh will beat copying numbers out by hand before every board update.",
         ],
       },
       {
@@ -140,24 +140,24 @@ export const seoPages: SeoPage[] = [
       {
         h2: "Importer details",
         paragraphs: [
-          "Connect with a Lemon Squeezy API key. Lemon Squeezy doesn't document read-only or per-store API keys, so name the key RevenueSheet and delete it anytime. The first run backfills historical orders; later syncs are incremental. Refunds and subscription changes update the original rows instead of duplicating. The add-on only reads; it never creates, edits, or refunds.",
+          "At launch, you'll connect with a Lemon Squeezy API key. Lemon Squeezy doesn't document read-only or per-store API keys, so name the key RevenueSheet and delete it anytime. The first run will backfill historical orders; later syncs will be incremental. Refunds and subscription changes will update the original rows instead of duplicating. The add-on will only read; it will never create, edit, or refund.",
         ],
         bullets: [
           "One store on Free/Pro; up to 20 stores on Business, one combined MRR",
           "Orders, subscriptions, customers, and refunds in named tabs you own",
-          "Scheduled refresh on Pro and Business so the sheet stays current",
+          "Scheduled refresh on Pro and Business so the sheet will stay current",
         ],
       },
       {
         h2: "MRR from Lemon Squeezy subscriptions",
         paragraphs: [
-          "Active subscriptions contribute to the Dashboard MRR tile. Logo churn uses cancellations over a trailing window (default 30 days) divided by how many subscriptions were active at the start of that window; see How we calculate MRR and churn. One-time purchases land in net revenue without inflating MRR.",
+          "At launch, active subscriptions will contribute to the Dashboard MRR tile. Logo churn will use cancellations over a trailing window (default 30 days) divided by how many subscriptions were active at the start of that window; see How we calculate MRR and churn. One-time purchases will land in net revenue without inflating MRR.",
         ],
       },
       {
         h2: "Combine with other stores",
         paragraphs: [
-          "If you migrated part of a catalog to Polar, or still sell packs on Gumroad, add those sources on Pro. The Dashboard stacks MRR by source so you can see which platform is carrying growth.",
+          "If you migrated part of a catalog to Polar, or still sell packs on Gumroad, you'll add those sources on Pro. The Dashboard will stack MRR by source so you can see which platform is carrying growth.",
         ],
       },
     ],

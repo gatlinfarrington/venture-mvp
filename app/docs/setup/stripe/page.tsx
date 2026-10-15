@@ -38,8 +38,8 @@ export default function StripeSetupPage() {
           <li>Save the key in your password manager before you paste it.</li>
         </ol>
         <p>
-          The add-on only reads; it never creates, edits, or refunds. It calls Stripe with GET
-          requests only.
+          At launch, the add-on will only read; it will never create, edit, or refund. It will call
+          Stripe with GET requests only.
         </p>
         <h2>Connect in {brand.name}</h2>
         <p>
@@ -54,9 +54,9 @@ export default function StripeSetupPage() {
         </p>
         <h2>Backfill and schedule</h2>
         <p>
-          Press Backfill once. Charges land as orders; subscriptions contribute to MRR on the
-          Dashboard tab. On Pro or Business, enable scheduled refresh so Stripe tabs stay current.
-          Free remains manual refresh for one source.
+          At launch, press Backfill once. Charges will land as orders; subscriptions will contribute
+          to MRR on the Dashboard tab. On Pro or Business, enable scheduled refresh so Stripe tabs
+          stay current. Free will remain manual refresh for one source.
         </p>
         <p>
           Guide: <Link href="/stripe-to-google-sheets">Stripe to Google Sheets</Link>. For stores
