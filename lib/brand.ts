@@ -96,7 +96,21 @@ export function marketplaceUrl(): string | null {
 /** Google Sheets template “Make a copy” link for post-checkout onboarding. */
 export function templateCopyUrl(): string | null {
   const raw = process.env.NEXT_PUBLIC_TEMPLATE_COPY_URL?.trim() || "";
-  return raw.length > 0 ? raw : null;
+  // Sheets copy links only — .xlsx overrides belong on templateXlsxUrl().
+  if (!raw || /\.xlsx(\?|#|$)/i.test(raw)) return null;
+  return raw;
+}
+
+/**
+ * Public blank .xlsx template for /sample download.
+ * Defaults to /revenuesheet-template.xlsx.
+ * Override with NEXT_PUBLIC_TEMPLATE_COPY_URL when it points at an .xlsx file
+ * (CDN or absolute URL); Sheets “Make a copy” links stay on templateCopyUrl().
+ */
+export function templateXlsxUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_TEMPLATE_COPY_URL?.trim() || "";
+  if (raw && /\.xlsx(\?|#|$)/i.test(raw)) return raw;
+  return "/revenuesheet-template.xlsx";
 }
 
 /** @deprecated Use marketplaceUrl() — null when no listing is configured. */
