@@ -10,6 +10,8 @@ const TAG_LABELS: Record<string, string> = {
   mrr: "MRR",
   guides: "Guides",
   churn: "Churn",
+  zapier: "Zapier",
+  sheetxai: "SheetXAI",
 };
 
 export function blogTagLabel(slug: string): string {
