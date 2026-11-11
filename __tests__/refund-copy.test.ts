@@ -13,9 +13,9 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 describe("refund copy", () => {
-  it("uses the single pre-launch refund line and never promises 14 days", () => {
+  it("uses the single 7-day refund line everywhere and never promises 14 days", () => {
     expect(REFUND_LINE).toBe(
-      "Paid plans aren't on sale yet. Refund terms will be published before checkout opens.",
+      "Full refund within 7 days of a payment. Email support@revenuesheet.app from your purchase email.",
     );
     const roots = ["app", "components", "lib", "content"];
     const blob = roots
@@ -23,6 +23,7 @@ describe("refund copy", () => {
       .map((f) => readFileSync(f, "utf8"))
       .join("\n");
     expect(blob).not.toMatch(/14 days/i);
+    expect(blob).not.toMatch(/Refund terms will be published before checkout opens/i);
     expect(blob).toContain(REFUND_LINE);
   });
 });
