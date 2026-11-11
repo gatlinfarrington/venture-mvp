@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SampleCopyAction } from "@/components/SampleCopyAction";
 import { SampleSheet } from "@/components/SampleSheet";
+import { SampleTemplateDownload } from "@/components/SampleTemplateDownload";
 import { brand } from "@/lib/brand";
 import { SAMPLE_CAPTION } from "@/lib/sample-data";
 import { siteConfig } from "@/lib/site";
@@ -32,6 +33,7 @@ export default function SamplePage() {
         </p>
         <div className="sample-actions">
           <SampleCopyAction source="sample-page" />
+          <SampleTemplateDownload source="sample-page" />
           <Link className="sample-how-link text-link" href="/#how-it-works">
             How sync works
           </Link>

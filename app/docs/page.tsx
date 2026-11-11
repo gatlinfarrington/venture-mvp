@@ -85,6 +85,11 @@ const help = [
     title: "Troubleshooting",
     body: "Empty tabs, auth errors, rate limits, and license verification.",
   },
+  {
+    href: "/revenuesheet-template.xlsx",
+    title: "Blank template (.xlsx)",
+    body: "Download the Orders, Subscriptions, Customers, Refunds, and Dashboard layout. Preview only.",
+  },
 ] as const;
 
 export default function DocsIndexPage() {
@@ -138,14 +143,26 @@ export default function DocsIndexPage() {
         <section>
           <h2 className="docs-group-label mono">Help</h2>
           <ul className="docs-card-list">
-            {help.map((card, i) => (
-              <Reveal as="li" key={card.href} className="reveal-rise" delay={Math.min(i, 3) * 40}>
-                <Link href={card.href}>
+            {help.map((card, i) => {
+              const isFile = card.href.endsWith(".xlsx");
+              const inner = (
+                <>
                   <span className="docs-card-title">{card.title}</span>
                   <span className="muted">{card.body}</span>
-                </Link>
-              </Reveal>
-            ))}
+                </>
+              );
+              return (
+                <Reveal as="li" key={card.href} className="reveal-rise" delay={Math.min(i, 3) * 40}>
+                  {isFile ? (
+                    <a href={card.href} download="revenuesheet-template.xlsx">
+                      {inner}
+                    </a>
+                  ) : (
+                    <Link href={card.href}>{inner}</Link>
+                  )}
+                </Reveal>
+              );
+            })}
           </ul>
         </section>
       </div>

@@ -17,6 +17,8 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
+      - name: Install openpyxl (template xlsx parse)
+        run: pip install --user openpyxl
       - run: npm run lint
       - run: npm run test
       - run: npm run typecheck

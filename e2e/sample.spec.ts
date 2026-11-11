@@ -67,6 +67,11 @@ test.describe("/sample acceptance", () => {
     await page.keyboard.press("Escape");
     await expect(page.locator("#sample-copy-tip")).not.toHaveClass(/is-open/);
 
+    const download = page.getByRole("link", { name: "Download the template (.xlsx)" });
+    await expect(download).toBeVisible();
+    await expect(download).toHaveClass(/btn-secondary/);
+    await expect(download).toHaveAttribute("href", "/revenuesheet-template.xlsx");
+
     const tabs = page.getByRole("tablist", { name: "Sheet tabs" });
     await tabs.getByRole("tab", { name: "Orders" }).click();
     await expect(page).toHaveURL(/#orders/);

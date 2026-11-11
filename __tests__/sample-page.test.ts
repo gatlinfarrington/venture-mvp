@@ -23,11 +23,12 @@ describe("/sample acceptance data", () => {
     expect([...SAMPLE_TAB_NAMES]).toEqual(["Dashboard", "Orders", "Subscriptions"]);
   });
 
-  it("Orders headers match the sample template (no Store column)", () => {
+  it("Orders headers match the xlsx template including Account", () => {
     expect([...ORDER_HEADERS]).toEqual([
       "Order ID",
       "Created",
       "Source",
+      "Account",
       "Product",
       "Customer email",
       "Amount (USD)",
@@ -36,16 +37,17 @@ describe("/sample acceptance data", () => {
     ]);
   });
 
-  it("Subscriptions headers match the sample template (no Store column)", () => {
+  it("Subscriptions headers match the xlsx template including Account", () => {
     expect([...SUB_HEADERS]).toEqual([
       "Subscription ID",
       "Created",
       "Source",
+      "Account",
       "Product",
       "Customer email",
       "MRR (USD)",
       "Status",
-      "Cancelled",
+      "Canceled",
       "Interval",
       "Country",
     ]);
@@ -158,6 +160,7 @@ describe("/sample acceptance data", () => {
       "app/sample/page.tsx",
       "components/SampleSheet.tsx",
       "components/SampleCopyAction.tsx",
+      "components/SampleTemplateDownload.tsx",
       "lib/sample-data.ts",
     ]) {
       const text = readFileSync(join(root, rel), "utf8");
