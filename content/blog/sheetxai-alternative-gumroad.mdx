@@ -1,0 +1,57 @@
+---
+title: "SheetXAI vs a dedicated Gumroad → Sheets sync"
+description: "How SheetXAI's AI-in-Sheets Gumroad prompts differ from a purpose-built revenue importer — sourced from public SheetXAI pages, with no unverified price claims."
+date: "2026-10-13"
+tags: ["guides", "gumroad", "sheets"]
+draft: true
+ogTitle: "SheetXAI vs dedicated Gumroad sync"
+---
+
+Creators who sell on Gumroad and live in Google Sheets usually pick one of four paths: CSV export, a Zapier/Make append Zap, a connector add-on, or an AI assistant that pulls data when you ask in plain English. [SheetXAI](https://www.sheetxai.com/) publishes Gumroad-specific guides for that last path. RevenueSheet is aimed at the "always-on ledger + MRR tab" job instead.
+
+This is a fair comparison of **jobs**, not a feature matrix with guessed prices. Every SheetXAI claim below links a public page and a checked date. Claims we could not verify on a public page are omitted. RevenueSheet is not available to install yet and is **not** installable today — [join the launch list](/#launch).
+
+## What SheetXAI says it does (public)
+
+SheetXAI describes itself as an AI assistant for Excel and Google Sheets: natural-language commands, data extraction, and connections to business apps ([sheetxai.com](https://www.sheetxai.com/); checked Oct 14, 2026). It is listed on the [Google Workspace Marketplace](https://workspace.google.com/marketplace/app/sheetxai_ai_assistant_for_google_sheets/363574928770) (checked Oct 14, 2026).
+
+On Gumroad specifically, SheetXAI's integration guide says you can ask the sidebar to pull sales into named columns, verify license keys in bulk, and export product catalogs without a CSV round-trip ([How to Connect Gumroad to Google Sheets](https://www.sheetxai.com/integrations/google-sheets/gumroad); checked Oct 14, 2026). The same page states a **7-day free trial** and that the Gumroad integration is included in every SheetXAI plan (checked Oct 14, 2026). We are **not** quoting dollar prices here; SheetXAI lists its plans at [sheetxai.com/pricing](https://www.sheetxai.com/pricing), and prices change.
+
+## What that job is good at
+
+- Ad-hoc pulls ("sales from the last 90 days into tab Sales")
+- One-off analysis and cleanup inside the sheet
+- License-key audits driven by a prompt
+- Operators who want an AI generalist, not only a revenue pipeline
+
+If your weekly ritual is "ask for a fresh slice of Gumroad data," that shape fits.
+
+## Where a dedicated revenue sync differs
+
+RevenueSheet's planned job at launch is narrower:
+
+- Walk Gumroad (and Lemon Squeezy / Polar / Stripe) history APIs into **stable named tabs**
+- Keep refunds and subscriptions in a ledger shape you can QUERY every morning
+- Build an **MRR dashboard** from those rows (intervals normalized; statuses hedged the same way every sync)
+- Free: one source, manual refresh, full history backfill at launch; Pro (once paid plans open): scheduled refresh across sources (one store per source)
+
+That is automation you configure once, not a prompt you re-type when the monthly update is due. It is also **not** a general AI formula assistant — if you need "write me a VLOOKUP" or "extract this PDF," SheetXAI's published positioning covers that lane and RevenueSheet does not claim it.
+
+For a DIY Gumroad history path without either product, see [Gumroad sales spreadsheet](/blog/gumroad-sales-spreadsheet) (CSV + Apps Script, citing Gumroad's sales API).
+
+## Side-by-side (jobs only)
+
+| Job | SheetXAI (per public Gumroad guide) | RevenueSheet (planned at launch) |
+|---|---|---|
+| Pull Gumroad sales into a sheet | Yes, via natural-language prompt | Yes, via source sync into named tabs |
+| General AI sheet assistant | Yes (positioning on homepage) | No |
+| Always-on MRR / churn dashboard tab | Not claimed on the Gumroad guide we checked | Yes (product plan) |
+| Multi-storefront ledger (LS + Polar + Gumroad + Stripe) | Not claimed on that guide | Planned on Pro / Business |
+| Installable today on Workspace Marketplace | Listed on Marketplace (checked Oct 14, 2026) | Not available yet — not claimed installable |
+
+## Pick by the question you ask every Monday
+
+- **"Pull last quarter's Gumroad sales into these columns, once."** SheetXAI's published Gumroad flow is aimed at that.
+- **"Keep every storefront in one sheet with MRR I can defend."** That is the RevenueSheet plan at launch — still not available to install yet.
+
+[Join the launch list](/#launch). Free covers one source with manual refresh at launch. Once paid plans open, Pro adds scheduled sync across sources (one store per source). Until then, SheetXAI's trial, Gumroad's CSV export, or a careful Apps Script remain valid options.
